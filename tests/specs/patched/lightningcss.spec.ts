@@ -5,7 +5,7 @@ import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
 
-import { patchViteCssModules } from '#vite-css-modules';
+import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
 	describe('LightningCSS', ({ test }) => {
@@ -15,7 +15,7 @@ export default testSuite(({ describe }) => {
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
-					patchViteCssModules(),
+					patchCssModules(),
 				],
 				css: {
 					transformer: 'lightningcss',
@@ -43,7 +43,7 @@ export default testSuite(({ describe }) => {
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
-					patchViteCssModules(),
+					patchCssModules(),
 				],
 				css: {
 					transformer: 'lightningcss',
@@ -64,7 +64,7 @@ export default testSuite(({ describe }) => {
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 					css: {
 						transformer: 'lightningcss',
@@ -100,7 +100,7 @@ export default testSuite(({ describe }) => {
 
 				const code = await viteServe(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 					css: {
 						transformer: 'lightningcss',
@@ -128,7 +128,7 @@ export default testSuite(({ describe }) => {
 
 				const { css } = await viteBuild(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 					css: {
 						transformer: 'lightningcss',
@@ -147,7 +147,7 @@ export default testSuite(({ describe }) => {
 
 				const code = await viteServe(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 					css: {
 						transformer: 'lightningcss',

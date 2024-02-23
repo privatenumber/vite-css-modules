@@ -3,7 +3,7 @@ import { testSuite, expect } from 'manten';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
-import { patchViteCssModules } from '#vite-css-modules';
+import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
 	describe('PostCSS', ({ test, describe }) => {
@@ -14,7 +14,7 @@ export default testSuite(({ describe }) => {
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 				});
 
@@ -49,7 +49,7 @@ export default testSuite(({ describe }) => {
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 				});
 
@@ -68,7 +68,7 @@ export default testSuite(({ describe }) => {
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 				});
 				expect(css).toBeUndefined();
@@ -86,7 +86,7 @@ export default testSuite(({ describe }) => {
 					fixture.path,
 					{
 						plugins: [
-							patchViteCssModules(),
+							patchCssModules(),
 						],
 					},
 				);
@@ -110,7 +110,7 @@ export default testSuite(({ describe }) => {
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
-					patchViteCssModules(),
+					patchCssModules(),
 				],
 				css: {
 					modules: {
@@ -147,7 +147,7 @@ export default testSuite(({ describe }) => {
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
-					patchViteCssModules(),
+					patchCssModules(),
 				],
 				css: {
 					modules: {
@@ -170,7 +170,7 @@ export default testSuite(({ describe }) => {
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 					css: {
 						modules: {
@@ -207,7 +207,7 @@ export default testSuite(({ describe }) => {
 
 				const code = await viteServe(fixture.path, {
 					plugins: [
-						patchViteCssModules(),
+						patchCssModules(),
 					],
 					css: {
 						modules: {
