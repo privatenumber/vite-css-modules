@@ -56,9 +56,12 @@ Vite uses [`postcss-modules`](https://github.com/madyankin/postcss-modules) to b
 
 1. **CSS Modules are not integrated with the Vite build**
 
-    `postcss-modules` bundles each CSS Module entry-point in a black-box, preventing Vite plugins from accessing any of the dependencies it resolves. This effectively limits further CSS post-processing from Vite plugins (e.g. PostCSS or LightningCSS). 
+    `postcss-modules` bundles each CSS Module entry-point in a black-box, preventing Vite plugins from accessing any of the dependencies it resolves. This effectively limits further CSS post-processing from Vite plugins (e.g. SCSS, PostCSS, or LightningCSS). 
     
-    Although `postcss-modules` tries to apply other PostCSS plugins to dependencies, it seems to have issues: https://github.com/vitejs/vite/issues/10079
+    Although `postcss-modules` tries to apply other PostCSS plugins to dependencies, it seems to have issues:
+    
+    - https://github.com/vitejs/vite/issues/10079
+    - https://github.com/vitejs/vite/issues/10340
 
 
 2. **Duplicated CSS Module dependencies**

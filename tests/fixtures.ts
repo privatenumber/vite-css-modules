@@ -163,6 +163,33 @@ export const scssModules = Object.freeze({
 	'style.module.scss': outdent`
 	$primary: #cc0000;
 
+	// comment
+
+	.text-primary {
+		color: $primary;
+	}
+	`,
+
+	'postcss.config.js': postcssConfig,
+});
+
+export const mixedScssModules = Object.freeze({
+	'index.js': outdent`
+	export * from './css.module.css';
+	export { default } from './css.module.css';
+	`,
+
+	'css.module.css': outdent`
+	.text-primary {
+		composes: text-primary from './scss.module.scss';
+	}
+	`,
+
+	'scss.module.scss': outdent`
+	$primary: #cc0000;
+
+	// comment
+
 	.text-primary {
 		color: $primary;
 	}

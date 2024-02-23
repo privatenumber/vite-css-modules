@@ -62,6 +62,29 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch(`.${className}`);
 			});
 
+			// https://github.com/vitejs/vite/issues/10340
+			test('mixed css + scss types', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.mixedScssModules);
+				onTestFinish(() => fixture.rm());
+
+				const { js, css } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+				});
+
+				expect(css).toMatch('--file: "css.module.css"');
+				expect(css).toMatch('--file: "scss.module.scss?.module.css"');
+
+				const exported = await import(base64Module(js));
+				expect(exported['text-primary']).toMatch(/[-\w][-\dA-Z]*_[-\w]+_\w{5}/i);
+
+				const classNames = exported['text-primary'].split(' ');
+				for (const className of classNames) {
+					expect(css).toMatch(`.${className}`);
+				}
+			});
+
 			test('inline', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.inlineCssModules);
 				onTestFinish(() => fixture.rm());

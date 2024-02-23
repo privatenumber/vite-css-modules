@@ -1,5 +1,6 @@
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
+import type { CssSyntaxError } from 'postcss';
 import { base64Module } from '../utils/base64-module.js';
 import * as fixtures from '../fixtures.js';
 import { viteBuild, viteServe } from '../utils/vite.js';
@@ -64,6 +65,24 @@ export default testSuite(({ describe }) => {
 				// https://github.com/vitejs/vite/issues/15683
 				const utilClass = Array.from(code.matchAll(/util-class/g));
 				expect(utilClass.length).toBeGreaterThan(1);
+			});
+
+			// https://github.com/vitejs/vite/issues/10340
+			test('mixed css + scss types doesnt build', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.mixedScssModules);
+				onTestFinish(() => fixture.rm());
+
+				let error: CssSyntaxError | undefined;
+				process.once('unhandledRejection', (reason) => {
+					error = reason as CssSyntaxError;
+				});
+				try {
+					await viteBuild(fixture.path, {
+						logLevel: 'silent',
+					});
+				} catch {}
+
+				expect(error?.reason).toBe('Unexpected \'/\'. Escaping special characters with \\ may help.');
 			});
 
 			// This one is more for understanding expected behavior
