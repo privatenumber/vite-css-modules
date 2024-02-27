@@ -34,6 +34,9 @@ devDependencies:
   '@types/icss-utils':
     specifier: ^5.1.2
     version: 5.1.2
+  '@types/lodash.camelcase':
+    specifier: ^4.3.9
+    version: 4.3.9
   '@types/node':
     specifier: ^20.11.20
     version: 20.11.20
@@ -55,6 +58,9 @@ devDependencies:
   lightningcss:
     specifier: ^1.24.0
     version: 1.24.0
+  lodash.camelcase:
+    specifier: ^4.3.0
+    version: 4.3.0
   manten:
     specifier: ^1.2.0
     version: 1.2.0
@@ -994,6 +1000,16 @@ packages:
 
   /@types/json5@0.0.29:
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+    dev: true
+
+  /@types/lodash.camelcase@4.3.9:
+    resolution: {integrity: sha512-ys9/hGBfsKxzmFI8hckII40V0ASQ83UM2pxfQRghHAwekhH4/jWtjz/3/9YDy7ZpUd/H0k2STSqmPR28dnj7Zg==}
+    dependencies:
+      '@types/lodash': 4.14.202
+    dev: true
+
+  /@types/lodash@4.14.202:
+    resolution: {integrity: sha512-OvlIYQK9tNneDlS0VN54LLd5uiPCBOp7gS5Z0f1mjoJYBrtStzgmJBxONW3U6OZqdtNzZPmn9BS/7WI7BFFcFQ==}
     dev: true
 
   /@types/mdast@3.0.15:
@@ -3055,6 +3071,10 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       p-locate: 5.0.0
+    dev: true
+
+  /lodash.camelcase@4.3.0:
+    resolution: {integrity: sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==}
     dev: true
 
   /lodash.merge@4.6.2:

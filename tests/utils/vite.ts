@@ -7,10 +7,12 @@ export const viteBuild = async (
 	fixturePath: string,
 	config?: InlineConfig,
 ) => {
-	await fs.symlink(
-		path.resolve('node_modules'),
-		path.join(fixturePath, 'node_modules'),
-	);
+	try {
+		await fs.symlink(
+			path.resolve('node_modules'),
+			path.join(fixturePath, 'node_modules'),
+		);
+	} catch {}
 
 	const built = await build({
 		root: fixturePath,

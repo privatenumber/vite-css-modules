@@ -27,25 +27,43 @@ const importsToCode = (
 const exportsToCode = (
 	exports: Exports,
 ) => {
-	const defaultExportEntries: string[] = [];
-	const namedExports = Object.entries(exports).map(
+	const variables = new Set<string>();
+	const exportedVariables = Object.entries(exports).map(
 		([exportName, value]) => {
-			const stringValue = `\`${value}\``;
 			const jsVariable = makeLegalIdentifier(exportName);
+			const valueDecl = `const ${jsVariable} = \`${value}\`;`;
+			variables.add(valueDecl);
 
-			const variable = `const ${jsVariable}=${stringValue};`;
-			if (exportName === jsVariable) {
-				defaultExportEntries.push(jsVariable);
-				return `export ${variable}`;
+			if (exportName !== jsVariable) {
+				exportName = JSON.stringify(exportName);
 			}
-
-			const exportNameString = JSON.stringify(exportName);
-			defaultExportEntries.push(`${exportNameString}:${jsVariable}`);
-			return `${variable}export{${jsVariable} as ${exportNameString}};`;
+			return [jsVariable, exportName] as const;
 		},
-	).join('');
+	);
 
-	return `${namedExports}export default{${defaultExportEntries.join(',')}};`;
+	const namedExports = `export {${
+		exportedVariables
+			.map(
+				([jsVariable, exportName]) => (
+					jsVariable === exportName
+						? jsVariable
+						: `${jsVariable} as ${exportName}`
+				),
+			)
+			.join(',')
+	}};`;
+
+	const defaultExports = `export default{${
+		exportedVariables.map(
+			([jsVariable, exportName]) => (
+				jsVariable === exportName
+					? jsVariable
+					: `${exportName}: ${jsVariable}`
+			),
+		).join(',')
+	}}`;
+
+	return `${Array.from(variables).join('')}${namedExports}${defaultExports}`;
 };
 
 export const generateEsm = (

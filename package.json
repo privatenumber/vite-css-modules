@@ -70,6 +70,7 @@
 	"devDependencies": {
 		"@pvtnbr/eslint-config": "^1.0.3",
 		"@types/icss-utils": "^5.1.2",
+		"@types/lodash.camelcase": "^4.3.9",
 		"@types/node": "^20.11.20",
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
@@ -77,6 +78,7 @@
 		"clean-pkg-json": "^1.2.0",
 		"fs-fixture": "^1.2.0",
 		"lightningcss": "^1.24.0",
+		"lodash.camelcase": "^4.3.0",
 		"manten": "^1.2.0",
 		"outdent": "^0.8.0",
 		"pkgroll": "^2.0.1",

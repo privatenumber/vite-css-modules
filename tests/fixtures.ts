@@ -31,12 +31,12 @@ module.exports = {
 
 export const multiCssModules = Object.freeze({
 	'index.js': outdent`
-	export { default as style1 } from './style1.module.css';
-	export { default as style2 } from './style2.module.css';
+	export * as style1 from './style1.module.css';
+	export * as style2 from './style2.module.css';
 	`,
 
 	'style1.module.css': outdent`
-	.class-name1 {
+	.className1 {
 		composes: util-class from './utils1.css';
 		color: red;
 	}
