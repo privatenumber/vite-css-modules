@@ -36,12 +36,12 @@ const exportsToCode = (
 			const jsVariable = makeLegalIdentifier(exportName);
 			variables.add(`const ${jsVariable} = \`${value}\`;`);
 
-			return Array.from(exportAs).map((exportName) => {
-				const exportNameSafe = makeLegalIdentifier(exportName)
-				if (exportName !== exportNameSafe) {
-					exportName = JSON.stringify(exportName);
+			return Array.from(exportAs).map((exportAsName) => {
+				const exportNameSafe = makeLegalIdentifier(exportAsName);
+				if (exportAsName !== exportNameSafe) {
+					exportAsName = JSON.stringify(exportAsName);
 				}
-				return [jsVariable, exportName] as const;
+				return [jsVariable, exportAsName] as const;
 			});
 		},
 	);

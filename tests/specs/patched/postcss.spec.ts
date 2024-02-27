@@ -335,7 +335,7 @@ export default testSuite(({ describe }) => {
 					],
 					css: {
 						modules: {
-							localsConvention: (originalClassname) => originalClassname + '123',
+							localsConvention: originalClassname => `${originalClassname}123`,
 						},
 					},
 				});
@@ -343,10 +343,10 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						'className1123': expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						className1123: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
 						'class-name2123': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
 						default: {
-							'className1123': expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+							className1123: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
 							'class-name2123': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
 						},
 					},

@@ -141,7 +141,7 @@ export const cssModules = (
 						if (preserveOriginalExport) {
 							exportAs.add(exportName);
 						}
-	
+
 						const transformedExport = localsConventionFunction?.(exportName, exported.name, id);
 						if (transformedExport) {
 							exportAs.add(transformedExport);
@@ -152,21 +152,21 @@ export const cssModules = (
 							exported.composes.map(async (dep) => {
 								if (dep.type === 'dependency') {
 									const loaded = await loadExports(this, `${dep.specifier}?.module.css`, id);
-									const [exportName] = Array.from(loaded[dep.name]!.exportAs);
-									const importedAs = registerImport(dep.specifier, exportName)!;
+									const [exportAsName] = Array.from(loaded[dep.name]!.exportAs);
+									const importedAs = registerImport(dep.specifier, exportAsName)!;
 									return `\${${importedAs}}`;
 								}
-	
+
 								return dep.name;
 							}),
 						);
 						const classes = [exported.name, ...composedClasses].join(' ');
-	
+
 						exports[exportName] = {
 							value: classes,
 							exportAs,
 						};
-					}	
+					}
 				}),
 			);
 
@@ -184,7 +184,6 @@ export const cssModules = (
 				}),
 			);
 			// console.log('imports', imports);
-
 
 			const jsCode = generateEsm(imports, exports);
 
