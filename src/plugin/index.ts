@@ -129,53 +129,61 @@ export const cssModules = (
 
 			const exports: Exports = {};
 
-			for (const [exportName, exported] of Object.entries(cssModule.exports)) {
-				if (typeof exported === 'string') {
-					exports[exportName] = exported;
-				} else {
-					const classes = [
-						exported.name,
+			await Promise.all(
+				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
+					if (typeof exported === 'string') {
+						exports[exportName] = {
+							value: exported,
+							exportAs: new Set([exportName]),
+						};
+					} else {
+						const exportAs = new Set<string>();
+						if (preserveOriginalExport) {
+							exportAs.add(exportName);
+						}
+	
+						const transformedExport = localsConventionFunction?.(exportName, exported.name, id);
+						if (transformedExport) {
+							exportAs.add(transformedExport);
+						}
 
 						// Collect composed classes
-						...exported.composes.map((dep) => {
-							if (dep.type === 'dependency') {
-								const loaded = loadExports(this, `${dep.specifier}?.module.css`, id);
-								loaded.then(l => console.log(222, l));
-								const importedAs = registerImport(dep.specifier, dep.name)!;
-								return `\${${importedAs}}`;
-							}
-
-							return dep.name;
-						}),
-					].join(' ');
-
-					const exportAs = localsConventionFunction?.(exportName, exported.name, id);
-					if (exportAs) {
-						exports[exportAs] = classes;
-					}
-
-					if (preserveOriginalExport) {
-						exports[exportName] = classes;
-					} else if (exportAs) {
-						// signal that exportAs points to exportName
-					}
-				}
-			}
+						const composedClasses = await Promise.all(
+							exported.composes.map(async (dep) => {
+								if (dep.type === 'dependency') {
+									const loaded = await loadExports(this, `${dep.specifier}?.module.css`, id);
+									const [exportName] = Array.from(loaded[dep.name]!.exportAs);
+									const importedAs = registerImport(dep.specifier, exportName)!;
+									return `\${${importedAs}}`;
+								}
+	
+								return dep.name;
+							}),
+						);
+						const classes = [exported.name, ...composedClasses].join(' ');
+	
+						exports[exportName] = {
+							value: classes,
+							exportAs,
+						};
+					}	
+				}),
+			);
 
 			// Inject CSS Modules values
 			await Promise.all(
 				Object.entries(cssModule.references).map(async ([placeholder, source]) => {
 					const loaded = await loadExports(this, `${source.specifier}?.module.css`, id);
-					const importValue = loaded[source.name];
-					if (!importValue) {
+					const exported = loaded[source.name];
+					if (!exported) {
 						throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
 					}
 
 					registerImport(source.specifier);
-					outputCss = outputCss.replaceAll(placeholder, importValue);
+					outputCss = outputCss.replaceAll(placeholder, exported.value);
 				}),
 			);
-			console.log('imports', imports);
+			// console.log('imports', imports);
 
 
 			const jsCode = generateEsm(imports, exports);
