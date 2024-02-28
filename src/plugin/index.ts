@@ -176,7 +176,6 @@ export const cssModules = (
 					outputCss = outputCss.replaceAll(placeholder, exported.value);
 				}),
 			);
-			// console.log('imports', imports);
 
 			const jsCode = generateEsm(imports, exports);
 
