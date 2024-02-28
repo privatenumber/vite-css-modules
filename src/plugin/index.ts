@@ -96,7 +96,7 @@ export const cssModules = (
 			const imports: Imports = new Map();
 			let counter = 0;
 
-			const preserveOriginalExport = shouldKeepOriginalExport(cssModuleConfig);
+			const keepOriginalExport = shouldKeepOriginalExport(cssModuleConfig);
 			const localsConventionFunction = getLocalesConventionFunction(cssModuleConfig);
 
 			const registerImport = (
@@ -131,7 +131,7 @@ export const cssModules = (
 						};
 					} else {
 						const exportAs = new Set<string>();
-						if (preserveOriginalExport) {
+						if (keepOriginalExport) {
 							exportAs.add(exportName);
 						}
 
