@@ -1,96 +1,61 @@
 {
-	"name": "vite-css-modules",
-	"version": "0.0.0-semantic-release",
-	"description": "Vite plugin for correct CSS Modules behavior",
-	"keywords": [
-		"vite",
-		"plugin",
-		"css modules",
-		"patch"
-	],
-	"license": "MIT",
-	"repository": "privatenumber/vite-css-modules",
-	"funding": "https://github.com/privatenumber/vite-css-modules?sponsor=1",
-	"author": {
-		"name": "Hiroki Osame",
-		"email": "hiroki.osame@gmail.com"
-	},
-	"files": [
-		"dist"
-	],
-	"packageManager": "pnpm@8.15.1",
-	"type": "module",
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.cts",
-	"exports": {
-		"require": {
-			"types": "./dist/index.d.cts",
-			"default": "./dist/index.cjs"
-		},
-		"import": {
-			"types": "./dist/index.d.mts",
-			"default": "./dist/index.mjs"
-		}
-	},
-	"imports": {
-		"#vite-css-modules": {
-			"types": "./src/index.ts",
-			"development": "./src/index.ts",
-			"default": "./dist/index.mjs"
-		}
-	},
-	"scripts": {
-		"build": "pkgroll",
-		"test": "tsx tests",
-		"dev": "tsx watch --conditions=development --ignore='/private/**' tests",
-		"type-check": "tsc",
-		"lint": "lint .",
-		"prepack": "pnpm build && clean-pkg-json"
-	},
-	"peerDependencies": {
-		"lightningcss": "^1.23.0",
-		"postcss": "^8.4.33",
-		"vite": "^5.0.12"
-	},
-	"peerDependenciesMeta": {
-		"lightningcss": {
-			"optional": true
-		}
-	},
-	"dependencies": {
-		"@rollup/pluginutils": "^5.1.0",
-		"generic-names": "^4.0.0",
-		"icss-utils": "^5.1.0",
-		"postcss-modules-extract-imports": "^3.0.0",
-		"postcss-modules-local-by-default": "^4.0.4",
-		"postcss-modules-scope": "^3.1.1",
-		"postcss-modules-values": "^4.0.0"
-	},
-	"devDependencies": {
-		"@pvtnbr/eslint-config": "^1.0.3",
-		"@types/icss-utils": "^5.1.2",
-		"@types/lodash.camelcase": "^4.3.9",
-		"@types/node": "^20.11.20",
-		"@types/postcss-modules-extract-imports": "^3.0.5",
-		"@types/postcss-modules-local-by-default": "^4.0.2",
-		"@types/postcss-modules-values": "^4.0.2",
-		"clean-pkg-json": "^1.2.0",
-		"fs-fixture": "^1.2.0",
-		"lightningcss": "^1.24.0",
-		"lodash.camelcase": "^4.3.0",
-		"manten": "^1.2.0",
-		"outdent": "^0.8.0",
-		"pkgroll": "^2.0.1",
-		"postcss": "^8.4.35",
-		"postcss-selector-parser": "^6.0.15",
-		"rollup": "^4.12.0",
-		"sass": "^1.71.1",
-		"tsx": "^4.7.1",
-		"typescript": "^5.3.3",
-		"vite": "^5.1.4"
-	},
-	"eslintConfig": {
-		"extends": "@pvtnbr/eslint-config/node"
-	}
+  "name": "vite-css-modules",
+  "version": "0.0.0-semantic-release",
+  "description": "Vite plugin for correct CSS Modules behavior",
+  "keywords": [
+    "vite",
+    "plugin",
+    "css modules",
+    "patch"
+  ],
+  "license": "MIT",
+  "repository": "privatenumber/vite-css-modules",
+  "funding": "https://github.com/privatenumber/vite-css-modules?sponsor=1",
+  "author": {
+    "name": "Hiroki Osame",
+    "email": "hiroki.osame@gmail.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    },
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "imports": {
+    "#vite-css-modules": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "peerDependencies": {
+    "lightningcss": "^1.23.0",
+    "postcss": "^8.4.33",
+    "vite": "^5.0.12"
+  },
+  "peerDependenciesMeta": {
+    "lightningcss": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@rollup/pluginutils": "^5.1.0",
+    "generic-names": "^4.0.0",
+    "icss-utils": "^5.1.0",
+    "postcss-modules-extract-imports": "^3.0.0",
+    "postcss-modules-local-by-default": "^4.0.4",
+    "postcss-modules-scope": "^3.1.1",
+    "postcss-modules-values": "^4.0.0"
+  }
 }
