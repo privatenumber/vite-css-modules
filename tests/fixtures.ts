@@ -224,3 +224,19 @@ export const inlineCssModules = Object.freeze({
 
 	'postcss.config.js': postcssConfig,
 });
+
+export const globalModule = Object.freeze({
+	'index.js': outdent`
+	export * from './global.module.css';
+	export { default } from './global.module.css';
+	`,
+
+	'global.module.css': outdent`
+	.page {
+		padding: 20px;
+	}
+	:local(.title) {
+		color: green;
+	}
+	`,
+});

@@ -26,7 +26,7 @@ const defaultScopedName = '_[local]_[hash:7]';
 
 export const transform: Transformer<CSSModulesOptions> = (
 	code,
-	from,
+	id,
 	options,
 ) => {
 	const generateScopedName = (
@@ -37,13 +37,14 @@ export const transform: Transformer<CSSModulesOptions> = (
 			})
 	);
 
+	const isGlobal = options?.globalModulePaths?.some(pattern => pattern.test(id));
 	const localClasses: string[] = [];
 	let extracted: Extracted;
 	const { css } = postcss([
 		postcssModulesValues,
 
 		postcssModulesLocalByDefault({
-			mode: options?.scopeBehaviour,
+			mode: isGlobal ? 'global' : options?.scopeBehaviour,
 		}),
 
 		// Declares imports from composes
@@ -70,7 +71,7 @@ export const transform: Transformer<CSSModulesOptions> = (
 				extracted = _extracted;
 			},
 		}),
-	]).process(code, { from });
+	]).process(code, { from: id });
 
 	return {
 		code: css,

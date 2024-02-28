@@ -363,6 +363,32 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
+		test('globalModulePaths', async ({ onTestFinish }) => {
+			const fixture = await createFixture(fixtures.globalModule);
+			onTestFinish(() => fixture.rm());
+
+			const { js, css } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				css: {
+					modules: {
+						globalModulePaths: [/global\.module\.css/],
+					},
+				},
+			});
+
+			const exported = await import(base64Module(js));
+			expect(exported).toMatchObject({
+				default: {
+					title: expect.stringMatching(/^_title_\w{5}/),
+				},
+				title: expect.stringMatching(/^_title_\w{5}/),
+			});
+
+			expect(css).toMatch('.page {');
+		});
+
 		test('Empty CSS Module', async ({ onTestFinish }) => {
 			const fixture = await createFixture(fixtures.emptyCssModule);
 			onTestFinish(() => fixture.rm());
