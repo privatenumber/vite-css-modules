@@ -124,17 +124,19 @@ export const cssModules = (
 
 			await Promise.all(
 				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
-					if (typeof exported === 'string') {
-						exports[exportName] = {
-							value: exported,
-							exportAs: new Set([exportName]),
-						};
-					} else {
-						const exportAs = new Set<string>();
-						if (keepOriginalExport) {
-							exportAs.add(exportName);
-						}
+					const exportAs = new Set<string>();
+					if (keepOriginalExport) {
+						exportAs.add(exportName);
+					}
 
+					let value: string;
+					if (typeof exported === 'string') {
+						const transformedExport = localsConventionFunction?.(exportName, exportName, id);
+						if (transformedExport) {
+							exportAs.add(transformedExport);
+						}
+						value = exported;
+					} else {
 						const transformedExport = localsConventionFunction?.(exportName, exported.name, id);
 						if (transformedExport) {
 							exportAs.add(transformedExport);
@@ -153,13 +155,13 @@ export const cssModules = (
 								return dep.name;
 							}),
 						);
-						const classes = [exported.name, ...composedClasses].join(' ');
-
-						exports[exportName] = {
-							value: classes,
-							exportAs,
-						};
+						value = [exported.name, ...composedClasses].join(' ');
 					}
+
+					exports[exportName] = {
+						value,
+						exportAs,
+					};
 				}),
 			);
 

@@ -10,15 +10,19 @@ import { postcssExtractIcss } from './postcss-extract-icss.js';
 import type { Extracted } from './types.js';
 
 /**
- * For reference, postcss-modules's default for feature parity:
+ * For reference, postcss-modules's default:
  * https://github.com/madyankin/postcss-modules/blob/v6.0.0/src/scoping.js#L41
  *
- * LightningCSS recommends hash first for grid compatibility,
+ * I didn't add the line number because it seemed needless.
+ * I increased the hash to 7 to follow Git's default for short SHA:
+ * https://stackoverflow.com/a/18134919/911407
+ *
+ * FYI LightningCSS recommends hash first for grid compatibility,
  * https://github.com/parcel-bundler/lightningcss/blob/v1.23.0/website/pages/css-modules.md?plain=1#L237-L238
  *
  * but PostCSS CSS Modules doesn't seem to transform Grid names
  */
-const defaultScopedName = '[name]_[local]_[hash:5]';
+const defaultScopedName = '_[local]_[hash:7]';
 
 export const transform: Transformer<CSSModulesOptions> = (
 	code,

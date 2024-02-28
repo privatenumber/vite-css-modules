@@ -32,17 +32,17 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
-						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
+						className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
 						default: {
-							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-							'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+							'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						},
 					},
 					style2: {
-						'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						default: {
-							'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						},
 					},
 				});
@@ -54,7 +54,8 @@ export default testSuite(({ describe }) => {
 				];
 
 				for (const className of classes) {
-					expect(className).toMatch(/^[-\w][-\dA-Z]*_[-\w]+_\w{5}$/i);
+					// eslint-disable-next-line regexp/no-super-linear-backtracking
+					expect(className).toMatch(/^(_[-\w]+_\w{7}\s?)+$/);
 					expect(css).toMatch(`.${className}`);
 				}
 			});
@@ -72,7 +73,7 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch('--file: "style.module.scss"');
 
 				const exported = await import(base64Module(js));
-				expect(exported['text-primary']).toMatch(/^[-\w][-\dA-Z]*_[-\w]+_\w{5}$/i);
+				expect(exported['text-primary']).toMatch(/^_[-\w]+_\w{7}$/);
 
 				const className = exported['text-primary'];
 				expect(css).toMatch(`.${className}`);
@@ -93,7 +94,9 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch('--file: "scss.module.scss?.module.css"');
 
 				const exported = await import(base64Module(js));
-				expect(exported['text-primary']).toMatch(/[-\w][-\dA-Z]*_[-\w]+_\w{5}/i);
+
+				// eslint-disable-next-line regexp/no-super-linear-backtracking
+				expect(exported['text-primary']).toMatch(/^(_[-\w]+_\w{7}\s?)+$/);
 
 				const classNames = exported['text-primary'].split(' ');
 				for (const className of classNames) {
@@ -199,21 +202,21 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
-						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
+						className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						default: {
-							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-							'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
-							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+							'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						},
 					},
 					style2: {
-						'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
-						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						default: {
-							'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
-							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						},
 					},
 				});
@@ -237,17 +240,17 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						default: {
-							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						},
 					},
 					style2: {
-						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						default: {
-							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						},
 					},
 				});
@@ -271,21 +274,21 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
-						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
+						className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						default: {
-							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-							'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
-							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+							'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						},
 					},
 					style2: {
-						'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
-						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						default: {
-							'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
-							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							'class-name2': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						},
 					},
 				});
@@ -309,17 +312,17 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						default: {
-							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						},
 					},
 					style2: {
-						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						default: {
-							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						},
 					},
 				});
@@ -343,17 +346,17 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						className1123: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-						'class-name2123': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						className1123: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+						'class-name2123': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						default: {
-							className1123: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
-							'class-name2123': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className1123: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+							'class-name2123': expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
 						},
 					},
 					style2: {
-						'class-name2123': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						'class-name2123': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						default: {
-							'class-name2123': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							'class-name2123': expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 						},
 					},
 				});
@@ -391,21 +394,16 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
-					css: {
-						modules: {
-							generateScopedName: '[name]_[local]',
-						},
-					},
 				});
 
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					default: {
-						'class-name1': 'style-module_class-name1 utils1_util-class utils2_util-class',
-						'class-name2': 'style-module_class-name2',
+						'class-name1': expect.stringMatching(/^_class-name1_\w+ _util-class_\w+ _util-class_\w+$/),
+						'class-name2': expect.stringMatching(/^_class-name2_\w+$/),
 					},
-					'class-name1': 'style-module_class-name1 utils1_util-class utils2_util-class',
-					'class-name2': 'style-module_class-name2',
+					'class-name1': expect.stringMatching(/_class-name1_\w+ _util-class_\w+ _util-class_\w+/),
+					'class-name2': expect.stringMatching(/^_class-name2_\w+$/),
 				});
 
 				expect(css).toMatch('color: #fff');
