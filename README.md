@@ -1,12 +1,10 @@
 # vite-css-modules
 
-This plugin changes how Vite handles CSS Modules by treating them as JavaScript modules. This integrates CSS Modules into Vite's module graph, de-duplicating shared modules, and allows Vite plugins to access them.
+This Vite plugin to fixes the following CSS Module bugs in Vite: [#7504](https://github.com/vitejs/vite/issues/7504), [#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340), & [#15683](https://github.com/vitejs/vite/issues/15683)
 
-The goal of this plugin is two fold:
+The plugin makes Vite handle CSS Modules as JavaScript modules, allowing integration into Vite's module graph. This lets Vite plugins process individual CSS Modules, and also lets Vite de-duplicate shared CSS Modules.
 
-1. To patch and address bugs in Vite's handling of CSS Modules
-
-2. Eventually, have these improvements added directly to Vite
+The goal of this package is to integrate this fix directly in Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)) while also offering it as a patch to users that can't upgrade Vite.
 
 For more details, see the [FAQ](#faq) below.
 
