@@ -4,7 +4,7 @@ import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
 import type { CSSModulesConfig } from 'lightningcss';
 import type { TransformPluginContext } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
-import { getLocalesConventionFunction } from './locals-convention.js';
+import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
@@ -96,14 +96,7 @@ export const cssModules = (
 			const imports: Imports = new Map();
 			let counter = 0;
 
-			const preserveOriginalExport = !(
-				'localsConvention' in cssModuleConfig
-				&& (
-					typeof cssModuleConfig.localsConvention === 'function'
-					|| cssModuleConfig.localsConvention === 'camelCaseOnly'
-					|| cssModuleConfig.localsConvention === 'dashesOnly'
-				)
-			);
+			const preserveOriginalExport = shouldKeepOriginalExport(cssModuleConfig);
 			const localsConventionFunction = getLocalesConventionFunction(cssModuleConfig);
 
 			const registerImport = (
