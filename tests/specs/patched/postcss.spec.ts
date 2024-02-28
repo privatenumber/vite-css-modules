@@ -30,9 +30,25 @@ export default testSuite(({ describe }) => {
 				expect(utilClass.length).toBe(1);
 
 				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style1: {
+						'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						default: {
+							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+							'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						},
+					},
+					style2: {
+						'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						default: {
+							'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						},
+					},
+				});
 
 				const classes = [
-					...exported.style1['class-name1'].split(' '),
+					...exported.style1.className1.split(' '),
 					...exported.style1['class-name2'].split(' '),
 					...exported.style2['class-name2'].split(' '),
 				];
@@ -145,7 +161,7 @@ export default testSuite(({ describe }) => {
 			const exported = await import(base64Module(js));
 			expect(exported).toMatchObject({
 				style1: {
-					'class-name1': expect.stringMatching(/^asdf_class-name1\s+asdf_util-class$/),
+					className1: expect.stringMatching(/^asdf_className1\s+asdf_util-class$/),
 				},
 				style2: {
 					'class-name2': expect.stringMatching(/^asdf_class-name2\s+asdf_util-class$/),
@@ -162,6 +178,186 @@ export default testSuite(({ describe }) => {
 			// Util is not duplicated
 			const utilClass = Array.from(css!.matchAll(/foo/g));
 			expect(utilClass.length).toBe(1);
+		});
+
+		describe('localsConvention', ({ test }) => {
+			test('camelCase', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					css: {
+						modules: {
+							localsConvention: 'camelCase',
+						},
+					},
+				});
+
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style1: {
+						'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						default: {
+							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+							'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						},
+					},
+					style2: {
+						'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						default: {
+							'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						},
+					},
+				});
+			});
+
+			test('camelCaseOnly', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					css: {
+						modules: {
+							localsConvention: 'camelCaseOnly',
+						},
+					},
+				});
+
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style1: {
+						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						default: {
+							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						},
+					},
+					style2: {
+						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						default: {
+							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						},
+					},
+				});
+			});
+
+			test('dashes', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					css: {
+						modules: {
+							localsConvention: 'dashes',
+						},
+					},
+				});
+
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style1: {
+						'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						default: {
+							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+							'class-name2': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						},
+					},
+					style2: {
+						'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						default: {
+							'class-name2': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						},
+					},
+				});
+			});
+
+			test('dashesOnly', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					css: {
+						modules: {
+							localsConvention: 'dashesOnly',
+						},
+					},
+				});
+
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style1: {
+						className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						default: {
+							className1: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+							className2: expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						},
+					},
+					style2: {
+						className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						default: {
+							className2: expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						},
+					},
+				});
+			});
+
+			test('function', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					css: {
+						modules: {
+							localsConvention: originalClassname => `${originalClassname}123`,
+						},
+					},
+				});
+
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style1: {
+						className1123: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+						'class-name2123': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						default: {
+							className1123: expect.stringMatching(/style1-module_className1_\w+ utils1_util-class_\w+/),
+							'class-name2123': expect.stringMatching(/style1-module_class-name2_\w+ utils1_util-class_\w+ utils2_util-class_\w+/),
+						},
+					},
+					style2: {
+						'class-name2123': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						default: {
+							'class-name2123': expect.stringMatching(/style2-module_class-name2_\w+ utils1_util-class_\w+/),
+						},
+					},
+				});
+			});
 		});
 
 		test('Empty CSS Module', async ({ onTestFinish }) => {

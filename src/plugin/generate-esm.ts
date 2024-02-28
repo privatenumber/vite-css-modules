@@ -2,7 +2,10 @@ import { makeLegalIdentifier } from '@rollup/pluginutils';
 
 type ImportSpecifiers = Record<string /* exportName */, string /* importAs */>;
 export type Imports = Map<string /* filePath */, ImportSpecifiers>;
-export type Exports = Record<string, string>;
+export type Exports = Record<string, {
+	value: string;
+	exportAs: Set<string>;
+}>;
 
 const importStatement = (
 	specifiers: string,
@@ -27,25 +30,45 @@ const importsToCode = (
 const exportsToCode = (
 	exports: Exports,
 ) => {
-	const defaultExportEntries: string[] = [];
-	const namedExports = Object.entries(exports).map(
-		([exportName, value]) => {
-			const stringValue = `\`${value}\``;
+	const variables = new Set<string>();
+	const exportedVariables = Object.entries(exports).flatMap(
+		([exportName, { exportAs, value }]) => {
 			const jsVariable = makeLegalIdentifier(exportName);
+			variables.add(`const ${jsVariable} = \`${value}\`;`);
 
-			const variable = `const ${jsVariable}=${stringValue};`;
-			if (exportName === jsVariable) {
-				defaultExportEntries.push(jsVariable);
-				return `export ${variable}`;
-			}
-
-			const exportNameString = JSON.stringify(exportName);
-			defaultExportEntries.push(`${exportNameString}:${jsVariable}`);
-			return `${variable}export{${jsVariable} as ${exportNameString}};`;
+			return Array.from(exportAs).map((exportAsName) => {
+				const exportNameSafe = makeLegalIdentifier(exportAsName);
+				if (exportAsName !== exportNameSafe) {
+					exportAsName = JSON.stringify(exportAsName);
+				}
+				return [jsVariable, exportAsName] as const;
+			});
 		},
-	).join('');
+	);
 
-	return `${namedExports}export default{${defaultExportEntries.join(',')}};`;
+	const namedExports = `export {${
+		exportedVariables
+			.map(
+				([jsVariable, exportName]) => (
+					jsVariable === exportName
+						? jsVariable
+						: `${jsVariable} as ${exportName}`
+				),
+			)
+			.join(',')
+	}};`;
+
+	const defaultExports = `export default{${
+		exportedVariables.map(
+			([jsVariable, exportName]) => (
+				jsVariable === exportName
+					? jsVariable
+					: `${exportName}: ${jsVariable}`
+			),
+		).join(',')
+	}}`;
+
+	return `${Array.from(variables).join('')}${namedExports}${defaultExports}`;
 };
 
 export const generateEsm = (

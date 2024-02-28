@@ -1,8 +1,10 @@
 import path from 'node:path';
 import { readFile } from 'fs/promises';
-import type { Plugin, ResolvedConfig } from 'vite';
+import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
+import type { CSSModulesConfig } from 'lightningcss';
 import type { TransformPluginContext } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
+import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
@@ -28,19 +30,13 @@ export const cssModules = (
 	const lightningCssOptions = { ...cssConfig.lightningcss };
 
 	const isLightningCss = cssConfig.transformer === 'lightningcss';
-	const cssModuleConfig = {
+	const cssModuleConfig: CSSModulesOptions | CSSModulesConfig = {
 		...(
 			isLightningCss
 				? lightningCssOptions.cssModules
 				: cssConfig.modules
 		),
 	};
-
-	if (cssModuleConfig === false) {
-		return {
-			name: pluginName,
-		};
-	}
 
 	const loadTransformer = (
 		isLightningCss
@@ -100,6 +96,9 @@ export const cssModules = (
 			const imports: Imports = new Map();
 			let counter = 0;
 
+			const keepOriginalExport = shouldKeepOriginalExport(cssModuleConfig);
+			const localsConventionFunction = getLocalesConventionFunction(cssModuleConfig);
+
 			const registerImport = (
 				fromFile: string,
 				exportName?: string,
@@ -123,36 +122,58 @@ export const cssModules = (
 
 			const exports: Exports = {};
 
-			for (const [exportName, exported] of Object.entries(cssModule.exports)) {
-				if (typeof exported === 'string') {
-					exports[exportName] = exported;
-				} else {
-					exports[exportName] = [
-						exported.name,
+			await Promise.all(
+				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
+					if (typeof exported === 'string') {
+						exports[exportName] = {
+							value: exported,
+							exportAs: new Set([exportName]),
+						};
+					} else {
+						const exportAs = new Set<string>();
+						if (keepOriginalExport) {
+							exportAs.add(exportName);
+						}
+
+						const transformedExport = localsConventionFunction?.(exportName, exported.name, id);
+						if (transformedExport) {
+							exportAs.add(transformedExport);
+						}
 
 						// Collect composed classes
-						...exported.composes.map((dep) => {
-							if (dep.type === 'dependency') {
-								const importedAs = registerImport(dep.specifier, dep.name)!;
-								return `\${${importedAs}}`;
-							}
+						const composedClasses = await Promise.all(
+							exported.composes.map(async (dep) => {
+								if (dep.type === 'dependency') {
+									const loaded = await loadExports(this, `${dep.specifier}?.module.css`, id);
+									const [exportAsName] = Array.from(loaded[dep.name]!.exportAs);
+									const importedAs = registerImport(dep.specifier, exportAsName)!;
+									return `\${${importedAs}}`;
+								}
 
-							return dep.name;
-						}),
-					].join(' ');
-				}
-			}
+								return dep.name;
+							}),
+						);
+						const classes = [exported.name, ...composedClasses].join(' ');
 
+						exports[exportName] = {
+							value: classes,
+							exportAs,
+						};
+					}
+				}),
+			);
+
+			// Inject CSS Modules values
 			await Promise.all(
 				Object.entries(cssModule.references).map(async ([placeholder, source]) => {
 					const loaded = await loadExports(this, `${source.specifier}?.module.css`, id);
-					const importValue = loaded[source.name];
-					if (!importValue) {
+					const exported = loaded[source.name];
+					if (!exported) {
 						throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
 					}
 
 					registerImport(source.specifier);
-					outputCss = outputCss.replaceAll(placeholder, importValue);
+					outputCss = outputCss.replaceAll(placeholder, exported.value);
 				}),
 			);
 

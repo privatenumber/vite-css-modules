@@ -16,10 +16,16 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
-						'class-name1': '_class-name1_1g59v_1 _util-class_iayaa_1',
+						className1: expect.stringMatching(/^_className1_\w+ _util-class_\w+$/),
+						default: {
+							className1: expect.stringMatching(/^_className1_\w+ _util-class_\w+$/),
+							'class-name2': expect.stringMatching(/^_class-name2_\w+ _util-class_\w+ _util-class_\w+$/),
+						},
 					},
 					style2: {
-						'class-name2': '_class-name2_3uf60_1 _util-class_iayaa_1',
+						default: {
+							'class-name2': expect.stringMatching(/^_class-name2_\w+ _util-class_\w+$/),
+						},
 					},
 				});
 
@@ -116,7 +122,7 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
-		describe('LightningCSS', ({ test }) => {
+		describe('LightningCSS', ({ describe, test }) => {
 			describe('no config', ({ test }) => {
 				test('build', async ({ onTestFinish }) => {
 					const fixture = await createFixture(fixtures.multiCssModules);
@@ -129,8 +135,20 @@ export default testSuite(({ describe }) => {
 					});
 
 					const exported = await import(base64Module(js));
-					expect(exported.style1['class-name1']).toMatch(/^[\w-]+_class-name1\s+[\w-]+_util-class$/);
-					expect(exported.style2['class-name2']).toMatch(/^[\w-]+_class-name2\s+[\w-]+_util-class$/);
+					expect(exported).toMatchObject({
+						style1: {
+							className1: expect.stringMatching(/^[\w-]+_className1 [\w-]+_util-class$/),
+							default: {
+								className1: expect.stringMatching(/^[\w-]+_className1 [\w-]+_util-class$/),
+								'class-name2': expect.stringMatching(/^[\w-]+_class-name2 [\w-]+_util-class [\w-]+_util-class$/),
+							},
+						},
+						style2: {
+							default: {
+								'class-name2': expect.stringMatching(/^[\w-]+_class-name2 [\w-]+_util-class$/),
+							},
+						},
+					});
 
 					// util class is duplicated
 					// https://github.com/vitejs/vite/issues/15683
