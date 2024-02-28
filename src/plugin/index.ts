@@ -129,13 +129,15 @@ export const cssModules = (
 						exportAs.add(exportName);
 					}
 
-					let value: string;
+					let code: string;
+					let resolved: string;
 					if (typeof exported === 'string') {
 						const transformedExport = localsConventionFunction?.(exportName, exportName, id);
 						if (transformedExport) {
 							exportAs.add(transformedExport);
 						}
-						value = exported;
+						code = exported;
+						resolved = exported;
 					} else {
 						const transformedExport = localsConventionFunction?.(exportName, exported.name, id);
 						if (transformedExport) {
@@ -147,19 +149,28 @@ export const cssModules = (
 							exported.composes.map(async (dep) => {
 								if (dep.type === 'dependency') {
 									const loaded = await loadExports(this, `${dep.specifier}?.module.css`, id);
-									const [exportAsName] = Array.from(loaded[dep.name]!.exportAs);
+									const exportedEntry = loaded[dep.name]!;
+									const [exportAsName] = Array.from(exportedEntry.exportAs);
 									const importedAs = registerImport(dep.specifier, exportAsName)!;
-									return `\${${importedAs}}`;
+									return {
+										resolved: exportedEntry.resolved,
+										code: `\${${importedAs}}`,
+									};
 								}
 
-								return dep.name;
+								return {
+									resolved: dep.name,
+									code: dep.name,
+								};
 							}),
 						);
-						value = [exported.name, ...composedClasses].join(' ');
+						code = [exported.name, ...composedClasses.map(c => c.code)].join(' ');
+						resolved = [exported.name, ...composedClasses.map(c => c.resolved)].join(' ');
 					}
 
 					exports[exportName] = {
-						value,
+						code,
+						resolved,
 						exportAs,
 					};
 				}),
@@ -175,9 +186,23 @@ export const cssModules = (
 					}
 
 					registerImport(source.specifier);
-					outputCss = outputCss.replaceAll(placeholder, exported.value);
+					outputCss = outputCss.replaceAll(placeholder, exported.code);
 				}),
 			);
+
+			if (
+				'getJSON' in cssModuleConfig
+				&& typeof cssModuleConfig.getJSON === 'function'
+			) {
+				const json: Record<string, string> = {};
+				for (const exported of Object.values(exports)) {
+					for (const exportAs of exported.exportAs) {
+						json[exportAs] = exported.resolved;
+					}
+				}
+
+				cssModuleConfig.getJSON(id, json, id);
+			}
 
 			const jsCode = generateEsm(imports, exports);
 

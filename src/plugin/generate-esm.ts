@@ -3,7 +3,8 @@ import { makeLegalIdentifier } from '@rollup/pluginutils';
 type ImportSpecifiers = Record<string /* exportName */, string /* importAs */>;
 export type Imports = Map<string /* filePath */, ImportSpecifiers>;
 export type Exports = Record<string, {
-	value: string;
+	code: string;
+	resolved: string;
 	exportAs: Set<string>;
 }>;
 
@@ -32,7 +33,7 @@ const exportsToCode = (
 ) => {
 	const variables = new Set<string>();
 	const exportedVariables = Object.entries(exports).flatMap(
-		([exportName, { exportAs, value }]) => {
+		([exportName, { exportAs, code: value }]) => {
 			const jsVariable = makeLegalIdentifier(exportName);
 			variables.add(`const ${jsVariable} = \`${value}\`;`);
 

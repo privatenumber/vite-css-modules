@@ -6,7 +6,7 @@ import * as fixtures from '../fixtures.js';
 import { viteBuild, viteServe } from '../utils/vite.js';
 
 export default testSuite(({ describe }) => {
-	describe('bug reproductions', ({ describe }) => {
+	describe('reproductions', ({ describe }) => {
 		describe('postcss (no config)', ({ test }) => {
 			test('build', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.multiCssModules);
@@ -121,6 +121,7 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch('border: 1px solid black');
 			});
 
+			// To understand expected behavior
 			test('globalModulePaths', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.globalModule);
 				onTestFinish(() => fixture.rm());
@@ -142,6 +143,55 @@ export default testSuite(({ describe }) => {
 				});
 
 				expect(css).toMatch('.page {');
+			});
+
+			// To understand expected behavior
+			test('getJSON', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				type JSON = {
+					inputFile: string;
+					exports: Record<string, string>;
+					outputFile: string;
+				};
+				const jsons: JSON[] = [];
+
+				await viteBuild(fixture.path, {
+					css: {
+						modules: {
+							localsConvention: 'camelCaseOnly',
+							getJSON: (inputFile, exports, outputFile) => {
+								jsons.push({
+									inputFile,
+									exports,
+									outputFile,
+								});
+							},
+						},
+					},
+				});
+
+				expect(jsons).toHaveLength(2);
+				jsons.sort((a, b) => a.inputFile.localeCompare(b.inputFile));
+
+				const [style1, style2] = jsons;
+				expect(style1).toMatchObject({
+					inputFile: expect.stringMatching(/style1\.module\.css$/),
+					exports: {
+						className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
+					},
+					outputFile: expect.stringMatching(/style1\.module\.css$/),
+				});
+
+				expect(style2).toMatchObject({
+					inputFile: expect.stringMatching(/style2\.module\.css$/),
+					exports: {
+						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
+					},
+					outputFile: expect.stringMatching(/style2\.module\.css$/),
+				});
 			});
 		});
 

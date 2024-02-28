@@ -389,6 +389,76 @@ export default testSuite(({ describe }) => {
 			expect(css).toMatch('.page {');
 		});
 
+		test('getJSON', async ({ onTestFinish }) => {
+			const fixture = await createFixture(fixtures.multiCssModules);
+			onTestFinish(() => fixture.rm());
+
+			type JSON = {
+				inputFile: string;
+				exports: Record<string, string>;
+				outputFile: string;
+			};
+			const jsons: JSON[] = [];
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				css: {
+					modules: {
+						localsConvention: 'camelCaseOnly',
+						getJSON: (inputFile, exports, outputFile) => {
+							jsons.push({
+								inputFile,
+								exports,
+								outputFile,
+							});
+						},
+					},
+				},
+			});
+
+			// This plugin treats each CSS Module as a JS module so it emits on each module
+			// rather than the final "bundle" which postcss-module emits on
+			expect(jsons).toHaveLength(4);
+			jsons.sort((a, b) => a.inputFile.localeCompare(b.inputFile));
+
+			const [style1, style2, utils1, utils2] = jsons;
+			expect(style1).toMatchObject({
+				inputFile: expect.stringMatching(/style1\.module\.css$/),
+				exports: {
+					className1: expect.stringMatching(/_className1_\w+ _util-class_\w+/),
+					className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+ _util-class_\w+/),
+				},
+				outputFile: expect.stringMatching(/style1\.module\.css$/),
+			});
+
+			expect(style2).toMatchObject({
+				inputFile: expect.stringMatching(/style2\.module\.css$/),
+				exports: {
+					className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
+				},
+				outputFile: expect.stringMatching(/style2\.module\.css$/),
+			});
+
+			expect(utils1).toMatchObject({
+				inputFile: expect.stringMatching(/utils1\.css\?\.module\.css$/),
+				exports: {
+					unusedClass: expect.stringMatching(/_unused-class_\w+/),
+					utilClass: expect.stringMatching(/_util-class_\w+/),
+				},
+				outputFile: expect.stringMatching(/utils1\.css\?\.module\.css$/),
+			});
+
+			expect(utils2).toMatchObject({
+				inputFile: expect.stringMatching(/utils2\.css\?\.module\.css$/),
+				exports: {
+					utilClass: expect.stringMatching(/_util-class_\w+/),
+				},
+				outputFile: expect.stringMatching(/utils2\.css\?\.module\.css$/),
+			});
+		});
+
 		test('Empty CSS Module', async ({ onTestFinish }) => {
 			const fixture = await createFixture(fixtures.emptyCssModule);
 			onTestFinish(() => fixture.rm());
