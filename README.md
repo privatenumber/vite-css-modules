@@ -1,4 +1,4 @@
-# vite-css-modules
+# vite-css-modules <a href="https://npm.im/vite-css-modules"><img src="https://badgen.net/npm/v/vite-css-modules"></a> <a href="https://npm.im/vite-css-modules"><img src="https://badgen.net/npm/dm/vite-css-modules"></a>
 
 This Vite plugin fixes several CSS Module bugs by handling CSS Modules as JS Modules.
 
