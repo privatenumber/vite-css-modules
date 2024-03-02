@@ -15,7 +15,7 @@ The goal is to incorporate this fix directly into Vite ([PR #16018](https://gith
 
 - **Improved error handling**
 
-    Currently, Vite fails silently when unable to resolve a `composes` dependency. This plugin will throw an error, making it easier to catch bugs.
+    Currently, Vite fails silently when unable to resolve a `composes` dependency. This plugin will throw an error, helping you catch bugs.
 
 For more details, see the [FAQ](#faq) below.
 
