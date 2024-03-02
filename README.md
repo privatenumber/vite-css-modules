@@ -4,6 +4,7 @@ This Vite plugin fixes several CSS Module bugs by handling CSS Modules as JS Mod
 
 The goal of this project is to incorporate this fix directly into Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)). Meanwhile, this plugin is published for early adopters and users who are unable to upgrade Vite.
 
+[→ Play with a demo on StackBlitz](https://stackblitz.com/edit/vitejs-vite-v9jcwo?file=src%2Fstyle.module.css)
 
 ### Improvements
 - **Handle CSS Modules as JS Modules**
