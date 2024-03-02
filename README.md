@@ -1,9 +1,8 @@
 # vite-css-modules
 
-This Vite plugin fixes the following CSS Module bugs: [#7504](https://github.com/vitejs/vite/issues/7504), [#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340), & [#15683](https://github.com/vitejs/vite/issues/15683).
+This Vite plugin fixes several CSS Module bugs by handling CSS Modules as JS Modules.
 
-
-The goal is to incorporate this fix directly into Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)). Meanwhile, this plugin offers a path for early adopters and users who are unable to upgrade Vite.
+The goal of this project is to incorporate this fix directly into Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)). Meanwhile, this plugin is published for early adopters and users who are unable to upgrade Vite.
 
 
 ### Improvements
@@ -11,11 +10,15 @@ The goal is to incorporate this fix directly into Vite ([PR #16018](https://gith
 
     The plugin changes how Vite processes CSS Modules. Currently, Vite bundles each CSS Module entry-point separately using [postcss-modules](https://github.com/madyankin/postcss-modules).
 
-    By treating them as JavaScript modules, they can now be integrated into Vite's module graph, allowing Vite to handle the bundling and de-duplicate shared dependencies. Also allowing Vite plugins to process individual CSS Modules.
+    By treating them as JavaScript modules, they can now be integrated into Vite's module graph, allowing Vite to handle the bundling. This allows:
+
+    - CSS Module dependencies to be de-duplicated (fix [#7504](https://github.com/vitejs/vite/issues/7504), [#15683](https://github.com/vitejs/vite/issues/15683))
+    - HMR in CSS Module dependencies (fix [#16074](https://github.com/vitejs/vite/issues/16074))
+    - Vite plugins to process individual CSS Modules (fix [#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340))
 
 - **Improved error handling**
 
-    Currently, Vite fails silently when unable to resolve a `composes` dependency. This plugin will throw an error, helping you catch bugs.
+    Currently, Vite (or more specifically, `postcss-modules`) fails silently when unable to resolve a `composes` dependency. This plugin will throw an error, helping you catch bugs. (fix [#16075](https://github.com/vitejs/vite/issues/16075))
 
 For more details, see the [FAQ](#faq) below.
 
@@ -60,7 +63,7 @@ This patches your Vite to handle CSS Modules in a more predictable way.
 ## FAQ
 
 ### What issues does this plugin address?
-Vite uses [`postcss-modules`](https://github.com/madyankin/postcss-modules) to bundle CSS Modules per entry point, which leads to the following problems:
+Vite uses [`postcss-modules`](https://github.com/madyankin/postcss-modules) to create a separate  bundle for each CSS Module entry point, which leads to the following problems:
 
 
 1. **CSS Modules are not integrated with the Vite build**
