@@ -1,10 +1,21 @@
 # vite-css-modules
 
-This Vite plugin to fixes the following CSS Module bugs in Vite: [#7504](https://github.com/vitejs/vite/issues/7504), [#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340), & [#15683](https://github.com/vitejs/vite/issues/15683)
+This Vite plugin fixes the following CSS Module bugs: [#7504](https://github.com/vitejs/vite/issues/7504), [#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340), & [#15683](https://github.com/vitejs/vite/issues/15683).
 
-The plugin makes Vite handle CSS Modules as JavaScript modules, allowing integration into Vite's module graph. This lets Vite plugins process individual CSS Modules, and also lets Vite de-duplicate shared CSS Modules.
 
-The goal of this package is to integrate this fix directly in Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)) while also offering it as a patch to users that can't upgrade Vite.
+The goal is to incorporate this fix directly into Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)). Meanwhile, this plugin offers a path for early adopters and users who are unable to upgrade Vite.
+
+
+### Improvements
+- **Handle CSS Modules as JS Modules**
+
+    The plugin changes how Vite processes CSS Modules. Currently, Vite bundles each CSS Module entry-point separately using [postcss-modules](https://github.com/madyankin/postcss-modules).
+
+    By treating them as JavaScript modules, they can now be integrated into Vite's module graph, allowing Vite to handle the bundling and de-duplicate shared dependencies. Also allowing Vite plugins to process individual CSS Modules.
+
+- **Improved error handling**
+
+    Currently, Vite fails silently when unable to resolve a `composes` dependency. This plugin will throw an error, making it easier to catch bugs.
 
 For more details, see the [FAQ](#faq) below.
 

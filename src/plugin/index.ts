@@ -150,6 +150,9 @@ export const cssModules = (
 								if (dep.type === 'dependency') {
 									const loaded = await loadExports(this, `${dep.specifier}?.module.css`, id);
 									const exportedEntry = loaded[dep.name]!;
+									if (!exportedEntry) {
+										throw new Error(`Cannot resolve ${JSON.stringify(dep.name)} from ${JSON.stringify(dep.specifier)}`);
+									}
 									const [exportAsName] = Array.from(exportedEntry.exportAs);
 									const importedAs = registerImport(dep.specifier, exportAsName)!;
 									return {

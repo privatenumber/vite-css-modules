@@ -240,3 +240,19 @@ export const globalModule = Object.freeze({
 	}
 	`,
 });
+
+export const missingClassExport = Object.freeze({
+	'index.js': outdent`
+	export * from './style.module.css';
+	export { default } from './style.module.css';
+	`,
+
+	'style.module.css': outdent`
+	.className1 {
+		composes: non-existent from './utils.css';
+		color: red;
+	}
+	`,
+
+	'utils.css': '',
+});

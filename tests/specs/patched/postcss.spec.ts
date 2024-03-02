@@ -541,5 +541,19 @@ export default testSuite(({ describe }) => {
 				expect(code).toMatch('--file: \\"utils2.css?.module.css\\"');
 			});
 		});
+
+		describe('error handling', ({ test }) => {
+			test('missing class export', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.missingClassExport);
+				onTestFinish(() => fixture.rm());
+
+				await expect(() => viteBuild(fixture.path, {
+					logLevel: 'silent',
+					plugins: [
+						patchCssModules(),
+					],
+				})).rejects.toThrow('[vite:css-modules] Cannot resolve "non-existent" from "./utils.css"');
+			});
+		});
 	});
 });

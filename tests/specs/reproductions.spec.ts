@@ -7,7 +7,7 @@ import { viteBuild, viteServe } from '../utils/vite.js';
 
 export default testSuite(({ describe }) => {
 	describe('reproductions', ({ describe }) => {
-		describe('postcss (no config)', ({ test }) => {
+		describe('postcss (no config)', ({ test, describe }) => {
 			test('build', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.multiCssModules);
 				onTestFinish(() => fixture.rm());
@@ -191,6 +191,22 @@ export default testSuite(({ describe }) => {
 						className2: expect.stringMatching(/_class-name2_\w+ _util-class_\w+/),
 					},
 					outputFile: expect.stringMatching(/style2\.module\.css$/),
+				});
+			});
+
+			describe('error handling', ({ test }) => {
+				test('missing class export does not error', async ({ onTestFinish }) => {
+					const fixture = await createFixture(fixtures.missingClassExport);
+					onTestFinish(() => fixture.rm());
+
+					const { js } = await viteBuild(fixture.path);
+					const exported = await import(base64Module(js));
+					expect(exported).toMatchObject({
+						className1: '_className1_innx3_1 undefined',
+						default: {
+							className1: '_className1_innx3_1 undefined',
+						},
+					});
 				});
 			});
 		});
