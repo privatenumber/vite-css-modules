@@ -114,18 +114,15 @@ const supportCssModulesHMR = (
 
 	const tag = '?SPOOF?inline';
 	viteCssAnalysisPlugin.configureServer = function (server) {
-		const interceptedServer = {
-			moduleGraph: {
-				getModuleById: (id: string) => {
-					const tagIndex = id.indexOf(tag);
-					if (tagIndex !== -1) {
-						id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
-					}
-					return server.moduleGraph.getModuleById(id);
-				},
-			},
+		const originalGetModuleById = server.moduleGraph.getModuleById.bind(server.moduleGraph);
+		server.moduleGraph.getModuleById = (id: string) => {
+			const tagIndex = id.indexOf(tag);
+			if (tagIndex !== -1) {
+				id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
+			}
+			return originalGetModuleById(id);
 		};
-		return Reflect.apply(configureServer, this, [interceptedServer]);
+		return Reflect.apply(configureServer, this, [server]);
 	};
 
 	viteCssAnalysisPlugin.transform = async function (css, id, options) {
