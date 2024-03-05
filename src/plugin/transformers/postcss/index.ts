@@ -40,7 +40,7 @@ export const transform: Transformer<CSSModulesOptions> = (
 	const isGlobal = options?.globalModulePaths?.some(pattern => pattern.test(id));
 	const localClasses: string[] = [];
 	let extracted: Extracted;
-	const { css } = postcss([
+	const processed = postcss([
 		postcssModulesValues,
 
 		postcssModulesLocalByDefault({
@@ -74,7 +74,8 @@ export const transform: Transformer<CSSModulesOptions> = (
 	]).process(code, { from: id });
 
 	return {
-		code: css,
+		code: processed.css,
+		map: processed.map,
 		...extracted!,
 	};
 };

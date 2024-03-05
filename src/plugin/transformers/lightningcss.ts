@@ -36,6 +36,7 @@ export const transform: Transformer<CSSModulesConfig> = (
 
 	return {
 		code: transformed.code.toString(),
+		map: transformed.map,
 
 		exports,
 
