@@ -112,15 +112,15 @@ const supportCssModulesHMR = (
 		throw new TypeError('vite:css-analysis plugin transform is not a function');
 	}
 
-	const tag = '?SPOOF?inline';
+	const tag = '?vite-css-modules?inline';
 	viteCssAnalysisPlugin.configureServer = function (server) {
-		const originalGetModuleById = server.moduleGraph.getModuleById.bind(server.moduleGraph);
-		server.moduleGraph.getModuleById = (id: string) => {
+		const { getModuleById } = server.moduleGraph;
+		server.moduleGraph.getModuleById = function (id: string) {
 			const tagIndex = id.indexOf(tag);
 			if (tagIndex !== -1) {
 				id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
 			}
-			return originalGetModuleById(id);
+			return Reflect.apply(getModuleById, this, [id]);
 		};
 		return Reflect.apply(configureServer, this, [server]);
 	};
