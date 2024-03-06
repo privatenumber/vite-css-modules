@@ -84,11 +84,8 @@ export const cssModules = (
 				inputCss,
 
 				/**
-				 * Relative path is needed to get stable hash when using CSS modules
+				 * Relative path from project root to get stable CSS modules hash
 				 * https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
-				 *
-				 * Although I think it should consider the file path relative to the project root
-				 * because two file names that are identical can produce the same hash?
 				 */
 				cleanUrl(path.relative(config.root, id)),
 				isLightningCss ? lightningCssOptions : cssModuleConfig,
@@ -203,7 +200,7 @@ export const cssModules = (
 				outputCss = ms.toString();
 
 				if (map) {
-					map = remapping(
+					const newMap = remapping(
 						[
 							ms.generateMap({
 								source: id,
@@ -214,6 +211,8 @@ export const cssModules = (
 						] as SourceMapInput[],
 						() => null,
 					) as ExistingRawSourceMap;
+
+					map = newMap;
 				}
 			}
 

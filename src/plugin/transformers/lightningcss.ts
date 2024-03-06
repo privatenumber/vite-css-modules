@@ -34,13 +34,16 @@ export const transform: Transformer<LightningCSSOptions> = (
 		),
 	);
 
+	const map = (
+		transformed.map
+			? JSON.parse(Buffer.from(transformed.map).toString()) as ExistingRawSourceMap
+			: undefined
+	);
+
 	return {
 		code: transformed.code.toString(),
-		map: (
-			transformed.map
-				? JSON.parse(Buffer.from(transformed.map).toString()) as ExistingRawSourceMap
-				: undefined
-		),
+
+		map,
 
 		exports,
 
