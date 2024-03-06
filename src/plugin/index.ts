@@ -5,6 +5,7 @@ import type { TransformPluginContext } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
+import type { PluginMeta } from './types.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
 export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
@@ -215,7 +216,7 @@ export const cssModules = (
 					[pluginName]: {
 						css: outputCss,
 						exports,
-					},
+					} satisfies PluginMeta,
 				},
 			};
 		},

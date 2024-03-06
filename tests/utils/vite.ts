@@ -34,7 +34,6 @@ export const viteBuild = async (
 			},
 			target: 'esnext',
 		},
-
 		...config,
 	});
 
@@ -65,6 +64,7 @@ const collectJsFromHttp = async (
 ) => {
 	const bundle = await rollup({
 		input,
+		logLevel: 'silent',
 		plugins: [
 			{
 				name: 'vite-dev-server',

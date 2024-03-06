@@ -1,5 +1,6 @@
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
+import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
@@ -236,6 +237,69 @@ export default testSuite(({ describe }) => {
 							+ "\tcomposes: util-class from './utils1.css';\n"
 							+ '\tcolor: red;\n'
 							+ '}',
+							null,
+						],
+					},
+				]);
+			});
+
+			test('devSourcemap with Vue.js', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.vue);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(fixture.path, {
+					plugins: [
+						patchCssModules(),
+						vitePluginVue(),
+					],
+					css: {
+						devSourcemap: true,
+					},
+				});
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						file: expect.stringMatching(/\/utils\.css$/),
+						mappings: 'AAAA;CACC,aAAa;CACb,WAAW;AACZ;;AAEA;CACC,aAAa;AACd;;ACPA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.util-class {\n'
+							+ "\t--name: 'foo';\n"
+							+ '\tcolor: blue;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.unused-class {\n'
+							+ '\tcolor: yellow;\n'
+							+ '}',
+							null,
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/comp\.vue$/),
+						mappings: 'AAKA;CAEC,UAAU;AACX;ACRA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/comp\.vue$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'<template>\n'
+							+ '\t<p :class="$style[\'css-module\']">&lt;css&gt; module</p>\n'
+							+ '</template>\n'
+							+ '\n'
+							+ '<style module>\n'
+							+ '.css-module {\n'
+							+ "\tcomposes: util-class from './utils.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '</style>',
 							null,
 						],
 					},

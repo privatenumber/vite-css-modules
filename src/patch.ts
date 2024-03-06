@@ -2,6 +2,7 @@ import path from 'path';
 import type { Plugin } from 'vite';
 import type { SourceMap } from 'rollup';
 import { cssModules, cssModuleRE } from './plugin/index.js';
+import type { PluginMeta } from './plugin/types.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
 const directRequestRE = /[?&]direct\b/;
@@ -47,7 +48,12 @@ const supportNewCssModules = (
 		if (cssModuleRE.test(id)) {
 			const inlined = inlineRE.test(id);
 			const info = this.getModuleInfo(id)!;
-			let css = info.meta[pluginInstance.name].css as string;
+			const pluginMeta = info.meta[pluginInstance.name] as PluginMeta | undefined;
+			if (!pluginMeta) {
+				throw new Error(`${pluginInstance.name} meta not found`);
+			}
+
+			let { css } = pluginMeta;
 
 			// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L482
 			if (config.command === 'serve') {
@@ -65,8 +71,8 @@ const supportNewCssModules = (
 				}
 
 				if (config.css?.devSourcemap) {
-					const sourcemap = this.getCombinedSourcemap();
-					css += attachSourceMap(sourcemap);
+					const map = this.getCombinedSourcemap();
+					css += attachSourceMap(map);
 				}
 
 				// From: https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L506

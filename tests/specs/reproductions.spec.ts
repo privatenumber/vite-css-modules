@@ -1,6 +1,7 @@
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
+import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../utils/base64-module.js';
 import * as fixtures from '../fixtures.js';
 import { viteBuild, viteServe } from '../utils/vite.js';
@@ -127,6 +128,47 @@ export default testSuite(({ describe }) => {
 							+ '}',
 						],
 						version: 3,
+					},
+				]);
+			});
+
+			test('devSourcemap with Vue.js', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.vue);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(fixture.path, {
+					plugins: [
+						vitePluginVue(),
+					],
+					css: {
+						devSourcemap: true,
+					},
+				});
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						file: expect.stringMatching(/\/comp\.vue$/),
+						mappings: 'AAAA;CAAA;CAAA;CAAA;CAAA;;ACKA;CAEC,UAAU;AACX;ADRA;CAAA',
+						names: [],
+						sources: [
+							'\u0000<no source>',
+							expect.stringMatching(/\/comp\.vue$/),
+						],
+						sourcesContent: [
+							null,
+							'<template>\n'
+							+ '\t<p :class="$style[\'css-module\']">&lt;css&gt; module</p>\n'
+							+ '</template>\n'
+							+ '\n'
+							+ '<style module>\n'
+							+ '.css-module {\n'
+							+ "\tcomposes: util-class from './utils.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '</style>',
+						],
 					},
 				]);
 			});
