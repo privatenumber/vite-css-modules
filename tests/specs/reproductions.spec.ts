@@ -79,7 +79,7 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.multiCssModules);
+				const fixture = await createFixture(fixtures.cssModulesValues);
 				onTestFinish(() => fixture.rm());
 
 				const code = await viteServe(fixture.path, {
@@ -89,42 +89,29 @@ export default testSuite(({ describe }) => {
 				});
 
 				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(1);
 				expect(cssSourcemaps).toMatchObject([
 					{
-						file: expect.stringMatching(/\/style1.module\.css$/),
-						mappings: 'AAAA;CAAA,cAAA;CAAA,YAAA;CAAA;CAAA,cAAA;CAAA;CAAA,cAAA;CAAA,aAAA;CAAA;;ACAA;CAEC,UAAU;AACX;;AAEA;AAGA;;ADRA;CAAA;CAAA',
+						file: expect.stringMatching(/\/style\.module\.css$/),
+						mappings: 'AAAA;CAAA,aAAA;CAAA;CAAA,aAAA;CAAA;ACGA;CACC,WAAS;CACT,uBAAqB;AAGtB;AACA;CACC,WAAS;AACV;ADXA;CAAA;CAAA',
 						names: [],
 						sources: [
 							'\u0000<no source>',
-							expect.stringMatching(/\/style1.module\.css$/),
+							expect.stringMatching(/\/style\.module\.css$/),
 						],
 						sourcesContent: [
 							null,
-							'.className1 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ '\tcolor: red;\n'
-							+ '}\n'
+							"@value primary as p1, simple-border from './utils1.css';\n"
+							+ "@value primary as p2 from './utils2.css';\n"
 							+ '\n'
-							+ '.class-name2 {\n'
+							+ '.class-name1 {\n'
+							+ '\tcolor: p1;\n'
+							+ '\tborder: simple-border;\n'
 							+ "\tcomposes: util-class from './utils1.css';\n"
 							+ "\tcomposes: util-class from './utils2.css';\n"
-							+ '}',
-						],
-						version: 3,
-					},
-					{
-						file: expect.stringMatching(/\/style2.module\.css$/),
-						mappings: 'AAAA;CAAA,cAAA;CAAA,YAAA;CAAA;CAAA,cAAA;CAAA;ACAA;CAEC,UAAU;AACX;ADHA;CAAA;CAAA',
-						names: [],
-						sources: [
-							'\u0000<no source>',
-							expect.stringMatching(/\/style2.module\.css$/),
-						],
-						sourcesContent: [
-							null,
-							'.class-name2 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '.class-name2 {\n'
+							+ '\tcolor: p2;\n'
 							+ '}',
 						],
 						version: 3,
@@ -363,86 +350,6 @@ export default testSuite(({ describe }) => {
 					const utilClass = Array.from(code.matchAll(/util-class/g));
 					expect(utilClass.length).toBeGreaterThan(1);
 				});
-
-				test('devSourcemap', async ({ onTestFinish }) => {
-					const fixture = await createFixture(fixtures.multiCssModules);
-					onTestFinish(() => fixture.rm());
-
-					const code = await viteServe(fixture.path, {
-						css: {
-							transformer: 'lightningcss',
-							devSourcemap: true,
-						},
-					});
-
-					const cssSourcemaps = getCssSourceMaps(code);
-					expect(cssSourcemaps).toMatchObject([
-						{
-							version: 3,
-							sourceRoot: null,
-
-							/**
-							 * Can't reliably match mappings because the fixture path changes every time
-							 * and even though Vite uses relative paths for the entry, they can't use relative
-							 * paths for the rest of the files that Lightning resolves via bundle API
-							 * https://github.com/vitejs/vite/blob/v5.0.12/packages/vite/src/node/plugins/css.ts#L2250
-							 */
-							// "mappings": expect.stringMatching(/^(ACAA,2CAKA,gCCLA,4CFAA,8BAKA)$/),
-							sources: [
-								'style1.module.css',
-								expect.stringMatching(/\/utils1\.css$/),
-								expect.stringMatching(/\/utils2\.css$/),
-							],
-							sourcesContent: [
-								'.className1 {\n'
-								+ "\tcomposes: util-class from './utils1.css';\n"
-								+ '\tcolor: red;\n'
-								+ '}\n'
-								+ '\n'
-								+ '.class-name2 {\n'
-								+ "\tcomposes: util-class from './utils1.css';\n"
-								+ "\tcomposes: util-class from './utils2.css';\n"
-								+ '}',
-								'.util-class {\n'
-								+ "\t--name: 'foo';\n"
-								+ '\tcolor: blue;\n'
-								+ '}\n'
-								+ '\n'
-								+ '.unused-class {\n'
-								+ '\tcolor: yellow;\n'
-								+ '}',
-								".util-class {\n\t--name: 'bar';\n\tcolor: green;\n}",
-							],
-							names: [],
-						},
-						{
-							version: 3,
-							sourceRoot: null,
-
-							// Can't reliably match mappings. See above
-							// "mappings": expect.stringMatching(/^(ACAA,2CAKA,gCDLA|ACAA,4CAKA,iCDLA)$/),
-							sources: [
-								'style2.module.css',
-								expect.stringMatching(/\/utils1\.css$/),
-							],
-							sourcesContent: [
-								'.class-name2 {\n'
-								+ "\tcomposes: util-class from './utils1.css';\n"
-								+ '\tcolor: red;\n'
-								+ '}',
-								'.util-class {\n'
-								+ "\t--name: 'foo';\n"
-								+ '\tcolor: blue;\n'
-								+ '}\n'
-								+ '\n'
-								+ '.unused-class {\n'
-								+ '\tcolor: yellow;\n'
-								+ '}',
-							],
-							names: [],
-						},
-					]);
-				});
 			});
 
 			test('dashedIdents', async ({ onTestFinish }) => {
@@ -464,6 +371,63 @@ export default testSuite(({ describe }) => {
 				// https://github.com/vitejs/vite/issues/15683
 				const utilClass = Array.from(css!.matchAll(/hotpink/g));
 				expect(utilClass.length).toBeGreaterThan(1);
+			});
+
+			test('devSourcemap', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(fixture.path, {
+					css: {
+						transformer: 'lightningcss',
+						devSourcemap: true,
+						lightningcss: {
+							cssModules: {
+								dashedIdents: true,
+							},
+						},
+					},
+				});
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(2);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						sourceRoot: null,
+
+						/**
+						 * Can't reliably match mappings because the fixture path changes every time
+						 * and even though Vite uses relative paths for the entry, they can't use relative
+						 * paths for the rest of the files that Lightning resolves via bundle API
+						 * https://github.com/vitejs/vite/blob/v5.0.12/packages/vite/src/node/plugins/css.ts#L2250
+						 */
+						// mappings: 'ACAA,oCDAA',
+						sources: [
+							'style1.module.css',
+							expect.stringMatching(/\/vars\.module\.css$/),
+						],
+						sourcesContent: [
+							'.button {\n\tbackground: var(--accent-color from "./vars.module.css");\n}',
+							':root {\n\t--accent-color: hotpink;\n}',
+						],
+						names: [],
+					},
+					{
+						version: 3,
+						sourceRoot: null,
+						// mappings: 'ACAA,oCDAA',
+						sources: [
+							'style2.module.css',
+							expect.stringMatching(/\/vars\.module\.css$/),
+						],
+						sourcesContent: [
+							'.input {\n\tcolor: var(--accent-color from "./vars.module.css");\n}',
+							':root {\n\t--accent-color: hotpink;\n}',
+						],
+						names: [],
+					},
+				]);
 			});
 		});
 	});

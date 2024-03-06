@@ -172,7 +172,7 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.multiCssModules);
+				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
 				onTestFinish(() => fixture.rm());
 
 				const code = await viteServe(
@@ -186,84 +186,47 @@ export default testSuite(({ describe }) => {
 							transformer: 'lightningcss',
 							lightningcss: {
 								include: Features.Nesting,
+								cssModules: {
+									dashedIdents: true,
+								},
 							},
 						},
 					},
 				);
 
 				const cssSourcemaps = getCssSourceMaps(code);
-				expect(cssSourcemaps.length).toBe(4);
+				expect(cssSourcemaps.length).toBe(3);
 				expect(cssSourcemaps).toMatchObject([
 					{
 						version: 3,
-						mappings: 'AAAA;;;;;AAKA;;;;ACLA',
+						// TODO: I think this is incorrect path
+						file: expect.stringMatching(/^style1\.module\.css$/),
+						mappings: 'AAAA',
 						names: [],
-						sources: [
-							expect.stringMatching(/\/utils1\.css$/),
-							'\u0000<no source>',
-						],
+						ignoreList: [],
+						sources: [expect.stringMatching(/^style1\.module\.css$/)],
 						sourcesContent: [
-							'.util-class {\n'
-							+ "\t--name: 'foo';\n"
-							+ '\tcolor: blue;\n'
-							+ '}\n'
-							+ '\n'
-							+ '.unused-class {\n'
-							+ '\tcolor: yellow;\n'
-							+ '}',
-							null,
+							'.button {\n\tbackground: var(--accent-color from "./vars.module.css");\n}',
 						],
-						file: expect.stringMatching(/\/utils1\.css$/),
 					},
 					{
 						version: 3,
-						mappings: 'AAAA;;;;;ACAA',
+						file: expect.stringMatching(/^style2\.module\.css$/),
+						mappings: 'AAAA',
 						names: [],
-						sources: [
-							expect.stringMatching(/\/utils2\.css$/),
-							'\u0000<no source>',
+						ignoreList: [],
+						sources: [expect.stringMatching(/^style2\.module\.css$/)],
+						sourcesContent: [
+							'.input {\n\tcolor: var(--accent-color from "./vars.module.css");\n}',
 						],
-						sourcesContent: [".util-class {\n\t--name: 'bar';\n\tcolor: green;\n}", null],
-						file: expect.stringMatching(/\/utils2\.css$/),
 					},
 					{
 						version: 3,
-						mappings: 'AAAA;;;;AAKA;;;ACLA',
+						sourceRoot: null,
+						mappings: 'AAAA',
+						sources: [expect.stringMatching(/^vars\.module\.css$/)],
+						sourcesContent: [':root {\n\t--accent-color: hotpink;\n}'],
 						names: [],
-						sources: [
-							expect.stringMatching(/\/style1\.module\.css$/),
-							'\u0000<no source>',
-						],
-						sourcesContent: [
-							'.className1 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ '\tcolor: red;\n'
-							+ '}\n'
-							+ '\n'
-							+ '.class-name2 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ "\tcomposes: util-class from './utils2.css';\n"
-							+ '}',
-							null,
-						],
-						file: expect.stringMatching(/\/style1\.module\.css$/),
-					},
-					{
-						version: 3,
-						mappings: 'AAAA;;;;ACAA',
-						names: [],
-						sources: [
-							expect.stringMatching(/\/style2\.module\.css$/),
-							'\u0000<no source>',
-						],
-						sourcesContent: [
-							'.class-name2 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ '\tcolor: red;\n'
-							+ '}',
-							null,
-						],
-						file: expect.stringMatching(/\/style2\.module\.css$/),
 					},
 				]);
 			});
@@ -287,31 +250,10 @@ export default testSuite(({ describe }) => {
 				});
 
 				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(2);
 				expect(cssSourcemaps).toMatchObject([
 					{
 						version: 3,
-						file: expect.stringMatching(/\/utils\.css$/),
-						mappings: 'AAAA;;;;;AAKA;;;;ACLA',
-						names: [],
-						sources: [
-							expect.stringMatching(/\/utils\.css$/),
-							'\u0000<no source>',
-						],
-						sourcesContent: [
-							'.util-class {\n'
-							+ "\t--name: 'foo';\n"
-							+ '\tcolor: blue;\n'
-							+ '}\n'
-							+ '\n'
-							+ '.unused-class {\n'
-							+ '\tcolor: yellow;\n'
-							+ '}',
-							null,
-						],
-					},
-					{
-						version: 3,
-						file: expect.stringMatching(/\/comp\.vue$/),
 						mappings: 'AAKA;;;;ACLA',
 						names: [],
 						sources: [
@@ -331,6 +273,28 @@ export default testSuite(({ describe }) => {
 							+ '</style>',
 							null,
 						],
+						file: expect.stringMatching(/\/comp\.vue$/),
+					},
+					{
+						version: 3,
+						mappings: 'AAAA;;;;;AAKA;;;;ACLA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.util-class {\n'
+							+ "\t--name: 'foo';\n"
+							+ '\tcolor: blue;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.unused-class {\n'
+							+ '\tcolor: yellow;\n'
+							+ '}',
+							null,
+						],
+						file: expect.stringMatching(/\/utils\.css$/),
 					},
 				]);
 			});

@@ -151,7 +151,7 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.multiCssModules);
+				const fixture = await createFixture(fixtures.cssModulesValues);
 				onTestFinish(() => fixture.rm());
 
 				const code = await viteServe(
@@ -167,25 +167,48 @@ export default testSuite(({ describe }) => {
 				);
 
 				const cssSourcemaps = getCssSourceMaps(code);
-				expect(cssSourcemaps.length).toBe(4);
+				expect(cssSourcemaps.length).toBe(3);
 				expect(cssSourcemaps).toMatchObject([
 					{
 						version: 3,
+						file: expect.stringMatching(/\/style\.module\.css$/),
+						mappings: 'AAGA;QACC,IAAS;SACT,eAAqB;AAGtB;AACA;QACC,IAAS;AACV;ACXA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/style\.module\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							"@value primary as p1, simple-border from './utils1.css';\n"
+							+ "@value primary as p2 from './utils2.css';\n"
+							+ '\n'
+							+ '.class-name1 {\n'
+							+ '\tcolor: p1;\n'
+							+ '\tborder: simple-border;\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ "\tcomposes: util-class from './utils2.css';\n"
+							+ '}\n'
+							+ '.class-name2 {\n'
+							+ '\tcolor: p2;\n'
+							+ '}',
+							null,
+						],
+					},
+					{
+						version: 3,
 						file: expect.stringMatching(/\/utils1\.css$/),
-						mappings: 'AAAA;CACC,aAAa;CACb,WAAW;AACZ;;AAEA;CACC,aAAa;AACd;;ACPA;CAAA',
+						mappings: 'AAGA;CACC,YAAe;AAChB;;ACLA;CAAA',
 						names: [],
 						sources: [
 							expect.stringMatching(/\/utils1\.css$/),
 							'\u0000<no source>',
 						],
 						sourcesContent: [
-							'.util-class {\n'
-							+ "\t--name: 'foo';\n"
-							+ '\tcolor: blue;\n'
-							+ '}\n'
+							'@value primary: #fff;\n'
+							+ '@value simple-border: 1px solid black;\n'
 							+ '\n'
-							+ '.unused-class {\n'
-							+ '\tcolor: yellow;\n'
+							+ '.util-class {\n'
+							+ '\tborder: primary;\n'
 							+ '}',
 							null,
 						],
@@ -193,50 +216,14 @@ export default testSuite(({ describe }) => {
 					{
 						version: 3,
 						file: expect.stringMatching(/\/utils2\.css$/),
-						mappings: 'AAAA;CACC,aAAa;CACb,YAAY;AACb;ACHA;CAAA',
+						mappings: 'AAEA;CACC,YAAe;AAChB;;ACJA;CAAA',
 						names: [],
 						sources: [
 							expect.stringMatching(/\/utils2\.css$/),
 							'\u0000<no source>',
 						],
-						sourcesContent: [".util-class {\n\t--name: 'bar';\n\tcolor: green;\n}", null],
-					},
-					{
-						version: 3,
-						file: expect.stringMatching(/\/style1\.module\.css$/),
-						mappings: 'AAAA;CAEC,UAAU;AACX;;AAEA;AAGA;;ACRA;CAAA',
-						names: [],
-						sources: [
-							expect.stringMatching(/\/style1\.module\.css$/),
-							'\u0000<no source>',
-						],
 						sourcesContent: [
-							'.className1 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ '\tcolor: red;\n'
-							+ '}\n'
-							+ '\n'
-							+ '.class-name2 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ "\tcomposes: util-class from './utils2.css';\n"
-							+ '}',
-							null,
-						],
-					},
-					{
-						version: 3,
-						file: expect.stringMatching(/\/style2\.module\.css$/),
-						mappings: 'AAAA;CAEC,UAAU;AACX;ACHA;CAAA',
-						names: [],
-						sources: [
-							expect.stringMatching(/\/style2\.module\.css$/),
-							'\u0000<no source>',
-						],
-						sourcesContent: [
-							'.class-name2 {\n'
-							+ "\tcomposes: util-class from './utils1.css';\n"
-							+ '\tcolor: red;\n'
-							+ '}',
+							'@value primary: #000;\n\n.util-class {\n\tborder: primary;\n}',
 							null,
 						],
 					},
@@ -258,28 +245,8 @@ export default testSuite(({ describe }) => {
 				});
 
 				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(2);
 				expect(cssSourcemaps).toMatchObject([
-					{
-						version: 3,
-						file: expect.stringMatching(/\/utils\.css$/),
-						mappings: 'AAAA;CACC,aAAa;CACb,WAAW;AACZ;;AAEA;CACC,aAAa;AACd;;ACPA;CAAA',
-						names: [],
-						sources: [
-							expect.stringMatching(/\/utils\.css$/),
-							'\u0000<no source>',
-						],
-						sourcesContent: [
-							'.util-class {\n'
-							+ "\t--name: 'foo';\n"
-							+ '\tcolor: blue;\n'
-							+ '}\n'
-							+ '\n'
-							+ '.unused-class {\n'
-							+ '\tcolor: yellow;\n'
-							+ '}',
-							null,
-						],
-					},
 					{
 						version: 3,
 						file: expect.stringMatching(/\/comp\.vue$/),
@@ -300,6 +267,27 @@ export default testSuite(({ describe }) => {
 							+ '\tcolor: red;\n'
 							+ '}\n'
 							+ '</style>',
+							null,
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/utils\.css$/),
+						mappings: 'AAAA;CACC,aAAa;CACb,WAAW;AACZ;;AAEA;CACC,aAAa;AACd;;ACPA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.util-class {\n'
+							+ "\t--name: 'foo';\n"
+							+ '\tcolor: blue;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.unused-class {\n'
+							+ '\tcolor: yellow;\n'
+							+ '}',
 							null,
 						],
 					},
