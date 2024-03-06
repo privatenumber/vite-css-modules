@@ -27,7 +27,8 @@ const loadExports = async (
 	const loaded = await context.load({
 		id: resolved.id,
 	});
-	return loaded.meta[pluginName].exports as Exports;
+	const pluginMeta = loaded.meta[pluginName] as PluginMeta;
+	return pluginMeta.exports;
 };
 
 // This plugin is designed to be used by Vite internally
