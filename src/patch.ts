@@ -17,7 +17,7 @@ const isDirectCSSRequest = (
 	&& directRequestRE.test(request)
 );
 
-const attachSourceMap = (
+const appendInlineSoureMap = (
 	map: SourceMap | string,
 ): string => {
 	if (typeof map !== 'string') {
@@ -72,7 +72,7 @@ const supportNewCssModules = (
 
 				if (config.css?.devSourcemap) {
 					const map = this.getCombinedSourcemap();
-					css += attachSourceMap(map);
+					css += appendInlineSoureMap(map);
 				}
 
 				// From: https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L506
