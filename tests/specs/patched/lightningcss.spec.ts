@@ -169,6 +169,103 @@ export default testSuite(({ describe }) => {
 
 				expect(code).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
 			});
+
+			test('devSourcemap', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(
+					fixture.path,
+					{
+						plugins: [
+							patchCssModules(),
+						],
+						css: {
+							devSourcemap: true,
+							transformer: 'lightningcss',
+							lightningcss: {
+								include: Features.Nesting,
+							},
+						},
+					},
+				);
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(4);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						mappings: 'AAAA;;;;;AAKA;;;;ACLA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils1\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.util-class {\n'
+							+ "\t--name: 'foo';\n"
+							+ '\tcolor: blue;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.unused-class {\n'
+							+ '\tcolor: yellow;\n'
+							+ '}',
+							null,
+						],
+						file: expect.stringMatching(/\/utils1\.css$/),
+					},
+					{
+						version: 3,
+						mappings: 'AAAA;;;;;ACAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils2\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [".util-class {\n\t--name: 'bar';\n\tcolor: green;\n}", null],
+						file: expect.stringMatching(/\/utils2\.css$/),
+					},
+					{
+						version: 3,
+						mappings: 'AAAA;;;;AAKA;;;ACLA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/style1\.module\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.className1 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.class-name2 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ "\tcomposes: util-class from './utils2.css';\n"
+							+ '}',
+							null,
+						],
+						file: expect.stringMatching(/\/style1\.module\.css$/),
+					},
+					{
+						version: 3,
+						mappings: 'AAAA;;;;ACAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/style2\.module\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.class-name2 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}',
+							null,
+						],
+						file: expect.stringMatching(/\/style2\.module\.css$/),
+					},
+				]);
+			});
 		});
 	});
 });

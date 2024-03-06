@@ -1,5 +1,6 @@
 import path from 'path';
 import type { Plugin } from 'vite';
+import type { SourceMap } from 'rollup';
 import { cssModules, cssModuleRE } from './plugin/index.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
@@ -15,11 +16,25 @@ const isDirectCSSRequest = (
 	&& directRequestRE.test(request)
 );
 
+const attachSourceMap = (
+	map: SourceMap | string,
+): string => {
+	if (typeof map !== 'string') {
+		map = JSON.stringify(map);
+	}
+
+	const sourceMapUrl = `data:application/json;base64,${Buffer.from(map).toString('base64')}`;
+	return `\n/*# sourceMappingURL=${sourceMapUrl} */`;
+};
+
 const supportNewCssModules = (
 	viteCssPostPlugin: Plugin,
 	config: {
 		command: string;
 		base: string;
+		css?: {
+			devSourcemap?: boolean;
+		};
 	},
 	pluginInstance: Plugin,
 ) => {
@@ -32,7 +47,7 @@ const supportNewCssModules = (
 		if (cssModuleRE.test(id)) {
 			const inlined = inlineRE.test(id);
 			const info = this.getModuleInfo(id)!;
-			const css = info.meta[pluginInstance.name].css as string;
+			let css = info.meta[pluginInstance.name].css as string;
 
 			// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L482
 			if (config.command === 'serve') {
@@ -47,6 +62,11 @@ const supportNewCssModules = (
 
 				if (inlined) {
 					return `export default ${JSON.stringify(css)}`;
+				}
+
+				if (config.css?.devSourcemap) {
+					const sourcemap = this.getCombinedSourcemap();
+					css += attachSourceMap(sourcemap);
 				}
 
 				// From: https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L506

@@ -28,6 +28,7 @@ export const transform: Transformer<CSSModulesOptions> = (
 	code,
 	id,
 	options,
+	generateSourceMap,
 ) => {
 	const generateScopedName = (
 		typeof options.generateScopedName === 'function'
@@ -71,11 +72,22 @@ export const transform: Transformer<CSSModulesOptions> = (
 				extracted = _extracted;
 			},
 		}),
-	]).process(code, { from: id });
+	]).process(code, {
+		from: id,
+		map: (
+			generateSourceMap
+				? {
+					inline: false,
+					annotation: false,
+					sourcesContent: true,
+				}
+				: false
+		),
+	});
 
 	return {
 		code: processed.css,
-		map: processed.map,
+		map: processed.map?.toString(),
 		...extracted!,
 	};
 };

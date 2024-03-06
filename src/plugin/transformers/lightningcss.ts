@@ -1,7 +1,4 @@
-import {
-	transform as lightningcssTransform,
-	type CSSModulesConfig,
-} from 'lightningcss';
+import { transform as lightningcssTransform } from 'lightningcss';
 import type { LightningCSSOptions } from 'vite';
 
 import type { Transformer } from '../types.js';
@@ -10,12 +7,14 @@ export const transform: Transformer<LightningCSSOptions> = (
 	code,
 	id,
 	options,
+	generateSourceMap,
 ) => {
 	const transformed = lightningcssTransform({
 		...options,
 		filename: id,
 		code: Buffer.from(code),
 		cssModules: options.cssModules || true,
+		sourceMap: generateSourceMap,
 	});
 
 	/**
@@ -37,7 +36,7 @@ export const transform: Transformer<LightningCSSOptions> = (
 
 	return {
 		code: transformed.code.toString(),
-		map: transformed.map,
+		map: transformed.map ? Buffer.from(transformed.map).toString() : undefined,
 
 		exports,
 

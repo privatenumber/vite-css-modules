@@ -166,9 +166,80 @@ export default testSuite(({ describe }) => {
 				);
 
 				const cssSourcemaps = getCssSourceMaps(code);
-				console.log(cssSourcemaps);
-				expect(cssSourcemaps.length).toBe(2);
-
+				expect(cssSourcemaps.length).toBe(4);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						file: expect.stringMatching(/\/utils1\.css$/),
+						mappings: 'AAAA;CACC,aAAa;CACb,WAAW;AACZ;;AAEA;CACC,aAAa;AACd;;ACPA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils1\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.util-class {\n'
+							+ "\t--name: 'foo';\n"
+							+ '\tcolor: blue;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.unused-class {\n'
+							+ '\tcolor: yellow;\n'
+							+ '}',
+							null,
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/utils2\.css$/),
+						mappings: 'AAAA;CACC,aAAa;CACb,YAAY;AACb;ACHA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils2\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [".util-class {\n\t--name: 'bar';\n\tcolor: green;\n}", null],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/style1\.module\.css$/),
+						mappings: 'AAAA;CAEC,UAAU;AACX;;AAEA;AAGA;;ACRA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/style1\.module\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.className1 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.class-name2 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ "\tcomposes: util-class from './utils2.css';\n"
+							+ '}',
+							null,
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/style2\.module\.css$/),
+						mappings: 'AAAA;CAEC,UAAU;AACX;ACHA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/style2\.module\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.class-name2 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}',
+							null,
+						],
+					},
+				]);
 			});
 		});
 

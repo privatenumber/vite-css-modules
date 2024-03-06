@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { readFile } from 'fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
-import type { CSSModulesConfig } from 'lightningcss';
 import type { TransformPluginContext } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
@@ -15,44 +14,43 @@ export const pluginName = 'vite:css-modules';
 const postfixRE = /[?#].*$/;
 const cleanUrl = (url: string): string => url.replace(postfixRE, '');
 
+const loadExports = async (
+	context: TransformPluginContext,
+	requestId: string,
+	fromId: string,
+) => {
+	const resolved = await context.resolve(requestId, fromId);
+	if (!resolved) {
+		throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
+	}
+	const loaded = await context.load({
+		id: resolved.id,
+	});
+	return loaded.meta[pluginName].exports as Exports;
+};
+
 // This plugin is designed to be used by Vite internally
 export const cssModules = (
 	config: ResolvedConfig,
 ): Plugin => {
 	const filter = createFilter(cssModuleRE);
 
-	let transform: (
-		typeof import('./transformers/postcss/index.js').transform
-		| typeof import('./transformers/lightningcss.js').transform
-	);
-
 	const cssConfig = config.css;
-	const isLightningCss = cssConfig.transformer === 'lightningcss';
-
-	const lightningCssOptions = { ...cssConfig.lightningcss };
-
 	const cssModuleConfig: CSSModulesOptions = { ...cssConfig.modules };
+	const lightningCssOptions = { ...cssConfig.lightningcss };
+	const { devSourcemap } = cssConfig;
 
+	const isLightningCss = cssConfig.transformer === 'lightningcss';
 	const loadTransformer = (
 		isLightningCss
 			? import('./transformers/lightningcss.js')
 			: import('./transformers/postcss/index.js')
 	);
 
-	const loadExports = async (
-		context: TransformPluginContext,
-		requestId: string,
-		fromId: string,
-	) => {
-		const resolved = await context.resolve(requestId, fromId);
-		if (!resolved) {
-			throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
-		}
-		const loaded = await context.load({
-			id: resolved.id,
-		});
-		return loaded.meta[pluginName].exports as Exports;
-	};
+	let transform: (
+		typeof import('./transformers/postcss/index.js').transform
+		| typeof import('./transformers/lightningcss.js').transform
+	);
 
 	return {
 		name: pluginName,
@@ -81,9 +79,16 @@ export const cssModules = (
 			const cssModule = transform(
 				inputCss,
 
-				// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
+				/**
+				 * Relative path is needed to get stable hash when using CSS modules
+				 * https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
+				 *
+				 * Although I think it should consider the file path relative to the project root
+				 * because two file names that are identical can produce the same hash?
+				 */
 				cleanUrl(path.relative(config.root, id)),
 				isLightningCss ? lightningCssOptions : cssModuleConfig,
+				devSourcemap,
 			);
 
 			let outputCss = cssModule.code;
@@ -205,7 +210,7 @@ export const cssModules = (
 
 			return {
 				code: jsCode,
-				map: { mappings: '' },
+				map: cssModule.map,
 				meta: {
 					[pluginName]: {
 						css: outputCss,
