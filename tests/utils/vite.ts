@@ -89,6 +89,7 @@ export const viteServe = async (
 		path.join(fixturePath, 'node_modules'),
 	);
 
+	// This adds a SIGTERM listener to process, which emits a memory leak warning
 	const server = await createServer({
 		root: fixturePath,
 		configFile: false,
