@@ -27,9 +27,10 @@ export const cssModules = (
 	);
 
 	const cssConfig = config.css;
+	const isLightningCss = cssConfig.transformer === 'lightningcss';
+
 	const lightningCssOptions = { ...cssConfig.lightningcss };
 
-	const isLightningCss = cssConfig.transformer === 'lightningcss';
 	const cssModuleConfig: CSSModulesOptions | CSSModulesConfig = {
 		...(
 			isLightningCss

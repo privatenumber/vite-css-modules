@@ -4,6 +4,7 @@ import type { CssSyntaxError } from 'postcss';
 import { base64Module } from '../utils/base64-module.js';
 import * as fixtures from '../fixtures.js';
 import { viteBuild, viteServe } from '../utils/vite.js';
+import { getCssSourceMaps } from '../utils/get-css-source-maps.js';
 
 export default testSuite(({ describe }) => {
 	describe('reproductions', ({ describe }) => {
@@ -60,6 +61,9 @@ export default testSuite(({ describe }) => {
 
 				const code = await viteServe(fixture.path);
 
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(0);
+
 				expect(code).toMatch('--file: \\"style1.module.css\\"');
 				expect(code).toMatch('--file: \\"style2.module.css\\"');
 
@@ -71,6 +75,60 @@ export default testSuite(({ describe }) => {
 				// https://github.com/vitejs/vite/issues/15683
 				const utilClass = Array.from(code.matchAll(/util-class/g));
 				expect(utilClass.length).toBeGreaterThan(1);
+			});
+
+			test('devSourcemap', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(fixture.path, {
+					css: {
+						devSourcemap: true,
+					},
+				});
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						file: expect.stringMatching(/\/style1.module\.css$/),
+						mappings: 'AAAA;CAAA,cAAA;CAAA,YAAA;CAAA;CAAA,cAAA;CAAA;CAAA,cAAA;CAAA,aAAA;CAAA;;ACAA;CAEC,UAAU;AACX;;AAEA;AAGA;;ADRA;CAAA;CAAA',
+						names: [],
+						sources: [
+							'\u0000<no source>',
+							expect.stringMatching(/\/style1.module\.css$/),
+						],
+						sourcesContent: [
+							null,
+							'.className1 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.class-name2 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ "\tcomposes: util-class from './utils2.css';\n"
+							+ '}',
+						],
+						version: 3,
+					},
+					{
+						file: expect.stringMatching(/\/style2.module\.css$/),
+						mappings: 'AAAA;CAAA,cAAA;CAAA,YAAA;CAAA;CAAA,cAAA;CAAA;ACAA;CAEC,UAAU;AACX;ADHA;CAAA;CAAA',
+						names: [],
+						sources: [
+							'\u0000<no source>',
+							expect.stringMatching(/\/style2.module\.css$/),
+						],
+						sourcesContent: [
+							null,
+							'.class-name2 {\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}',
+						],
+						version: 3,
+					},
+				]);
 			});
 
 			// https://github.com/vitejs/vite/issues/10340
@@ -255,10 +313,93 @@ export default testSuite(({ describe }) => {
 						},
 					});
 
+					const cssSourcemaps = getCssSourceMaps(code);
+					expect(cssSourcemaps.length).toBe(0);
+
 					// util class is duplicated
 					// https://github.com/vitejs/vite/issues/15683
 					const utilClass = Array.from(code.matchAll(/util-class/g));
 					expect(utilClass.length).toBeGreaterThan(1);
+				});
+
+				test('devSourcemap', async ({ onTestFinish }) => {
+					const fixture = await createFixture(fixtures.multiCssModules);
+					onTestFinish(() => fixture.rm());
+
+					const code = await viteServe(fixture.path, {
+						css: {
+							transformer: 'lightningcss',
+							devSourcemap: true,
+						},
+					});
+
+					const cssSourcemaps = getCssSourceMaps(code);
+					expect(cssSourcemaps).toMatchObject([
+						{
+							version: 3,
+							sourceRoot: null,
+
+							/**
+							 * Can't reliably match mappings because the fixture path changes every time
+							 * and even though Vite uses relative paths for the entry, they can't use relative
+							 * paths for the rest of the files that Lightning resolves via bundle API
+							 * https://github.com/vitejs/vite/blob/v5.0.12/packages/vite/src/node/plugins/css.ts#L2250
+							 */
+							// "mappings": expect.stringMatching(/^(ACAA,2CAKA,gCCLA,4CFAA,8BAKA)$/),
+							sources: [
+								'style1.module.css',
+								expect.stringMatching(/\/utils1\.css$/),
+								expect.stringMatching(/\/utils2\.css$/),
+							],
+							sourcesContent: [
+								'.className1 {\n'
+								+ "\tcomposes: util-class from './utils1.css';\n"
+								+ '\tcolor: red;\n'
+								+ '}\n'
+								+ '\n'
+								+ '.class-name2 {\n'
+								+ "\tcomposes: util-class from './utils1.css';\n"
+								+ "\tcomposes: util-class from './utils2.css';\n"
+								+ '}',
+								'.util-class {\n'
+								+ "\t--name: 'foo';\n"
+								+ '\tcolor: blue;\n'
+								+ '}\n'
+								+ '\n'
+								+ '.unused-class {\n'
+								+ '\tcolor: yellow;\n'
+								+ '}',
+								".util-class {\n\t--name: 'bar';\n\tcolor: green;\n}",
+							],
+							names: [],
+						},
+						{
+							version: 3,
+							sourceRoot: null,
+
+							// Can't reliably match mappings. See above
+							// "mappings": expect.stringMatching(/^(ACAA,2CAKA,gCDLA|ACAA,4CAKA,iCDLA)$/),
+							sources: [
+								'style2.module.css',
+								expect.stringMatching(/\/utils1\.css$/),
+							],
+							sourcesContent: [
+								'.class-name2 {\n'
+								+ "\tcomposes: util-class from './utils1.css';\n"
+								+ '\tcolor: red;\n'
+								+ '}',
+								'.util-class {\n'
+								+ "\t--name: 'foo';\n"
+								+ '\tcolor: blue;\n'
+								+ '}\n'
+								+ '\n'
+								+ '.unused-class {\n'
+								+ '\tcolor: yellow;\n'
+								+ '}',
+							],
+							names: [],
+						},
+					]);
 				});
 			});
 
