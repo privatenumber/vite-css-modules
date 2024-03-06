@@ -1,8 +1,10 @@
 import path from 'node:path';
 import { readFile } from 'fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
-import type { TransformPluginContext } from 'rollup';
+import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
+import MagicString from 'magic-string';
+import remapping, { type SourceMapInput } from '@ampproject/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import type { PluginMeta } from './types.js';
@@ -180,19 +182,40 @@ export const cssModules = (
 				}),
 			);
 
-			// Inject CSS Modules values
-			await Promise.all(
-				Object.entries(cssModule.references).map(async ([placeholder, source]) => {
-					const loaded = await loadExports(this, `${source.specifier}?.module.css`, id);
-					const exported = loaded[source.name];
-					if (!exported) {
-						throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
-					}
+			let { map } = cssModule;
 
-					registerImport(source.specifier);
-					outputCss = outputCss.replaceAll(placeholder, exported.code);
-				}),
-			);
+			// Inject CSS Modules values
+			const references = Object.entries(cssModule.references);
+			if (references.length > 0) {
+				const ms = new MagicString(outputCss);
+				await Promise.all(
+					references.map(async ([placeholder, source]) => {
+						const loaded = await loadExports(this, `${source.specifier}?.module.css`, id);
+						const exported = loaded[source.name];
+						if (!exported) {
+							throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
+						}
+
+						registerImport(source.specifier);
+						ms.replaceAll(placeholder, exported.code);
+					}),
+				);
+				outputCss = ms.toString();
+
+				if (map) {
+					map = remapping(
+						[
+							ms.generateMap({
+								source: id,
+								file: id,
+								includeContent: true,
+							}),
+							map,
+						] as SourceMapInput[],
+						() => null,
+					) as ExistingRawSourceMap;
+				}
+			}
 
 			if (
 				'getJSON' in cssModuleConfig
@@ -212,7 +235,7 @@ export const cssModules = (
 
 			return {
 				code: jsCode,
-				map: cssModule.map,
+				map,
 				meta: {
 					[pluginName]: {
 						css: outputCss,

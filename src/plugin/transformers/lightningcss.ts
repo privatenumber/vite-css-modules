@@ -1,6 +1,6 @@
 import { transform as lightningcssTransform } from 'lightningcss';
 import type { LightningCSSOptions } from 'vite';
-
+import type { ExistingRawSourceMap } from 'rollup';
 import type { Transformer } from '../types.js';
 
 export const transform: Transformer<LightningCSSOptions> = (
@@ -36,7 +36,11 @@ export const transform: Transformer<LightningCSSOptions> = (
 
 	return {
 		code: transformed.code.toString(),
-		map: transformed.map ? Buffer.from(transformed.map).toString() : undefined,
+		map: (
+			transformed.map
+				? JSON.parse(Buffer.from(transformed.map).toString()) as ExistingRawSourceMap
+				: undefined
+		),
 
 		exports,
 

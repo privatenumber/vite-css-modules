@@ -5,6 +5,7 @@ import postcssModulesExtractImports from 'postcss-modules-extract-imports';
 import postcssModulesScope from 'postcss-modules-scope';
 import genericNames from 'generic-names';
 import postcss from 'postcss';
+import type { ExistingRawSourceMap } from 'rollup';
 import type { Transformer } from '../../types.js';
 import { postcssExtractIcss } from './postcss-extract-icss.js';
 import type { Extracted } from './types.js';
@@ -87,7 +88,7 @@ export const transform: Transformer<CSSModulesOptions> = (
 
 	return {
 		code: processed.css,
-		map: processed.map?.toString(),
+		map: processed.map?.toJSON() as unknown as ExistingRawSourceMap,
 		...extracted!,
 	};
 };

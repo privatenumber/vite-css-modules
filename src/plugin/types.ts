@@ -1,5 +1,5 @@
 import type { CSSModuleReferences } from 'lightningcss';
-import type { SourceMapInput } from 'rollup';
+import type { ExistingRawSourceMap } from 'rollup';
 import type { CSSModuleExports } from './transformers/postcss/types.js';
 import type { Exports } from './generate-esm.js';
 
@@ -10,7 +10,7 @@ export type Transformer<Options> = (
 	generateSourceMap?: boolean,
 ) => {
 	code: string;
-	map?: SourceMapInput;
+	map?: ExistingRawSourceMap;
 	exports: CSSModuleExports;
 	references: CSSModuleReferences;
 };
