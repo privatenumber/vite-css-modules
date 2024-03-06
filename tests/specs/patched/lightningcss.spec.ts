@@ -196,10 +196,11 @@ export default testSuite(({ describe }) => {
 
 				const cssSourcemaps = getCssSourceMaps(code);
 				expect(cssSourcemaps.length).toBe(3);
+				// I'm skeptical these source maps are correct
+				// Seems lightningCSS is providing these source maps
 				expect(cssSourcemaps).toMatchObject([
 					{
 						version: 3,
-						// TODO: I think this is incorrect path
 						file: expect.stringMatching(/^style1\.module\.css$/),
 						mappings: 'AAAA',
 						names: [],
