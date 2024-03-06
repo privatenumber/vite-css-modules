@@ -5,6 +5,7 @@ import postcssModulesExtractImports from 'postcss-modules-extract-imports';
 import postcssModulesScope from 'postcss-modules-scope';
 import genericNames from 'generic-names';
 import postcss from 'postcss';
+import type { ExistingRawSourceMap } from 'rollup';
 import type { Transformer } from '../../types.js';
 import { postcssExtractIcss } from './postcss-extract-icss.js';
 import type { Extracted } from './types.js';
@@ -28,23 +29,24 @@ export const transform: Transformer<CSSModulesOptions> = (
 	code,
 	id,
 	options,
+	generateSourceMap,
 ) => {
 	const generateScopedName = (
-		typeof options?.generateScopedName === 'function'
+		typeof options.generateScopedName === 'function'
 			? options.generateScopedName
-			: genericNames(options?.generateScopedName ?? defaultScopedName, {
-				hashPrefix: options?.hashPrefix,
+			: genericNames(options.generateScopedName ?? defaultScopedName, {
+				hashPrefix: options.hashPrefix,
 			})
 	);
 
-	const isGlobal = options?.globalModulePaths?.some(pattern => pattern.test(id));
+	const isGlobal = options.globalModulePaths?.some(pattern => pattern.test(id));
 	const localClasses: string[] = [];
 	let extracted: Extracted;
-	const { css } = postcss([
+	const processed = postcss([
 		postcssModulesValues,
 
 		postcssModulesLocalByDefault({
-			mode: isGlobal ? 'global' : options?.scopeBehaviour,
+			mode: isGlobal ? 'global' : options.scopeBehaviour,
 		}),
 
 		// Declares imports from composes
@@ -52,7 +54,7 @@ export const transform: Transformer<CSSModulesOptions> = (
 
 		// Resolves & removes composes
 		postcssModulesScope({
-			exportGlobals: options?.exportGlobals,
+			exportGlobals: options.exportGlobals,
 			generateScopedName: (
 				exportName,
 				resourceFile,
@@ -71,10 +73,22 @@ export const transform: Transformer<CSSModulesOptions> = (
 				extracted = _extracted;
 			},
 		}),
-	]).process(code, { from: id });
+	]).process(code, {
+		from: id,
+		map: (
+			generateSourceMap
+				? {
+					inline: false,
+					annotation: false,
+					sourcesContent: true,
+				}
+				: false
+		),
+	});
 
 	return {
-		code: css,
+		code: processed.css,
+		map: processed.map?.toJSON() as unknown as ExistingRawSourceMap,
 		...extracted!,
 	};
 };

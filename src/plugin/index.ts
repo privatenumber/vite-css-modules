@@ -1,11 +1,13 @@
 import path from 'node:path';
 import { readFile } from 'fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
-import type { CSSModulesConfig } from 'lightningcss';
-import type { TransformPluginContext } from 'rollup';
+import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
+import MagicString from 'magic-string';
+import remapping, { type SourceMapInput } from '@ampproject/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
+import type { PluginMeta } from './types.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
 export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
@@ -15,49 +17,44 @@ export const pluginName = 'vite:css-modules';
 const postfixRE = /[?#].*$/;
 const cleanUrl = (url: string): string => url.replace(postfixRE, '');
 
+const loadExports = async (
+	context: TransformPluginContext,
+	requestId: string,
+	fromId: string,
+) => {
+	const resolved = await context.resolve(requestId, fromId);
+	if (!resolved) {
+		throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
+	}
+	const loaded = await context.load({
+		id: resolved.id,
+	});
+	const pluginMeta = loaded.meta[pluginName] as PluginMeta;
+	return pluginMeta.exports;
+};
+
 // This plugin is designed to be used by Vite internally
 export const cssModules = (
 	config: ResolvedConfig,
 ): Plugin => {
 	const filter = createFilter(cssModuleRE);
 
-	let transform: (
-		typeof import('./transformers/postcss/index.js').transform
-		| typeof import('./transformers/lightningcss.js').transform
-	);
-
 	const cssConfig = config.css;
+	const cssModuleConfig: CSSModulesOptions = { ...cssConfig.modules };
 	const lightningCssOptions = { ...cssConfig.lightningcss };
+	const { devSourcemap } = cssConfig;
 
 	const isLightningCss = cssConfig.transformer === 'lightningcss';
-	const cssModuleConfig: CSSModulesOptions | CSSModulesConfig = {
-		...(
-			isLightningCss
-				? lightningCssOptions.cssModules
-				: cssConfig.modules
-		),
-	};
-
 	const loadTransformer = (
 		isLightningCss
 			? import('./transformers/lightningcss.js')
 			: import('./transformers/postcss/index.js')
 	);
 
-	const loadExports = async (
-		context: TransformPluginContext,
-		requestId: string,
-		fromId: string,
-	) => {
-		const resolved = await context.resolve(requestId, fromId);
-		if (!resolved) {
-			throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
-		}
-		const loaded = await context.load({
-			id: resolved.id,
-		});
-		return loaded.meta[pluginName].exports as Exports;
-	};
+	let transform: (
+		typeof import('./transformers/postcss/index.js').transform
+		| typeof import('./transformers/lightningcss.js').transform
+	);
 
 	return {
 		name: pluginName,
@@ -86,10 +83,13 @@ export const cssModules = (
 			const cssModule = transform(
 				inputCss,
 
-				// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
+				/**
+				 * Relative path from project root to get stable CSS modules hash
+				 * https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
+				 */
 				cleanUrl(path.relative(config.root, id)),
-				cssModuleConfig,
-				lightningCssOptions,
+				isLightningCss ? lightningCssOptions : cssModuleConfig,
+				devSourcemap,
 			);
 
 			let outputCss = cssModule.code;
@@ -179,19 +179,42 @@ export const cssModules = (
 				}),
 			);
 
-			// Inject CSS Modules values
-			await Promise.all(
-				Object.entries(cssModule.references).map(async ([placeholder, source]) => {
-					const loaded = await loadExports(this, `${source.specifier}?.module.css`, id);
-					const exported = loaded[source.name];
-					if (!exported) {
-						throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
-					}
+			let { map } = cssModule;
 
-					registerImport(source.specifier);
-					outputCss = outputCss.replaceAll(placeholder, exported.code);
-				}),
-			);
+			// Inject CSS Modules values
+			const references = Object.entries(cssModule.references);
+			if (references.length > 0) {
+				const ms = new MagicString(outputCss);
+				await Promise.all(
+					references.map(async ([placeholder, source]) => {
+						const loaded = await loadExports(this, `${source.specifier}?.module.css`, id);
+						const exported = loaded[source.name];
+						if (!exported) {
+							throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
+						}
+
+						registerImport(source.specifier);
+						ms.replaceAll(placeholder, exported.code);
+					}),
+				);
+				outputCss = ms.toString();
+
+				if (map) {
+					const newMap = remapping(
+						[
+							ms.generateMap({
+								source: id,
+								file: id,
+								includeContent: true,
+							}),
+							map,
+						] as SourceMapInput[],
+						() => null,
+					) as ExistingRawSourceMap;
+
+					map = newMap;
+				}
+			}
 
 			if (
 				'getJSON' in cssModuleConfig
@@ -211,12 +234,12 @@ export const cssModules = (
 
 			return {
 				code: jsCode,
-				map: { mappings: '' },
+				map,
 				meta: {
 					[pluginName]: {
 						css: outputCss,
 						exports,
-					},
+					} satisfies PluginMeta,
 				},
 			};
 		},

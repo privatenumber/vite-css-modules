@@ -1,14 +1,15 @@
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import { Features } from 'lightningcss';
+import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
-
+import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
 import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
-	describe('LightningCSS', ({ test }) => {
+	describe('LightningCSS', ({ test, describe }) => {
 		test('Configured', async ({ onTestFinish }) => {
 			const fixture = await createFixture(fixtures.multiCssModules);
 			onTestFinish(() => fixture.rm());
@@ -148,7 +149,7 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
 			});
 
-			test('serve', async ({ onTestFinish }) => {
+			test('dev server', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.lightningFeatures);
 				onTestFinish(() => fixture.rm());
 
@@ -164,7 +165,139 @@ export default testSuite(({ describe }) => {
 					},
 				});
 
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(0);
+
 				expect(code).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
+			});
+
+			test('devSourcemap', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(
+					fixture.path,
+					{
+						plugins: [
+							patchCssModules(),
+						],
+						css: {
+							devSourcemap: true,
+							transformer: 'lightningcss',
+							lightningcss: {
+								include: Features.Nesting,
+								cssModules: {
+									dashedIdents: true,
+								},
+							},
+						},
+					},
+				);
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(3);
+				// I'm skeptical these source maps are correct
+				// Seems lightningCSS is providing these source maps
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						file: expect.stringMatching(/^style1\.module\.css$/),
+						mappings: 'AAAA',
+						names: [],
+						ignoreList: [],
+						sources: [expect.stringMatching(/^style1\.module\.css$/)],
+						sourcesContent: [
+							'.button {\n\tbackground: var(--accent-color from "./vars.module.css");\n}',
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/^style2\.module\.css$/),
+						mappings: 'AAAA',
+						names: [],
+						ignoreList: [],
+						sources: [expect.stringMatching(/^style2\.module\.css$/)],
+						sourcesContent: [
+							'.input {\n\tcolor: var(--accent-color from "./vars.module.css");\n}',
+						],
+					},
+					{
+						version: 3,
+						sourceRoot: null,
+						mappings: 'AAAA',
+						sources: [expect.stringMatching(/^vars\.module\.css$/)],
+						sourcesContent: [':root {\n\t--accent-color: hotpink;\n}'],
+						names: [],
+					},
+				]);
+			});
+
+			test('devSourcemap with Vue.js', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.vue);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(fixture.path, {
+					plugins: [
+						patchCssModules(),
+						vitePluginVue(),
+					],
+					css: {
+						devSourcemap: true,
+						transformer: 'lightningcss',
+						lightningcss: {
+							include: Features.Nesting,
+						},
+					},
+				});
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(2);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						mappings: 'AAKA;;;;ACLA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/comp\.vue$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'<template>\n'
+							+ '\t<p :class="$style[\'css-module\']">&lt;css&gt; module</p>\n'
+							+ '</template>\n'
+							+ '\n'
+							+ '<style module>\n'
+							+ '.css-module {\n'
+							+ "\tcomposes: util-class from './utils.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '</style>',
+							null,
+						],
+						file: expect.stringMatching(/\/comp\.vue$/),
+					},
+					{
+						version: 3,
+						mappings: 'AAAA;;;;;AAKA;;;;ACLA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.util-class {\n'
+							+ "\t--name: 'foo';\n"
+							+ '\tcolor: blue;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.unused-class {\n'
+							+ '\tcolor: yellow;\n'
+							+ '}',
+							null,
+						],
+						file: expect.stringMatching(/\/utils\.css$/),
+					},
+				]);
 			});
 		});
 	});

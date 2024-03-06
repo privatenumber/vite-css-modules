@@ -1,20 +1,20 @@
-import {
-	transform as lightningcssTransform,
-	type CSSModulesConfig,
-} from 'lightningcss';
+import { transform as lightningcssTransform } from 'lightningcss';
+import type { LightningCSSOptions } from 'vite';
+import type { ExistingRawSourceMap } from 'rollup';
 import type { Transformer } from '../types.js';
 
-export const transform: Transformer<CSSModulesConfig> = (
+export const transform: Transformer<LightningCSSOptions> = (
 	code,
 	id,
-	config,
 	options,
+	generateSourceMap,
 ) => {
 	const transformed = lightningcssTransform({
 		...options,
 		filename: id,
 		code: Buffer.from(code),
-		cssModules: config || true,
+		cssModules: options.cssModules || true,
+		sourceMap: generateSourceMap,
 	});
 
 	/**
@@ -34,8 +34,16 @@ export const transform: Transformer<CSSModulesConfig> = (
 		),
 	);
 
+	const map = (
+		transformed.map
+			? JSON.parse(Buffer.from(transformed.map).toString()) as ExistingRawSourceMap
+			: undefined
+	);
+
 	return {
 		code: transformed.code.toString(),
+
+		map,
 
 		exports,
 

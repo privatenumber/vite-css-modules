@@ -256,3 +256,35 @@ export const missingClassExport = Object.freeze({
 
 	'utils.css': '',
 });
+
+export const vue = Object.freeze({
+	'index.js': outdent`
+	export { default as Comp } from './comp.vue';
+	`,
+
+	'comp.vue': outdent`
+	<template>
+		<p :class="$style['css-module']">&lt;css&gt; module</p>
+	</template>
+
+	<style module>
+	.css-module {
+		composes: util-class from './utils.css';
+		color: red;
+	}
+	</style>
+	`,
+
+	'utils.css': outdent`
+	.util-class {
+		--name: 'foo';
+		color: blue;
+	}
+
+	.unused-class {
+		color: yellow;
+	}
+	`,
+
+	'postcss.config.js': postcssConfig,
+});

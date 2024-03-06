@@ -34,7 +34,6 @@ export const viteBuild = async (
 			},
 			target: 'esnext',
 		},
-
 		...config,
 	});
 
@@ -65,6 +64,7 @@ const collectJsFromHttp = async (
 ) => {
 	const bundle = await rollup({
 		input,
+		logLevel: 'silent',
 		plugins: [
 			{
 				name: 'vite-dev-server',
@@ -89,6 +89,7 @@ export const viteServe = async (
 		path.join(fixturePath, 'node_modules'),
 	);
 
+	// This adds a SIGTERM listener to process, which emits a memory leak warning
 	const server = await createServer({
 		root: fixturePath,
 		configFile: false,

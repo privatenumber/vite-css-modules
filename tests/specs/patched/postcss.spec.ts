@@ -1,8 +1,10 @@
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
+import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
+import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
 import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
@@ -133,6 +135,9 @@ export default testSuite(({ describe }) => {
 					},
 				);
 
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(0);
+
 				expect(code).toMatch('--file: \\"style1.module.css\\"');
 				expect(code).toMatch('--file: \\"style2.module.css\\"');
 
@@ -143,6 +148,150 @@ export default testSuite(({ describe }) => {
 				// Util is not duplicated despite being used twice
 				const utilClass = Array.from(code.matchAll(/foo/g));
 				expect(utilClass.length).toBe(1);
+			});
+
+			test('devSourcemap', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.cssModulesValues);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(
+					fixture.path,
+					{
+						plugins: [
+							patchCssModules(),
+						],
+						css: {
+							devSourcemap: true,
+						},
+					},
+				);
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(3);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						file: expect.stringMatching(/\/style\.module\.css$/),
+						mappings: 'AAGA;QACC,IAAS;SACT,eAAqB;AAGtB;AACA;QACC,IAAS;AACV;ACXA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/style\.module\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							"@value primary as p1, simple-border from './utils1.css';\n"
+							+ "@value primary as p2 from './utils2.css';\n"
+							+ '\n'
+							+ '.class-name1 {\n'
+							+ '\tcolor: p1;\n'
+							+ '\tborder: simple-border;\n'
+							+ "\tcomposes: util-class from './utils1.css';\n"
+							+ "\tcomposes: util-class from './utils2.css';\n"
+							+ '}\n'
+							+ '.class-name2 {\n'
+							+ '\tcolor: p2;\n'
+							+ '}',
+							null,
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/utils1\.css$/),
+						mappings: 'AAGA;CACC,YAAe;AAChB;;ACLA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils1\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'@value primary: #fff;\n'
+							+ '@value simple-border: 1px solid black;\n'
+							+ '\n'
+							+ '.util-class {\n'
+							+ '\tborder: primary;\n'
+							+ '}',
+							null,
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/utils2\.css$/),
+						mappings: 'AAEA;CACC,YAAe;AAChB;;ACJA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils2\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'@value primary: #000;\n\n.util-class {\n\tborder: primary;\n}',
+							null,
+						],
+					},
+				]);
+			});
+
+			test('devSourcemap with Vue.js', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.vue);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(fixture.path, {
+					plugins: [
+						patchCssModules(),
+						vitePluginVue(),
+					],
+					css: {
+						devSourcemap: true,
+					},
+				});
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(2);
+				expect(cssSourcemaps).toMatchObject([
+					{
+						version: 3,
+						file: expect.stringMatching(/\/comp\.vue$/),
+						mappings: 'AAKA;CAEC,UAAU;AACX;ACRA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/comp\.vue$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'<template>\n'
+							+ '\t<p :class="$style[\'css-module\']">&lt;css&gt; module</p>\n'
+							+ '</template>\n'
+							+ '\n'
+							+ '<style module>\n'
+							+ '.css-module {\n'
+							+ "\tcomposes: util-class from './utils.css';\n"
+							+ '\tcolor: red;\n'
+							+ '}\n'
+							+ '</style>',
+							null,
+						],
+					},
+					{
+						version: 3,
+						file: expect.stringMatching(/\/utils\.css$/),
+						mappings: 'AAAA;CACC,aAAa;CACb,WAAW;AACZ;;AAEA;CACC,aAAa;AACd;;ACPA;CAAA',
+						names: [],
+						sources: [
+							expect.stringMatching(/\/utils\.css$/),
+							'\u0000<no source>',
+						],
+						sourcesContent: [
+							'.util-class {\n'
+							+ "\t--name: 'foo';\n"
+							+ '\tcolor: blue;\n'
+							+ '}\n'
+							+ '\n'
+							+ '.unused-class {\n'
+							+ '\tcolor: yellow;\n'
+							+ '}',
+							null,
+						],
+					},
+				]);
 			});
 		});
 
