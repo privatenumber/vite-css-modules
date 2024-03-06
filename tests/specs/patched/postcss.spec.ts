@@ -3,6 +3,7 @@ import { testSuite, expect } from 'manten';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
+import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
 import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
@@ -133,6 +134,9 @@ export default testSuite(({ describe }) => {
 					},
 				);
 
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(0);
+
 				expect(code).toMatch('--file: \\"style1.module.css\\"');
 				expect(code).toMatch('--file: \\"style2.module.css\\"');
 
@@ -143,6 +147,28 @@ export default testSuite(({ describe }) => {
 				// Util is not duplicated despite being used twice
 				const utilClass = Array.from(code.matchAll(/foo/g));
 				expect(utilClass.length).toBe(1);
+			});
+
+			test('devSourcemap', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.multiCssModules);
+				onTestFinish(() => fixture.rm());
+
+				const code = await viteServe(
+					fixture.path,
+					{
+						plugins: [
+							patchCssModules(),
+						],
+						css: {
+							devSourcemap: true,
+						},
+					},
+				);
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				console.log(cssSourcemaps);
+				expect(cssSourcemaps.length).toBe(2);
+
 			});
 		});
 

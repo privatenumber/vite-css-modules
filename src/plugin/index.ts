@@ -31,13 +31,7 @@ export const cssModules = (
 
 	const lightningCssOptions = { ...cssConfig.lightningcss };
 
-	const cssModuleConfig: CSSModulesOptions | CSSModulesConfig = {
-		...(
-			isLightningCss
-				? lightningCssOptions.cssModules
-				: cssConfig.modules
-		),
-	};
+	const cssModuleConfig: CSSModulesOptions = { ...cssConfig.modules };
 
 	const loadTransformer = (
 		isLightningCss
@@ -89,8 +83,7 @@ export const cssModules = (
 
 				// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
 				cleanUrl(path.relative(config.root, id)),
-				cssModuleConfig,
-				lightningCssOptions,
+				isLightningCss ? lightningCssOptions : cssModuleConfig,
 			);
 
 			let outputCss = cssModule.code;

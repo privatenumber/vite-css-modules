@@ -4,7 +4,7 @@ import { Features } from 'lightningcss';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
-
+import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
 import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
@@ -148,7 +148,7 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
 			});
 
-			test('serve', async ({ onTestFinish }) => {
+			test('dev server', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.lightningFeatures);
 				onTestFinish(() => fixture.rm());
 
@@ -163,6 +163,9 @@ export default testSuite(({ describe }) => {
 						},
 					},
 				});
+
+				const cssSourcemaps = getCssSourceMaps(code);
+				expect(cssSourcemaps.length).toBe(0);
 
 				expect(code).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
 			});

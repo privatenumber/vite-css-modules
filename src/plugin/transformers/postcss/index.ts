@@ -30,21 +30,21 @@ export const transform: Transformer<CSSModulesOptions> = (
 	options,
 ) => {
 	const generateScopedName = (
-		typeof options?.generateScopedName === 'function'
+		typeof options.generateScopedName === 'function'
 			? options.generateScopedName
-			: genericNames(options?.generateScopedName ?? defaultScopedName, {
-				hashPrefix: options?.hashPrefix,
+			: genericNames(options.generateScopedName ?? defaultScopedName, {
+				hashPrefix: options.hashPrefix,
 			})
 	);
 
-	const isGlobal = options?.globalModulePaths?.some(pattern => pattern.test(id));
+	const isGlobal = options.globalModulePaths?.some(pattern => pattern.test(id));
 	const localClasses: string[] = [];
 	let extracted: Extracted;
 	const processed = postcss([
 		postcssModulesValues,
 
 		postcssModulesLocalByDefault({
-			mode: isGlobal ? 'global' : options?.scopeBehaviour,
+			mode: isGlobal ? 'global' : options.scopeBehaviour,
 		}),
 
 		// Declares imports from composes
@@ -52,7 +52,7 @@ export const transform: Transformer<CSSModulesOptions> = (
 
 		// Resolves & removes composes
 		postcssModulesScope({
-			exportGlobals: options?.exportGlobals,
+			exportGlobals: options.exportGlobals,
 			generateScopedName: (
 				exportName,
 				resourceFile,

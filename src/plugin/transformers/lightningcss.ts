@@ -2,19 +2,20 @@ import {
 	transform as lightningcssTransform,
 	type CSSModulesConfig,
 } from 'lightningcss';
+import type { LightningCSSOptions } from 'vite';
+
 import type { Transformer } from '../types.js';
 
-export const transform: Transformer<CSSModulesConfig> = (
+export const transform: Transformer<LightningCSSOptions> = (
 	code,
 	id,
-	config,
 	options,
 ) => {
 	const transformed = lightningcssTransform({
 		...options,
 		filename: id,
 		code: Buffer.from(code),
-		cssModules: config || true,
+		cssModules: options.cssModules || true,
 	});
 
 	/**

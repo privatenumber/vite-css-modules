@@ -5,8 +5,7 @@ import type { CSSModuleExports } from './transformers/postcss/types.js';
 export type Transformer<Options> = (
 	code: string,
 	id: string,
-	config?: Options,
-	lightningCssOptions?: LightningCSSOptions,
+	options: Options,
 ) => {
 	code: string;
 	exports: CSSModuleExports;
