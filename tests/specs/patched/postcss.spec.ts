@@ -122,6 +122,28 @@ export default testSuite(({ describe }) => {
 				expect(exported.default).toMatch(/--file: "style.module.css\?inline"/);
 			});
 
+			test('reserved keywords', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.reservedKeywords);
+				onTestFinish(() => fixture.rm());
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							import: '_import_1f0f104 _if_36a6377',
+							export: '_export_31ef8f2 _with_779bcbb',
+						},
+						export: '_export_31ef8f2 _with_779bcbb',
+						import: '_import_1f0f104 _if_36a6377',
+					},
+				});
+			});
+
 			test('dev server', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.multiCssModules);
 				onTestFinish(() => fixture.rm());

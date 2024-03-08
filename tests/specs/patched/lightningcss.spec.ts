@@ -65,6 +65,31 @@ export default testSuite(({ describe }) => {
 			expect(css).toBe('\n');
 		});
 
+		test('reserved keywords', async ({ onTestFinish }) => {
+			const fixture = await createFixture(fixtures.reservedKeywords);
+			onTestFinish(() => fixture.rm());
+
+			const { js } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				css: {
+					transformer: 'lightningcss',
+				},
+			});
+			const exported = await import(base64Module(js));
+			expect(exported).toMatchObject({
+				style: {
+					default: {
+						export: 'fk9XWG_export V_YH-W_with',
+						import: 'fk9XWG_import V_YH-W_if',
+					},
+					export: 'fk9XWG_export V_YH-W_with',
+					import: 'fk9XWG_import V_YH-W_if',
+				},
+			});
+		});
+
 		describe('Custom property dependencies', ({ test }) => {
 			test('build', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);

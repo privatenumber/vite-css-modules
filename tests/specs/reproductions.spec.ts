@@ -178,6 +178,27 @@ export default testSuite(({ describe }) => {
 				expect(error?.reason).toBe('Unexpected \'/\'. Escaping special characters with \\ may help.');
 			});
 
+			// https://github.com/vitejs/vite/issues/14050
+			test('reserved keywords', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.reservedKeywords);
+				onTestFinish(() => fixture.rm());
+
+				const { js } = await viteBuild(fixture.path);
+				const exported = await import(base64Module(js));
+
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							import: '_import_3y4f1_1 _if_1bsbm_1',
+							export: '_export_3y4f1_6 _with_1bsbm_6',
+						},
+					},
+				});
+
+				expect(exported.import).toBeUndefined();
+				expect(exported.export).toBeUndefined();
+			});
+
 			// This one is more for understanding expected behavior
 			test('@values', async ({ onTestFinish }) => {
 				const fixture = await createFixture(fixtures.cssModulesValues);

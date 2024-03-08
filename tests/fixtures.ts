@@ -74,6 +74,36 @@ export const multiCssModules = Object.freeze({
 	'postcss.config.js': postcssConfig,
 });
 
+export const reservedKeywords = Object.freeze({
+	'index.js': outdent`
+	export * as style from './style.module.css';
+	`,
+
+	'style.module.css': outdent`
+	.import {
+		composes: if from './utils.css';
+		color: red;
+	}
+
+	.export {
+		composes: with from './utils.css';
+	}
+	`,
+
+	'utils.css': outdent`
+	.if {
+		--name: 'foo';
+		color: blue;
+	}
+
+	.with {
+		color: yellow;
+	}
+	`,
+
+	'postcss.config.js': postcssConfig,
+});
+
 export const cssModulesValues = Object.freeze({
 	'index.js': outdent`
 	export * from './style.module.css';
