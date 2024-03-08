@@ -58,7 +58,7 @@ const supportNewCssModules = (
 			// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L482
 			if (config.command === 'serve') {
 				if (isDirectCSSRequest(id)) {
-					return null;
+					return css;
 				}
 
 				// server only
