@@ -318,3 +318,15 @@ export const vue = Object.freeze({
 
 	'postcss.config.js': postcssConfig,
 });
+
+export const moduleNamespace = Object.freeze({
+	'index.js': outdent`
+	import('./style.module.css');
+	`,
+
+	'style.module.css': outdent`
+	.class-name {
+		color: red;
+	}
+	`,
+});

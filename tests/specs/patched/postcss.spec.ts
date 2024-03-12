@@ -18,6 +18,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 				});
 
 				expect(css).toMatch('--file: "style1.module.css"');
@@ -70,6 +73,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 				});
 
 				expect(css).toMatch('--file: "style.module.scss"');
@@ -90,6 +96,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 				});
 
 				expect(css).toMatch('--file: "css.module.css"');
@@ -130,6 +139,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 				});
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
@@ -325,6 +337,9 @@ export default testSuite(({ describe }) => {
 				plugins: [
 					patchCssModules(),
 				],
+				build: {
+					target: 'es2022',
+				},
 				css: {
 					modules: {
 						generateScopedName: 'asdf_[local]',
@@ -363,6 +378,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 					css: {
 						modules: {
 							localsConvention: 'camelCase',
@@ -435,6 +453,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 					css: {
 						modules: {
 							localsConvention: 'dashes',
@@ -507,6 +528,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 					css: {
 						modules: {
 							localsConvention: originalClassname => `${originalClassname}123`,
@@ -661,6 +685,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					build: {
+						target: 'es2022',
+					},
 				});
 
 				const exported = await import(base64Module(js));
@@ -724,6 +751,17 @@ export default testSuite(({ describe }) => {
 						patchCssModules(),
 					],
 				})).rejects.toThrow('[vite:css-modules] Cannot resolve "non-existent" from "./utils.css"');
+			});
+
+			test('exporting a non-safe class name via esm doesnt throw', async ({ onTestFinish }) => {
+				const fixture = await createFixture(fixtures.moduleNamespace);
+				onTestFinish(() => fixture.rm());
+
+				await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+				});
 			});
 		});
 	});

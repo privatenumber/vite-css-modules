@@ -73,6 +73,9 @@ export default testSuite(({ describe }) => {
 				plugins: [
 					patchCssModules(),
 				],
+				build: {
+					target: 'es2022',
+				},
 				css: {
 					transformer: 'lightningcss',
 				},

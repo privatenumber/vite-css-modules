@@ -9,27 +9,39 @@ export type Exports = Record<string, {
 }>;
 
 const importStatement = (
-	specifiers: string,
+	specifier: string | string[],
 	source: string,
-) => `import${specifiers ? `{${specifiers}}from` : ''}${JSON.stringify(source)};`;
+) => `import ${
+	Array.isArray(specifier) ? `{${specifier.join(',')}}` : specifier
+} from${JSON.stringify(source)};`;
 
 const importsToCode = (
 	imports: Imports,
-) => (
-	Array.from(imports)
-		.map(
-			([file, importedAs]) => importStatement(
-				Object.entries(importedAs).map(
-					([exportName, importAs]) => `${JSON.stringify(exportName)} as ${importAs}`,
-				).join(','),
-				`${file}?.module.css`,
-			),
-		)
-		.join('')
-);
+	stringNamedExports = false,
+) => Array.from(imports)
+	.map(
+		([file, importedAs], index) => {
+			const importFrom = `${file}?.module.css`;
+			if (stringNamedExports) {
+				return importStatement(
+					Object.entries(importedAs).map(
+						([exportName, importAs]) => `${JSON.stringify(exportName)} as ${importAs}`,
+					),
+					importFrom,
+				);
+			}
+
+			const importDefault = `cssModule${index}`;
+			return `${importStatement(importDefault, importFrom)}const {${Object.entries(importedAs).map(
+				([exportName, importAs]) => `${JSON.stringify(exportName)}: ${importAs}`,
+			).join(',')}} = ${importDefault};`;
+		},
+	)
+	.join('');
 
 const exportsToCode = (
 	exports: Exports,
+	stringNamedExports = false,
 ) => {
 	const variables = new Set<string>();
 	const exportedVariables = Object.entries(exports).flatMap(
@@ -53,9 +65,14 @@ const exportsToCode = (
 				([jsVariable, exportName]) => (
 					jsVariable === exportName
 						? jsVariable
-						: `${jsVariable} as ${exportName}`
+						: (
+							exportName[0] !== '"' || stringNamedExports
+								? `${jsVariable} as ${exportName}`
+								: ''
+						)
 				),
 			)
+			.filter(Boolean)
 			.join(',')
 	}};`;
 
@@ -75,4 +92,8 @@ const exportsToCode = (
 export const generateEsm = (
 	imports: Imports,
 	exports: Exports,
-) => importsToCode(imports) + exportsToCode(exports);
+	stringNamedExports = false,
+) => (
+	importsToCode(imports, stringNamedExports)
+	+ exportsToCode(exports, stringNamedExports)
+);

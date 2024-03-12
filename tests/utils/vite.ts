@@ -19,6 +19,7 @@ export const viteBuild = async (
 		configFile: false,
 		envFile: false,
 		logLevel: 'error',
+		...config,
 
 		build: {
 			/**
@@ -32,9 +33,8 @@ export const viteBuild = async (
 				entry: 'index.js',
 				formats: ['es'],
 			},
-			target: 'esnext',
+			...config?.build,
 		},
-		...config,
 	});
 
 	if (!Array.isArray(built)) {
@@ -42,12 +42,14 @@ export const viteBuild = async (
 	}
 
 	const { output } = built[0]!;
-	const css = output[1];
+	const css = output.find(file => file.type === 'asset' && file.fileName.endsWith('.css'));
 
 	if (
 		css
-		&& (css.type !== 'asset'
-		|| typeof css.source !== 'string')
+		&& (
+			css.type !== 'asset'
+			|| typeof css.source !== 'string'
+		)
 	) {
 		throw new Error('Unexpected CSS output');
 	}

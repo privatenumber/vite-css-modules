@@ -19,7 +19,7 @@ The goal of this project is to incorporate this fix directly into Vite ([PR #160
 
 - **Improved error handling**
 
-    Currently, Vite (or more specifically, `postcss-modules`) fails silently when unable to resolve a `composes` dependency. This plugin will throw an error, helping you catch bugs. (fix [#16075](https://github.com/vitejs/vite/issues/16075))
+    Currently, Vite (or more specifically, `postcss-modules`) fails silently when unable to resolve a `composes` dependency. This plugin will catch missing exports if the `build.target` is `es2022` or higher. (fix [#16075](https://github.com/vitejs/vite/issues/16075))
 
 For more details, see the [FAQ](#faq) below.
 
