@@ -21,6 +21,9 @@ export default testSuite(({ describe }) => {
 				css: {
 					transformer: 'lightningcss',
 				},
+				build: {
+					target: 'es2022',
+				},
 			});
 
 			const exported = await import(base64Module(js));
