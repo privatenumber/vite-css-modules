@@ -114,6 +114,6 @@ In previous versions of ES, named exports only allowed names that could be repre
 But in ES2022, the spec added support for exporting & importing names with any characters, including hyphens, by representing them as strings (https://github.com/tc39/ecma262/pull/2154). This allows class names like `.foo-bar` to be directly exported as named exports in ES2022 or later versions.
 
 To get access all class names as named exports, set your Vite config `build.target` to `es2022` or above and import them as follows:
-```ts
+```js
 import { 'foo-bar' as fooBar } from './styles.module.css'
 ```
