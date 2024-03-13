@@ -54,6 +54,11 @@ export default {
                 // ...
             }
         }
+    },
+
+    build: {
+        // Recommended minimum is `es2022` so we can take advantage of new ESM features
+        target: 'esnext'
     }
 }
 ```
@@ -99,3 +104,16 @@ This process mirrors the approach taken by Webpack’s `css-loader`, making it e
 
 #### Patch
 The patch disables Vite's default CSS Modules behavior, injects this plugin right before Vite's `vite:css-post` plugin, and patches the `vite:css-post` plugin to handle the JS output from the plugin.
+
+
+### Does it export class names as named exports?
+
+
+In previous versions of ES, named exports only allowed names that could be represented as valid JavaScript variables, excluding names with special characters. This meant some class names (e.g. containing hyphens `.foo-bar`) were not directly exportable as named exports, though they could be included in the default export object.
+
+But in ES2022, the spec added support for exporting & importing names with any characters, including hyphens, by representing them as strings (https://github.com/tc39/ecma262/pull/2154). This allows class names like `.foo-bar` to be directly exported as named exports in ES2022 or later versions.
+
+To get access all class names as named exports, set your Vite config `build.target` to `es2022` or above and import them as follows:
+```ts
+import { 'foo-bar' as fooBar } from './styles.module.css'
+```
