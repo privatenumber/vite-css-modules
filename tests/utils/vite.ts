@@ -72,8 +72,18 @@ const collectJsFromHttp = async (
 				name: 'vite-dev-server',
 				resolveId: id => id,
 				load: async (id) => {
-					const response = await fetch(path.join(baseUrl, id));
-					return await response.text();
+					let retry = 5;
+					while (retry > 0) {
+						try {
+							const response = await fetch(path.join(baseUrl, id));
+							return await response.text();
+						} catch (error) {
+							if (retry === 0) {
+								throw error;
+							}
+						}
+						retry -= 1;
+					}
 				},
 			},
 		],
