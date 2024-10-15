@@ -73,7 +73,7 @@ export default {
 
 This patches your Vite to handle CSS Modules in a more predictable way.
 
-### Type definition generation
+### Type definition (`.d.ts` file) generation
 
 As a bonus feature, this plugin can generate type definitions for CSS Modules by creating corresponding `.d.ts` files next to the source files.
 
