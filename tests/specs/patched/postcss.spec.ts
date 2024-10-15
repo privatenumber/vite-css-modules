@@ -172,12 +172,12 @@ export default testSuite(({ describe }) => {
 				const cssSourcemaps = getCssSourceMaps(code);
 				expect(cssSourcemaps.length).toBe(0);
 
-				expect(code).toMatch('--file: \\"style1.module.css\\"');
-				expect(code).toMatch('--file: \\"style2.module.css\\"');
+				expect(code).toMatch(String.raw`--file: \"style1.module.css\"`);
+				expect(code).toMatch(String.raw`--file: \"style2.module.css\"`);
 
 				// Ensure that PostCSS is applied to the composed
-				expect(code).toMatch('--file: \\"utils1.css?.module.css\\"');
-				expect(code).toMatch('--file: \\"utils2.css?.module.css\\"');
+				expect(code).toMatch(String.raw`--file: \"utils1.css?.module.css\"`);
+				expect(code).toMatch(String.raw`--file: \"utils2.css?.module.css\"`);
 
 				// Util is not duplicated despite being used twice
 				const utilClass = Array.from(code.matchAll(/foo/g));
@@ -734,9 +734,9 @@ export default testSuite(({ describe }) => {
 				expect(code).toMatch('border: 1px solid black');
 
 				// Ensure that PostCSS is applied to the composed files
-				expect(code).toMatch('--file: \\"style.module.css\\"');
-				expect(code).toMatch('--file: \\"utils1.css?.module.css\\"');
-				expect(code).toMatch('--file: \\"utils2.css?.module.css\\"');
+				expect(code).toMatch(String.raw`--file: \"style.module.css\"`);
+				expect(code).toMatch(String.raw`--file: \"utils1.css?.module.css\"`);
+				expect(code).toMatch(String.raw`--file: \"utils2.css?.module.css\"`);
 			});
 		});
 

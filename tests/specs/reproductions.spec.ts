@@ -65,8 +65,8 @@ export default testSuite(({ describe }) => {
 				const cssSourcemaps = getCssSourceMaps(code);
 				expect(cssSourcemaps.length).toBe(0);
 
-				expect(code).toMatch('--file: \\"style1.module.css\\"');
-				expect(code).toMatch('--file: \\"style2.module.css\\"');
+				expect(code).toMatch(String.raw`--file: \"style1.module.css\"`);
+				expect(code).toMatch(String.raw`--file: \"style2.module.css\"`);
 
 				// Without the patch, PostCSS is not applied to composed dependencies
 				expect(code).not.toMatch('--file: "utils1.css?.module.css"');
@@ -175,7 +175,7 @@ export default testSuite(({ describe }) => {
 					});
 				} catch {}
 
-				expect(error?.reason).toBe('Unexpected \'/\'. Escaping special characters with \\ may help.');
+				expect(error?.reason).toBe(String.raw`Unexpected '/'. Escaping special characters with \ may help.`);
 			});
 
 			// https://github.com/vitejs/vite/issues/14050
