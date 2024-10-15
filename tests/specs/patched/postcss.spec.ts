@@ -772,7 +772,7 @@ export default testSuite(({ describe }) => {
 				'postcss.config.js',
 				'style.module.css',
 				'style.module.css.d.ts',
-				'utils.css'
+				'utils.css',
 			]);
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');

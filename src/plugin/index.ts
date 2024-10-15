@@ -6,7 +6,9 @@ import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@ampproject/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
-import { generateEsm, generateTypes, type Imports, type Exports } from './generate-esm.js';
+import {
+	generateEsm, generateTypes, type Imports, type Exports,
+} from './generate-esm.js';
 import type { PluginMeta } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 
@@ -35,6 +37,7 @@ const loadExports = async (
 };
 
 export type PatchConfig = {
+
 	/**
 	 * Generate TypeScript declaration (.d.ts) files for CSS modules
 	 *
@@ -253,9 +256,9 @@ export const cssModules = (
 					const fileExists = await access(filePath).then(() => true, () => false);
 					if (fileExists) {
 						await writeFile(
-							id + '.d.ts',
+							`${id}.d.ts`,
 							generateTypes(exports, allowArbitraryNamedExports),
-						);	
+						);
 					}
 				}
 			}

@@ -133,7 +133,7 @@ export const generateTypes = (
 			.map(
 				([jsVariable, exportName]) => (
 					jsVariable === exportName
-						? '\t' + jsVariable
+						? `\t${jsVariable}`
 						: (
 							exportName[0] !== '"' || allowArbitraryNamedExports
 								? `\t${jsVariable} as ${exportName}`
@@ -147,11 +147,10 @@ export const generateTypes = (
 
 	const defaultExports = `export default {\n${
 		exportedVariables.map(
-			([jsVariable, exportName]) => '\t' + (
+			([jsVariable, exportName]) => `\t${
 				jsVariable === exportName
 					? jsVariable
-					: `${exportName}: ${jsVariable}`
-			),
+					: `${exportName}: ${jsVariable}`}`,
 		).join(',\n')
 	}\n}`;
 
