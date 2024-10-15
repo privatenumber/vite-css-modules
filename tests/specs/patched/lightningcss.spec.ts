@@ -11,9 +11,8 @@ import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
 	describe('LightningCSS', ({ test, describe }) => {
-		test('Configured', async ({ onTestFinish }) => {
-			const fixture = await createFixture(fixtures.multiCssModules);
-			onTestFinish(() => fixture.rm());
+		test('Configured', async () => {
+			await using fixture = await createFixture(fixtures.multiCssModules);
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
@@ -49,9 +48,8 @@ export default testSuite(({ describe }) => {
 			expect(utilClass.length).toBe(1);
 		});
 
-		test('Empty CSS Module', async ({ onTestFinish }) => {
-			const fixture = await createFixture(fixtures.emptyCssModule);
-			onTestFinish(() => fixture.rm());
+		test('Empty CSS Module', async () => {
+			await using fixture = await createFixture(fixtures.emptyCssModule);
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
@@ -69,9 +67,8 @@ export default testSuite(({ describe }) => {
 			expect(css).toBe('\n');
 		});
 
-		test('reserved keywords', async ({ onTestFinish }) => {
-			const fixture = await createFixture(fixtures.reservedKeywords);
-			onTestFinish(() => fixture.rm());
+		test('reserved keywords', async () => {
+			await using fixture = await createFixture(fixtures.reservedKeywords);
 
 			const { js } = await viteBuild(fixture.path, {
 				plugins: [
@@ -98,9 +95,8 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('Custom property dependencies', ({ test }) => {
-			test('build', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
-				onTestFinish(() => fixture.rm());
+			test('build', async () => {
+				await using fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
@@ -134,9 +130,8 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch(`background: var(${variableName})`);
 			});
 
-			test('serve', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
-				onTestFinish(() => fixture.rm());
+			test('serve', async () => {
+				await using fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
 
 				const code = await viteServe(fixture.path, {
 					plugins: [
@@ -162,9 +157,8 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('Other configs', ({ test }) => {
-			test('build', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.lightningFeatures);
-				onTestFinish(() => fixture.rm());
+			test('build', async () => {
+				await using fixture = await createFixture(fixtures.lightningFeatures);
 
 				const { css } = await viteBuild(fixture.path, {
 					plugins: [
@@ -181,9 +175,8 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
 			});
 
-			test('dev server', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.lightningFeatures);
-				onTestFinish(() => fixture.rm());
+			test('dev server', async () => {
+				await using fixture = await createFixture(fixtures.lightningFeatures);
 
 				const code = await viteServe(fixture.path, {
 					plugins: [
@@ -203,9 +196,8 @@ export default testSuite(({ describe }) => {
 				expect(code).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
 			});
 
-			test('devSourcemap', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
-				onTestFinish(() => fixture.rm());
+			test('devSourcemap', async () => {
+				await using fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
 
 				const code = await viteServe(
 					fixture.path,
@@ -264,9 +256,8 @@ export default testSuite(({ describe }) => {
 				]);
 			});
 
-			test('devSourcemap with Vue.js', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.vue);
-				onTestFinish(() => fixture.rm());
+			test('devSourcemap with Vue.js', async () => {
+				await using fixture = await createFixture(fixtures.vue);
 
 				const code = await viteServe(fixture.path, {
 					plugins: [
