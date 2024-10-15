@@ -35,7 +35,13 @@ const loadExports = async (
 };
 
 export type PatchConfig = {
-	generateTypes?: boolean;
+	/**
+	 * Generate TypeScript declaration (.d.ts) files for CSS modules
+	 *
+	 * For example, importing `style.module.css` will create a `style.module.css.d.ts` file
+	 * next to it, containing type definitions for the exported CSS class names
+	 */
+	generateSourceTypes?: boolean;
 };
 
 // This plugin is designed to be used by Vite internally
@@ -239,7 +245,7 @@ export const cssModules = (
 
 			const jsCode = generateEsm(imports, exports, allowArbitraryNamedExports);
 
-			if (patchConfig?.generateTypes) {
+			if (patchConfig?.generateSourceTypes) {
 				const filePath = id.split('?', 2)[0];
 
 				// Only generate types for importable module files

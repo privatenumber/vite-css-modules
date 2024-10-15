@@ -339,7 +339,7 @@ export default testSuite(({ describe }) => {
 			await viteBuild(fixture.path, {
 				plugins: [
 					patchCssModules({
-						generateTypes: true,
+						generateSourceTypes: true,
 					}),
 				],
 				build: {
