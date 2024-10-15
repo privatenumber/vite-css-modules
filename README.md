@@ -73,13 +73,13 @@ export default {
 
 This patches your Vite to handle CSS Modules in a more predictable way.
 
-### Type definition (`.d.ts` file) generation
+### Bonus feature: Type definition (`.d.ts` file) generation
 
-As a bonus feature, this plugin can generate type definitions for CSS Modules by creating corresponding `.d.ts` files next to the source files.
+This plugin can also conveniently generate type definitions for CSS Modules by creating corresponding `.d.ts` files next to the source files.
 
 This improves the developer experience by providing type-safe class name imports, better autocompletion, and enhanced error checking directly in your editor when working with CSS Modules.
 
-Enable this feature by passing in `generateSourceTypes` to the `patchCssModules` plugin.
+To enable this feature, pass `generateSourceTypes` to the `patchCssModules` plugin:
 
 ```ts
 patchCssModules({
