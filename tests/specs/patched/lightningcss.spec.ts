@@ -331,5 +331,26 @@ export default testSuite(({ describe }) => {
 				]);
 			});
 		});
+
+		// test('d.ts', async ({ onTestFinish }) => {
+		// 	const fixture = await createFixture(fixtures.lightningFeatures);
+		// 	onTestFinish(() => fixture.rm());
+
+		// 	const { css } = await viteBuild(fixture.path, {
+		// 		plugins: [
+		// 			patchCssModules({
+		// 				generateTypes: true,
+		// 			}),
+		// 		],
+		// 		css: {
+		// 			transformer: 'lightningcss',
+		// 			lightningcss: {
+		// 				include: Features.Nesting,
+		// 			},
+		// 		},
+		// 	});
+
+		// 	expect(css).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
+		// });
 	});
 });

@@ -764,5 +764,30 @@ export default testSuite(({ describe }) => {
 				});
 			});
 		});
+
+		test('.d.ts', async ({ onTestFinish }) => {
+			const fixture = await createFixture(fixtures.reservedKeywords);
+			// onTestFinish(() => fixture.rm());
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateTypes: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+				css: {
+					modules: {
+						localsConvention: 'camelCase',
+					},
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			console.log({ dts });
+			console.log(fixture.path);
+		});
 	});
 });

@@ -1,12 +1,12 @@
 import path from 'node:path';
-import { readFile } from 'fs/promises';
+import { readFile, writeFile } from 'fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
 import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@ampproject/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
-import { generateEsm, type Imports, type Exports } from './generate-esm.js';
+import { generateEsm, generateTypes, type Imports, type Exports } from './generate-esm.js';
 import type { PluginMeta } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 
@@ -34,12 +34,17 @@ const loadExports = async (
 	return pluginMeta.exports;
 };
 
+export type PatchConfig = {
+	generateTypes?: boolean;
+};
+
 // This plugin is designed to be used by Vite internally
 export const cssModules = (
 	config: ResolvedConfig,
+	patchConfig?: PatchConfig,
 ): Plugin => {
 	const filter = createFilter(cssModuleRE);
-	const stringNamedExports = supportsArbitraryModuleNamespace(config);
+	const allowArbitraryNamedExports = supportsArbitraryModuleNamespace(config);
 
 	const cssConfig = config.css;
 	const cssModuleConfig: CSSModulesOptions = { ...cssConfig.modules };
@@ -232,7 +237,14 @@ export const cssModules = (
 				cssModuleConfig.getJSON(id, json, id);
 			}
 
-			const jsCode = generateEsm(imports, exports, stringNamedExports);
+			const jsCode = generateEsm(imports, exports, allowArbitraryNamedExports);
+
+			if (patchConfig?.generateTypes) {
+				await writeFile(
+					id + '.d.ts',
+					generateTypes(exports, allowArbitraryNamedExports),
+				);
+			}
 
 			return {
 				code: jsCode,
