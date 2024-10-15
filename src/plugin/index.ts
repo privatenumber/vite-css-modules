@@ -243,7 +243,7 @@ export const cssModules = (
 				const filePath = id.split('?')[0];
 
 				// Only generate types for importable module files
-				if (filePath?.includes('.module.')) {
+				if (filePath && cssModuleRE.test(filePath)) {
 					const fileExists = await access(filePath).then(() => true, () => false);
 					if (fileExists) {
 						await writeFile(
