@@ -1,7 +1,7 @@
 import path from 'path';
 import type { Plugin } from 'vite';
 import type { SourceMap } from 'rollup';
-import { cssModules, cssModuleRE } from './plugin/index.js';
+import { cssModules, cssModuleRE, type PatchConfig } from './plugin/index.js';
 import type { PluginMeta } from './plugin/types.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
@@ -161,11 +161,13 @@ const supportCssModulesHMR = (
 	};
 };
 
-export const patchCssModules = (): Plugin => ({
+export const patchCssModules = (
+	patchConfig?: PatchConfig,
+): Plugin => ({
 	name: 'patch-css-modules',
 	enforce: 'pre',
 	configResolved: (config) => {
-		const pluginInstance = cssModules(config);
+		const pluginInstance = cssModules(config, patchConfig);
 		const cssConfig = config.css;
 
 		const isCssModulesDisabled = (
