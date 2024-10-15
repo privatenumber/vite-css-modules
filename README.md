@@ -26,13 +26,8 @@ For more details, see the [FAQ](#faq) below.
 <br>
 
 <p align="center">
-	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum">
-		<picture>
-			<source width="830" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image=dark">
-			<source width="830" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image">
-			<img width="830" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image" alt="Premium sponsor banner">
-		</picture>
-	</a>
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=398771"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/donate.webp"></a>
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=416984"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/sponsor.webp"></a>
 </p>
 
 ## Install
@@ -69,7 +64,8 @@ export default {
     },
 
     build: {
-        // Recommended minimum is `es2022` so we can take advantage of new ESM features
+        // Recommended minimum is `es2022`
+        // Which allows us to use the new ESM arbitrary imports/exports (explained in the FAQ)
         target: 'esnext'
     }
 }
@@ -77,17 +73,20 @@ export default {
 
 This patches your Vite to handle CSS Modules in a more predictable way.
 
-<br>
+### Type definition generation
 
-<p align="center">
-	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold">
-		<picture>
-			<source width="830" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold&image=dark">
-			<source width="830" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold&image">
-			<img width="830" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold&image" alt="Premium sponsor banner">
-		</picture>
-	</a>
-</p>
+As a bonus feature, this plugin can generate type definitions for CSS Modules by creating corresponding `.d.ts` files next to the source files.
+
+This improves the developer experience by providing type-safe class name imports, better autocompletion, and enhanced error checking directly in your editor when working with CSS Modules.
+
+Enable this feature by passing in `generateSourceTypes` to the `patchCssModules` plugin.
+
+```ts
+patchCssModules({
+    generateSourceTypes: true
+})
+```
+
 
 ## FAQ
 
@@ -131,34 +130,16 @@ The patch disables Vite's default CSS Modules behavior, injects this plugin righ
 
 ### Does it export class names as named exports?
 
+In older versions of the JavaScript (ECMAScript) spec, named exports only allowed names that could be represented as valid JavaScript variables, excluding names with special characters. This meant some class names (e.g. containing hyphens `.foo-bar`) were not directly exportable as named exports, though they could be included in the default export object.
 
-In previous versions of ES, named exports only allowed names that could be represented as valid JavaScript variables, excluding names with special characters. This meant some class names (e.g. containing hyphens `.foo-bar`) were not directly exportable as named exports, though they could be included in the default export object.
+But in ES2022, the spec added support for [Arbitrary module namespace identifier names](https://github.com/tc39/ecma262/pull/2154), which allows exporting & importing names with any characters, including hyphens, by representing them as strings. This allows class names like `.foo-bar` to be directly exported as named exports in ES2022 or later versions.
 
-But in ES2022, the spec added support for exporting & importing names with any characters, including hyphens, by representing them as strings (https://github.com/tc39/ecma262/pull/2154). This allows class names like `.foo-bar` to be directly exported as named exports in ES2022 or later versions.
-
-To get access all class names as named exports, set your Vite config `build.target` to `es2022` or above and import them as follows:
+To get access all class names as named exports, set your Vite config `build.target` to `es2022` or above, and import them as follows:
 ```js
 import { 'foo-bar' as fooBar } from './styles.module.css'
 ```
 
 ## Sponsors
-
-<p align="center">
-	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1">
-		<picture>
-			<source width="410" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1&image=dark">
-			<source width="410" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1&image">
-			<img width="410" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1&image" alt="Premium sponsor banner">
-		</picture>
-	</a>
-	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2">
-		<picture>
-			<source width="410" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2&image=dark">
-			<source width="410" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2&image">
-			<img width="410" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2&image" alt="Premium sponsor banner">
-		</picture>
-	</a>
-</p>
 
 <p align="center">
 	<a href="https://github.com/sponsors/privatenumber">
