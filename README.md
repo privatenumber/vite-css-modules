@@ -58,11 +58,12 @@ import { patchCssModules } from 'vite-css-modules'
 
 export default {
     plugins: [
-        patchCssModules()
-    // Other plugins
+        patchCssModules() // ← This is all you need to add!
+
+        // Other plugins...
     ],
     css: {
-    // Your existing CSS Modules configuration
+        // Your existing CSS Modules configuration
         modules: {
             // ...
         },
