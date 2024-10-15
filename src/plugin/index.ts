@@ -240,7 +240,7 @@ export const cssModules = (
 			const jsCode = generateEsm(imports, exports, allowArbitraryNamedExports);
 
 			if (patchConfig?.generateTypes) {
-				const filePath = id.split('?')[0];
+				const filePath = id.split('?', 2)[0];
 
 				// Only generate types for importable module files
 				if (filePath && cssModuleRE.test(filePath)) {
