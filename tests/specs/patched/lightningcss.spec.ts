@@ -1,3 +1,4 @@
+import { readdir } from 'node:fs/promises';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import { Features } from 'lightningcss';
@@ -332,25 +333,38 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
-		// test('d.ts', async ({ onTestFinish }) => {
-		// 	const fixture = await createFixture(fixtures.lightningFeatures);
-		// 	onTestFinish(() => fixture.rm());
+		test('.d.ts', async () => {
+			await using fixture = await createFixture(fixtures.reservedKeywords);
 
-		// 	const { css } = await viteBuild(fixture.path, {
-		// 		plugins: [
-		// 			patchCssModules({
-		// 				generateTypes: true,
-		// 			}),
-		// 		],
-		// 		css: {
-		// 			transformer: 'lightningcss',
-		// 			lightningcss: {
-		// 				include: Features.Nesting,
-		// 			},
-		// 		},
-		// 	});
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateTypes: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+				css: {
+					transformer: 'lightningcss',
+				},
+			});
 
-		// 	expect(css).toMatch(/\.[\w-]+_button\.[\w-]+_primary/);
-		// });
+			const files = await readdir(fixture.path);
+			expect(files).toStrictEqual([
+				'dist',
+				'index.js',
+				'node_modules',
+				'postcss.config.js',
+				'style.module.css',
+				'style.module.css.d.ts',
+				'utils.css'
+			]);
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('const _import: string');
+			expect(dts).toMatch('_import as "import"');
+		});
+
 	});
 });

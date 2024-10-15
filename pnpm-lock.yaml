@@ -61,8 +61,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       fs-fixture:
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^2.4.1
+        version: 2.4.1
       lightningcss:
         specifier: ^1.24.0
         version: 1.24.0
@@ -1497,9 +1497,9 @@ packages:
     resolution: {integrity: sha512-Ld2g8rrAyMYFXBhEqMz8ZAHBi4J4uS1i/CxGMDnjyFWddMXLVcDp051DZfu+t7+ab7Wv6SMqpWmyFIj5UbfFvg==}
     engines: {node: '>=14'}
 
-  fs-fixture@1.2.0:
-    resolution: {integrity: sha512-bPBNW12US81zxCXzP/BQ6ntSvMXNgX76nHVUxzQJVTmHkzXnbfp+M4mNWeJ9LuCG8M1wyeFov7oiwO9wnCEBjQ==}
-    engines: {node: '>=16.7.0'}
+  fs-fixture@2.4.1:
+    resolution: {integrity: sha512-sa/jd28CHfyShFe7CQuZOnmiGj9rCWpBAU3A3FXxeZRYavMLj9rquT8pQTDT2e+aI4wlszO560iXJGQh3WSj6g==}
+    engines: {node: '>=18.0.0'}
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -4344,7 +4344,7 @@ snapshots:
       cross-spawn: 7.0.3
       signal-exit: 4.1.0
 
-  fs-fixture@1.2.0: {}
+  fs-fixture@2.4.1: {}
 
   fsevents@2.3.3:
     optional: true

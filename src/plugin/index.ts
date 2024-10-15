@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, access } from 'fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
 import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
@@ -240,10 +240,18 @@ export const cssModules = (
 			const jsCode = generateEsm(imports, exports, allowArbitraryNamedExports);
 
 			if (patchConfig?.generateTypes) {
-				await writeFile(
-					id + '.d.ts',
-					generateTypes(exports, allowArbitraryNamedExports),
-				);
+				const filePath = id.split('?')[0];
+
+				// Only generate types for importable module files
+				if (filePath?.includes('.module.')) {
+					const fileExists = await access(filePath).then(() => true, () => false);
+					if (fileExists) {
+						await writeFile(
+							id + '.d.ts',
+							generateTypes(exports, allowArbitraryNamedExports),
+						);	
+					}
+				}
 			}
 
 			return {

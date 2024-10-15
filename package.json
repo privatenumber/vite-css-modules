@@ -78,7 +78,7 @@
 		"@types/postcss-modules-values": "^4.0.2",
 		"@vitejs/plugin-vue": "^5.0.4",
 		"clean-pkg-json": "^1.2.0",
-		"fs-fixture": "^1.2.0",
+		"fs-fixture": "^2.4.1",
 		"lightningcss": "^1.24.0",
 		"lintroll": "^1.10.0",
 		"lodash.camelcase": "^4.3.0",
