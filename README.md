@@ -51,9 +51,10 @@ npm install -D vite-css-modules
 
 ## Setup
 
-In `vite.config.js`:
+In your Vite config file, add the `patchCssModules()` plugin to patch Vite's CSS Modules behavior:
 
 ```ts
+// vite.config.js
 import { patchCssModules } from 'vite-css-modules'
 
 export default {
@@ -82,6 +83,12 @@ export default {
 ```
 
 This patches your Vite to handle CSS Modules in a more predictable way.
+
+### Configuration
+Configuring the CSS Modules behavior remains the same as before.
+
+Read the [Vite docs](https://vite.dev/guide/features.html#css-modules) to learn more.
+
 
 ### Bonus feature: strongly typed CSS Modules
 
