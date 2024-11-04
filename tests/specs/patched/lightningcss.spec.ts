@@ -67,6 +67,7 @@ export default testSuite(({ describe }) => {
 			expect(css).toBe('\n');
 		});
 
+		// https://github.com/vitejs/vite/issues/14050
 		test('reserved keywords', async () => {
 			await using fixture = await createFixture(fixtures.reservedKeywords);
 

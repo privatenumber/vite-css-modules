@@ -128,6 +128,7 @@ export default testSuite(({ describe }) => {
 				expect(exported.default).toMatch(/--file: "style.module.css\?inline"/);
 			});
 
+			// https://github.com/vitejs/vite/issues/14050
 			test('reserved keywords', async () => {
 				await using fixture = await createFixture(fixtures.reservedKeywords);
 

@@ -24,24 +24,27 @@ Here are the issues this plugin addresses:
 #### Dependency duplication
 
 Prevents duplicated CSS Modules, preventing style conflicts from duplication and minimizing bundle size
-- [Vite Issue #7504](https://github.com/vitejs/vite/issues/7504)
-- [Vite Issue #15683](https://github.com/vitejs/vite/issues/15683)
+- [vitejs/vite#7504: CSS Modules composed styles are duplicated](https://github.com/vitejs/vite/issues/7504)
+- [vitejs/vite#15683: CSS Modules duplicated styles re-declares classes](https://github.com/vitejs/vite/issues/15683)
 
 #### Hot Module Replacement (HMR) issues
 
 Enables HMR in CSS Module dependencies, improving development efficiency
-- [Vite Issue #16074](https://github.com/vitejs/vite/issues/16074)
+- [vitejs/vite#16074: HMR not working in CSS Modules](https://github.com/vitejs/vite/issues/16074)
 
 #### Plugin compatibility
 
 Allows other Vite plugins (e.g. PostCSS/SCSS) to process CSS Modules dependencies
-- [Vite Issue #10079](https://github.com/vitejs/vite/issues/10079)
-- [Vite Issue #10340](https://github.com/vitejs/vite/issues/10340)
+- [vitejs/vite#10079: PostCSS not applied to composed styles](https://github.com/vitejs/vite/issues/10079)
+- [vitejs/vite#10340: Composed SCSS file treated as CSS](https://github.com/vitejs/vite/issues/10340)
 
-#### Silent failures
+#### Improved composition handling
 
-Errors on missing exports, helping you catch CSS bugs early instead of failing silently
-- [Vite Issue #16075](https://github.com/vitejs/vite/issues/16075)
+This plugin raises errors for missing composes dependencies and supports CSS class names that collide with JavaScript reserved keywords.
+- [vitejs/vite#16075: Doesn't error on missing composes](https://github.com/vitejs/vite/issues/16075)
+
+- [vitejs/vite#14050: Reserved keywords not allowed in CSS Modules class names](https://github.com/vitejs/vite/issues/14050)
+
 
 
 ## Install
