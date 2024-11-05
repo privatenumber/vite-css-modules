@@ -107,6 +107,31 @@ patchCssModules({
 })
 ```
 
+## API
+
+### `patchCssModules(options)`
+
+The `patchCssModules` function is the main method of the plugin and accepts an options object. Here are the options you can configure:
+
+#### `options.exportMode`
+
+- **Type**: `'both' | 'named' | 'default'`
+- **Default**: `'both'`
+
+Specifies how class names are exported from the CSS Module:
+
+- **`both`**: Exports class names as both named and default exports.
+- **`named`**: Exports class names as named exports only.
+- **`default`**: Exports class names as a default export only (an object where keys are class names).
+
+#### `options.generateSourceTypes`
+
+- **Type**: `boolean`
+- **Default**: `false`
+
+If enabled, this option generates TypeScript `.d.ts` files for each CSS module, providing type definitions for all exported class names. This feature enhances developer experience by enabling autocompletion and type safety for imported CSS classes.
+
+
 ## FAQ
 
 ### What issues does this plugin address?
