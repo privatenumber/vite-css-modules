@@ -780,5 +780,125 @@ export default testSuite(({ describe }) => {
 			expect(dts).toMatch('const _import: string');
 			expect(dts).toMatch('_import as "import"');
 		});
+
+		describe('exportMode', ({ test }) => {
+			test('both (default)', async () => {
+				await using fixture = await createFixture(fixtures.exportModeBoth);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'both',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							class: '_class_6a3525e _util_f9ba12f',
+						},
+						class: '_class_6a3525e _util_f9ba12f',
+					},
+				});
+			});
+
+			test('named', async () => {
+				await using fixture = await createFixture(fixtures.exportModeBoth);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'named',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						class: '_class_6a3525e _util_f9ba12f',
+					},
+				});
+				expect(exported.style.default).toBeUndefined();
+			});
+
+			test('default', async () => {
+				await using fixture = await createFixture(fixtures.exportModeBoth);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'default',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							class: '_class_6a3525e _util_f9ba12f',
+						},
+					},
+				});
+
+				expect(
+					Object.keys(exported.style).length,
+				).toBe(1);
+			});
+		});
+
+		describe('default as named export', ({ test }) => {
+			test('should warn & omit named export', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							typeof: '_typeof_06003d4 _default_59c1934',
+						},
+						typeof: '_typeof_06003d4 _default_59c1934',
+					},
+				});
+			});
+
+			test('should work', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'named',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						typeof: '_typeof_06003d4 _default_59c1934',
+					},
+				});
+			});
+		});
 	});
 });

@@ -19,3 +19,5 @@ export type PluginMeta = {
 	css: string;
 	exports: Exports;
 };
+
+export type ExportMode = 'both' | 'named' | 'default';

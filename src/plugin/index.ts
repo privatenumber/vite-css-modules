@@ -9,7 +9,7 @@ import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals
 import {
 	generateEsm, generateTypes, type Imports, type Exports,
 } from './generate-esm.js';
-import type { PluginMeta } from './types.js';
+import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
@@ -37,6 +37,17 @@ const loadExports = async (
 };
 
 export type PatchConfig = {
+
+	/**
+	 * Specifies the export method for CSS Modules.
+	 *
+	 * - 'both': Export both default and named exports.
+	 * - 'default': Export only the default export.
+	 * - 'named': Export only named exports.
+	 *
+	 * @default 'both'
+	 */
+	exportMode?: ExportMode;
 
 	/**
 	 * Generate TypeScript declaration (.d.ts) files for CSS modules
@@ -71,6 +82,8 @@ export const cssModules = (
 		typeof import('./transformers/postcss/index.js').transform
 		| typeof import('./transformers/lightningcss.js').transform
 	);
+
+	const exportMode = patchConfig?.exportMode ?? 'both';
 
 	return {
 		name: pluginName,
@@ -140,6 +153,13 @@ export const cssModules = (
 
 			await Promise.all(
 				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
+					if (
+						exportName === 'default'
+						&& exportMode !== 'named'
+					) {
+						this.warn('You cannot use "default" as a class name as it conflicts with the default export. Set "exportMode: named" to use "default" as a class name.');
+					}
+
 					const exportAs = new Set<string>();
 					if (keepOriginalExport) {
 						exportAs.add(exportName);
@@ -246,7 +266,12 @@ export const cssModules = (
 				cssModuleConfig.getJSON(id, json, id);
 			}
 
-			const jsCode = generateEsm(imports, exports, allowArbitraryNamedExports);
+			const jsCode = generateEsm(
+				imports,
+				exports,
+				exportMode,
+				allowArbitraryNamedExports,
+			);
 
 			if (patchConfig?.generateSourceTypes) {
 				const filePath = id.split('?', 2)[0];

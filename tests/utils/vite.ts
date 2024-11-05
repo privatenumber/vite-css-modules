@@ -18,7 +18,7 @@ export const viteBuild = async (
 		root: fixturePath,
 		configFile: false,
 		envFile: false,
-		logLevel: 'error',
+		logLevel: 'warn',
 		...config,
 
 		build: {
