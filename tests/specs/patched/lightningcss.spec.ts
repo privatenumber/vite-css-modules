@@ -357,5 +357,140 @@ export default testSuite(({ describe }) => {
 			expect(dts).toMatch('const _import: string');
 			expect(dts).toMatch('_import as "import"');
 		});
+
+		describe('exportMode', ({ test }) => {
+			test('both (default)', async () => {
+				await using fixture = await createFixture(fixtures.exportModeBoth);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'both',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							class: 'fk9XWG_class V_YH-W_util',
+						},
+						class: 'fk9XWG_class V_YH-W_util',
+					},
+				});
+			});
+
+			test('named', async () => {
+				await using fixture = await createFixture(fixtures.exportModeBoth);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'named',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						class: 'fk9XWG_class V_YH-W_util',
+					},
+				});
+				expect(exported.style.default).toBeUndefined();
+			});
+
+			test('default', async () => {
+				await using fixture = await createFixture(fixtures.exportModeBoth);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'default',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							class: 'fk9XWG_class V_YH-W_util',
+						},
+					},
+				});
+
+				expect(
+					Object.keys(exported.style).length,
+				).toBe(1);
+			});
+		});
+
+		describe('default as named export', ({ test }) => {
+			test('should warn & omit named export', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							typeof: 'fk9XWG_typeof',
+						},
+						typeof: 'fk9XWG_typeof',
+					},
+				});
+			});
+
+			test('should work', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'named',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						typeof: 'fk9XWG_typeof',
+					},
+				});
+			});
+		});
 	});
 });

@@ -104,6 +104,50 @@ export const reservedKeywords = Object.freeze({
 	'postcss.config.js': postcssConfig,
 });
 
+export const exportModeBoth = Object.freeze({
+	'index.js': outdent`
+	export * as style from './style.module.css';
+	`,
+
+	'style.module.css': outdent`
+	.class {
+		composes: util from './utils.css';
+		color: red;
+	}
+	`,
+
+	'utils.css': outdent`
+	.util {
+		--name: 'foo';
+		color: blue;
+	}
+	`,
+
+	'postcss.config.js': postcssConfig,
+});
+
+export const defaultAsName = Object.freeze({
+	'index.js': outdent`
+	export * as style from './style.module.css';
+	`,
+
+	'style.module.css': outdent`
+	.typeof {
+		composes: default from './utils.css';
+		color: red;
+	}
+	`,
+
+	'utils.css': outdent`
+	.default {
+		--name: 'foo';
+		color: blue;
+	}
+	`,
+
+	'postcss.config.js': postcssConfig,
+});
+
 export const cssModulesValues = Object.freeze({
 	'index.js': outdent`
 	export * from './style.module.css';
