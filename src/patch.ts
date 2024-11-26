@@ -134,29 +134,44 @@ const supportCssModulesHMR = (
 	if (typeof transform !== 'function') {
 		throw new TypeError('vite:css-analysis plugin transform is not a function');
 	}
-	if (typeof configureServer !== 'function') {
-		throw new TypeError('vite:css-analysis plugin transform is not a function');
-	}
-
 	const tag = '?vite-css-modules?inline';
-	viteCssAnalysisPlugin.configureServer = function (server) {
-		const { getModuleById } = server.moduleGraph;
-		server.moduleGraph.getModuleById = function (id: string) {
-			const tagIndex = id.indexOf(tag);
-			if (tagIndex !== -1) {
-				id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
-			}
-			return Reflect.apply(getModuleById, this, [id]);
+	if (configureServer) {
+		if (typeof configureServer !== 'function') {
+			throw new TypeError('vite:css-analysis plugin configureServer is not a function');
+		}
+		
+		viteCssAnalysisPlugin.configureServer = function (server) {
+			const { getModuleById } = server.moduleGraph;
+			server.moduleGraph.getModuleById = function (id: string) {
+				const tagIndex = id.indexOf(tag);
+				if (tagIndex !== -1) {
+					id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
+				}
+				return Reflect.apply(getModuleById, this, [id]);
+			};
+			return Reflect.apply(configureServer, this, [server]);
 		};
-		return Reflect.apply(configureServer, this, [server]);
-	};
-
+		
+	}
 	viteCssAnalysisPlugin.transform = async function (css, id, options) {
+		
+		if (!configureServer) {
+      
+      const { getModuleById } = this.environment.moduleGraph;
+        this.environment.moduleGraph.getModuleById = function (id) {
+        const tagIndex = id.indexOf(tag);
+        	if (tagIndex !== -1) {
+          		id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
+        	}
+        	return Reflect.apply(getModuleById, this, [id]);
+      	}
+    	}
 		if (cssModuleRE.test(id)) {
 			// Disable self-accept by adding `?inline` for:
 			// https://github.com/privatenumber/vite/blob/775bb5026ee1d7e15b75c8829e7f528c1b26c493/packages/vite/src/node/plugins/css.ts#L955-L958
 			id += tag;
 		}
+		
 		return Reflect.apply(transform, this, [css, id, options]);
 	};
 };
