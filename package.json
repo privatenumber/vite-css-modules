@@ -51,7 +51,7 @@
 	"peerDependencies": {
 		"lightningcss": "^1.23.0",
 		"postcss": "^8.4.33",
-		"vite": "^5.0.12"
+		"vite": "^6.0.3"
 	},
 	"peerDependenciesMeta": {
 		"lightningcss": {
@@ -76,7 +76,7 @@
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
-		"@vitejs/plugin-vue": "^5.0.4",
+		"@vitejs/plugin-vue": "^5.2.1",
 		"clean-pkg-json": "^1.2.0",
 		"fs-fixture": "^2.4.1",
 		"lightningcss": "^1.24.0",
@@ -91,7 +91,7 @@
 		"sass": "^1.71.1",
 		"tsx": "^4.19.1",
 		"typescript": "~5.5.4",
-		"vite": "^5.1.5",
+		"vite": "^6.0.3",
 		"vue": "^3.4.21"
 	}
 }
