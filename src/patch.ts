@@ -1,6 +1,6 @@
 import path from 'path';
-import type { Plugin } from 'vite';
-import type { SourceMap } from 'rollup';
+import type { Plugin, DevEnvironment } from 'vite';
+import type { SourceMap, TransformPluginContext } from 'rollup';
 import { cssModules, cssModuleRE, type PatchConfig } from './plugin/index.js';
 import type { PluginMeta } from './plugin/types.js';
 
@@ -139,7 +139,7 @@ const supportCssModulesHMR = (
 		if (typeof configureServer !== 'function') {
 			throw new TypeError('vite:css-analysis plugin configureServer is not a function');
 		}
-		
+
 		viteCssAnalysisPlugin.configureServer = function (server) {
 			const { getModuleById } = server.moduleGraph;
 			server.moduleGraph.getModuleById = function (id: string) {
@@ -151,27 +151,28 @@ const supportCssModulesHMR = (
 			};
 			return Reflect.apply(configureServer, this, [server]);
 		};
-		
 	}
-	viteCssAnalysisPlugin.transform = async function (css, id, options) {
-		
+	viteCssAnalysisPlugin.transform = async function (
+		this: TransformPluginContext, css, id, options,
+	) {
 		if (!configureServer) {
-      
-      const { getModuleById } = this.environment.moduleGraph;
-        this.environment.moduleGraph.getModuleById = function (id) {
-        const tagIndex = id.indexOf(tag);
-        	if (tagIndex !== -1) {
-          		id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
-        	}
-        	return Reflect.apply(getModuleById, this, [id]);
-      	}
-    	}
+			const environment = this.environment as DevEnvironment;
+
+			const { getModuleById } = environment.moduleGraph;
+			environment.moduleGraph.getModuleById = function (moduleId) {
+				const tagIndex = id.indexOf(tag);
+				if (tagIndex !== -1) {
+					id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);
+				}
+				return Reflect.apply(getModuleById, this, [moduleId]);
+			};
+		}
 		if (cssModuleRE.test(id)) {
 			// Disable self-accept by adding `?inline` for:
 			// https://github.com/privatenumber/vite/blob/775bb5026ee1d7e15b75c8829e7f528c1b26c493/packages/vite/src/node/plugins/css.ts#L955-L958
 			id += tag;
 		}
-		
+
 		return Reflect.apply(transform, this, [css, id, options]);
 	};
 };
