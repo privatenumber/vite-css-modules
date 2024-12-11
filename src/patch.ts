@@ -184,7 +184,6 @@ export const patchCssModules = (
 		// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192
 		if (cssConfig.transformer === 'lightningcss') {
 			if (cssConfig.lightningcss) {
-				// @ts-expect-error type doesn't accept false but Vite will pass down false
 				// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
 				cssConfig.lightningcss.cssModules = false;
 			}
@@ -197,7 +196,7 @@ export const patchCssModules = (
 			 * So instead we have to revert back to PostCSS, and then
 			 * disable CSS Modules on PostCSS
 			 */
-			cssConfig.transformer = undefined;
+			cssConfig.transformer = 'postcss';
 		}
 
 		cssConfig.modules = false;
