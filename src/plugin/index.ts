@@ -18,7 +18,7 @@ export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postc
 export const pluginName = 'vite:css-modules';
 
 const moduleQs = '?.module.css';
-const postfixRE = new RegExp(String.raw`(#.*$|${moduleQs.replaceAll(/(\?\.)/g, '\\$1')})`);
+const postfixRE = new RegExp(String.raw`(#.*$|${moduleQs.replaceAll(/(\?\.)/g, String.raw`\$1`)})`);
 const cleanUrl = (url: string): string => url.replace(postfixRE, '');
 
 const loadExports = async (
