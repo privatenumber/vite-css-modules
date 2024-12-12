@@ -492,5 +492,30 @@ export default testSuite(({ describe }) => {
 				});
 			});
 		});
+
+		describe('querystring imports', ({ test }) => {
+			test('should be preserved', async () => {
+				await using fixture = await createFixture(fixtures.qsImport);
+				const { css } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						modules: {
+							generateScopedName: (name: string, filename: string) => {
+								if (filename.includes('?stylesheet')) {
+									return 'success';
+								}
+								return 'fail';
+							},
+						},
+					},
+				});
+				expect(css).toMatch('.success');
+			});
+		});
 	});
 });
