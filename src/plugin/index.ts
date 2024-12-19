@@ -68,7 +68,7 @@ export type PatchConfig = {
 	 * - 'array': composed classes as arrays of strings
 	 * - 'all-array': all classes as arrays of strings
 	 */
-	composedClasses?: ComposedClassesMode;
+	composedClassesMode?: ComposedClassesMode;
 };
 
 // This plugin is designed to be used by Vite internally
@@ -97,6 +97,7 @@ export const cssModules = (
 	);
 
 	const exportMode = patchConfig?.exportMode ?? 'both';
+	const composedClassesMode = patchConfig?.composedClassesMode ?? 'string';
 
 	let isVitest = false;
 
@@ -304,6 +305,7 @@ export const cssModules = (
 				imports,
 				exports,
 				exportMode,
+				composedClassesMode,
 				allowArbitraryNamedExports,
 			);
 

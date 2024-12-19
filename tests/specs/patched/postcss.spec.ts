@@ -570,7 +570,7 @@ export default testSuite(({ describe }) => {
 				await using fixture = await createFixture(fixtures.composedAndFlat);
 
 				const { js } = await viteBuild(fixture.path, {
-					plugins: [patchCssModules({ composedClasses: 'string' })],
+					plugins: [patchCssModules({ composedClassesMode: 'string' })],
 					build: {
 						target: 'es2022',
 					},
@@ -588,7 +588,7 @@ export default testSuite(({ describe }) => {
 				await using fixture = await createFixture(fixtures.composedAndFlat);
 
 				const { js } = await viteBuild(fixture.path, {
-					plugins: [patchCssModules({ composedClasses: 'array' })],
+					plugins: [patchCssModules({ composedClassesMode: 'array' })],
 					build: {
 						target: 'es2022',
 					},
@@ -606,7 +606,7 @@ export default testSuite(({ describe }) => {
 				await using fixture = await createFixture(fixtures.composedAndFlat);
 
 				const { js } = await viteBuild(fixture.path, {
-					plugins: [patchCssModules({ composedClasses: 'all-array' })],
+					plugins: [patchCssModules({ composedClassesMode: 'all-array' })],
 					build: {
 						target: 'es2022',
 					},

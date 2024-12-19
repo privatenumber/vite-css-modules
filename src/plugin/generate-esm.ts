@@ -1,5 +1,5 @@
 import { makeLegalIdentifier } from '@rollup/pluginutils';
-import type { ExportMode } from './types.js';
+import type { ComposedClassesMode, ExportMode } from './types.js';
 
 type ImportSpecifiers = Record<string /* exportName */, string /* importAs */>;
 export type Imports = Map<string /* filePath */, ImportSpecifiers>;
@@ -44,6 +44,7 @@ const importsToCode = (
 const exportsToCode = (
 	exports: Exports,
 	exportMode: ExportMode,
+	composedClassesMode: ComposedClassesMode,
 	allowArbitraryNamedExports = false,
 ) => {
 	let code = '';
@@ -52,7 +53,12 @@ const exportsToCode = (
 	const exportedVariables = Object.entries(exports).flatMap(
 		([exportName, { exportAs, code: value }]) => {
 			const jsVariable = makeLegalIdentifier(exportName);
-			variables.add(`const ${jsVariable} = \`${value}\`;`);
+
+			if (composedClassesMode === 'string' || (composedClassesMode === 'array' && !value.includes(' '))) {
+				variables.add(`const ${jsVariable} = \`${value}\`;`);
+			} else {
+				variables.add(`const ${jsVariable} = [${value.split(' ').map(v => `\`${v}\``).join(', ')}];`);
+			}
 
 			return Array.from(exportAs).map((exportAsName) => {
 				const exportNameSafe = makeLegalIdentifier(exportAsName);
@@ -116,10 +122,11 @@ export const generateEsm = (
 	imports: Imports,
 	exports: Exports,
 	exportMode: ExportMode,
+	composedClassesMode: ComposedClassesMode,
 	allowArbitraryNamedExports = false,
 ) => (
 	importsToCode(imports, exportMode, allowArbitraryNamedExports)
-	+ exportsToCode(exports, exportMode, allowArbitraryNamedExports)
+	+ exportsToCode(exports, exportMode, composedClassesMode, allowArbitraryNamedExports)
 );
 
 const dtsComment = `
