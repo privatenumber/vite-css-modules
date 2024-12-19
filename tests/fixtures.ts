@@ -375,14 +375,14 @@ export const moduleNamespace = Object.freeze({
 	`,
 });
 
-export const qsImport = Object.freeze({
+export const requestQuery = Object.freeze({
 	'index.js': outdent`
-	export * as style from './style.module.css?stylesheet';
+	export * as style from './style.module.css?some-query';
 	`,
 
 	'style.module.css': outdent`
 	.class-name {
-	  color: red;
-    }
+		color: red;
+	}
 	`,
 });

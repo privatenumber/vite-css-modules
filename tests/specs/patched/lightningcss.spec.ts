@@ -7,6 +7,7 @@ import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
+import { injectIdPlugin } from '../../utils/inject-id-plugin.js';
 import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
@@ -493,29 +494,23 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
-		describe('querystring imports', ({ test }) => {
-			test('should be preserved', async () => {
-				await using fixture = await createFixture(fixtures.qsImport);
-				const { css } = await viteBuild(fixture.path, {
-					plugins: [
-						patchCssModules(),
-					],
-					build: {
-						target: 'es2022',
-					},
-					css: {
-						modules: {
-							generateScopedName: (name: string, filename: string) => {
-								if (filename.includes('?stylesheet')) {
-									return 'success';
-								}
-								return 'fail';
-							},
-						},
-					},
-				});
-				expect(css).toMatch('.success');
+		test('queries in requests should be preserved', async () => {
+			await using fixture = await createFixture(fixtures.requestQuery);
+			const { css } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+					injectIdPlugin(),
+				],
+				build: {
+					target: 'es2022',
+					cssMinify: false,
+				},
+				css: {
+					transformer: 'lightningcss',
+				},
 			});
+			console.log({ css});
+			expect(css).toMatch('style.module.css?some-query');
 		});
 	});
 });

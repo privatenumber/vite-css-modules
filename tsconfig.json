@@ -2,8 +2,7 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"lib": ["ESNext", "DOM"],
-		"module": "ESNext",
-		"moduleResolution": "Bundler",
+		"module": "Preserve",
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"noEmit": true,
