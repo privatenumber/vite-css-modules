@@ -7,7 +7,6 @@ import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
 import { viteBuild, viteServe } from '../../utils/vite.js';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
-import { injectIdPlugin } from '../../utils/inject-id-plugin.js';
 import { patchCssModules } from '#vite-css-modules';
 
 export default testSuite(({ describe }) => {
@@ -499,7 +498,6 @@ export default testSuite(({ describe }) => {
 			const { css } = await viteBuild(fixture.path, {
 				plugins: [
 					patchCssModules(),
-					injectIdPlugin(),
 				],
 				build: {
 					target: 'es2022',
@@ -509,7 +507,6 @@ export default testSuite(({ describe }) => {
 					transformer: 'lightningcss',
 				},
 			});
-			console.log({ css});
 			expect(css).toMatch('style.module.css?some-query');
 		});
 	});

@@ -385,4 +385,6 @@ export const requestQuery = Object.freeze({
 		color: red;
 	}
 	`,
+
+	'postcss.config.js': postcssConfig,
 });
