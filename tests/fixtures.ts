@@ -382,7 +382,14 @@ export const requestQuery = Object.freeze({
 
 	'style.module.css': outdent`
 	.class-name {
-		color: red;
+		composes: util-class from './utils.css?another-query';
+	}
+	`,
+
+	'utils.css': outdent`
+	.util-class {
+		--name: 'foo';
+		color: blue;
 	}
 	`,
 

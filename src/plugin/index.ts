@@ -18,8 +18,11 @@ export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postc
 export const pluginName = 'vite:css-modules';
 
 const moduleCssQuery = '?.module.css';
-const postfixRE = /(#.*$|\?\.module\.css)/;
-const cleanUrl = (url: string): string => url.replace(postfixRE, '');
+const cleanUrl = (url: string) => (
+	url.endsWith(moduleCssQuery)
+		? url.slice(0, -moduleCssQuery.length)
+		: url
+);
 
 const loadExports = async (
 	context: TransformPluginContext,
