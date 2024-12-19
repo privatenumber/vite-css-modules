@@ -492,5 +492,22 @@ export default testSuite(({ describe }) => {
 				});
 			});
 		});
+
+		test('queries in requests should be preserved', async () => {
+			await using fixture = await createFixture(fixtures.requestQuery);
+			const { css } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				build: {
+					target: 'es2022',
+					cssMinify: false,
+				},
+				css: {
+					transformer: 'lightningcss',
+				},
+			});
+			expect(css).toMatch('style.module.css?some-query');
+		});
 	});
 });
