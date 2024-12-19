@@ -732,7 +732,7 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
-				})).rejects.toThrow('[vite:css-modules] Cannot resolve "non-existent" from "./utils.css"');
+				})).rejects.toThrow('Cannot resolve "non-existent" from "./utils.css"');
 			});
 
 			test('exporting a non-safe class name via esm doesnt throw', async () => {
