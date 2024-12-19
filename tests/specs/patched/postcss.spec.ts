@@ -565,6 +565,62 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
+		describe('composedClasses', () => {
+			test('string', async () => {
+				await using fixture = await createFixture(fixtures.composedAndFlat);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [patchCssModules({ composedClasses: 'string' })],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						plain: expect.stringMatching(/_plain_\w+/),
+						composed: expect.stringMatching(/_composed_\w+ _plain_\w+/),
+					},
+				});
+			});
+
+			test('array', async () => {
+				await using fixture = await createFixture(fixtures.composedAndFlat);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [patchCssModules({ composedClasses: 'array' })],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						plain: expect.stringMatching(/_plain_\w+/),
+						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
+					},
+				});
+			});
+
+			test('all-array', async () => {
+				await using fixture = await createFixture(fixtures.composedAndFlat);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [patchCssModules({ composedClasses: 'all-array' })],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						plain: [expect.stringMatching(/_plain_\w+/)],
+						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
+					},
+				});
+			});
+		});
+
 		test('globalModulePaths', async () => {
 			await using fixture = await createFixture(fixtures.globalModule);
 

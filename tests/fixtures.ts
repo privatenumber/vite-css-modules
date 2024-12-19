@@ -128,6 +128,25 @@ export const exportModeBoth = Object.freeze({
 	`,
 });
 
+export const composedAndFlat = Object.freeze({
+	'index.js': outdent`
+	export * as style from './style.module.css';
+	`,
+
+	'style.module.css': outdent`
+	.plain {
+	  color: red;
+    }
+
+    .composed {
+      composes: plain;
+      color: blue;
+    }
+	`,
+
+	'postcss.config.js': postcssConfig,
+});
+
 export const defaultAsName = Object.freeze({
 	'index.js': outdent`
 	export * as style from './style.module.css';
