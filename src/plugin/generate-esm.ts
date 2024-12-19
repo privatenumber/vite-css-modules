@@ -141,13 +141,19 @@ const dtsComment = `
 
 export const generateTypes = (
 	exports: Exports,
+	composedClassesMode: ComposedClassesMode,
 	allowArbitraryNamedExports = false,
 ) => {
 	const variables = new Set<string>();
 	const exportedVariables = Object.entries(exports).flatMap(
-		([exportName, { exportAs }]) => {
+		([exportName, { exportAs, code: value }]) => {
 			const jsVariable = makeLegalIdentifier(exportName);
-			variables.add(`const ${jsVariable}: string;`);
+
+			if (composedClassesMode === 'string' || (composedClassesMode === 'array' && !value.includes(' '))) {
+				variables.add(`const ${jsVariable}: string;`);
+			} else {
+				variables.add(`const ${jsVariable}: string[];`);
+			}
 
 			return Array.from(exportAs).map((exportAsName) => {
 				const exportNameSafe = makeLegalIdentifier(exportAsName);
