@@ -33,6 +33,10 @@
 		}
 	},
 	"imports": {
+		"vite": {
+			"vite5": "vite5",
+			"default": "vite"
+		},
 		"#vite-css-modules": {
 			"types": "./src/index.ts",
 			"development": "./src/index.ts",
@@ -42,7 +46,9 @@
 	"packageManager": "pnpm@9.12.1",
 	"scripts": {
 		"build": "pkgroll",
-		"test": "tsx tests",
+		"test:vite5": "tsx --import alias-imports -C vite5 tests",
+		"test:vite6": "tsx tests",
+		"test": "pnpm test:vite5 && pnpm test:vite6",
 		"dev": "tsx watch --conditions=development --ignore='/private/**' tests",
 		"type-check": "tsc",
 		"lint": "lintroll .",
@@ -51,7 +57,7 @@
 	"peerDependencies": {
 		"lightningcss": "^1.23.0",
 		"postcss": "^8.4.33",
-		"vite": "^5.0.12"
+		"vite": "^5.0.12 || ^6.0.0"
 	},
 	"peerDependenciesMeta": {
 		"lightningcss": {
@@ -77,6 +83,7 @@
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
 		"@vitejs/plugin-vue": "^5.2.1",
+		"alias-imports": "^1.1.0",
 		"clean-pkg-json": "^1.2.0",
 		"fs-fixture": "^2.6.0",
 		"lightningcss": "^1.28.2",
@@ -91,7 +98,8 @@
 		"sass": "^1.83.0",
 		"tsx": "^4.19.2",
 		"typescript": "^5.7.2",
-		"vite": "^5.4.11",
+		"vite": "6",
+		"vite5": "npm:vite@5",
 		"vue": "^3.5.13"
 	}
 }

@@ -1,5 +1,5 @@
 import path from 'path';
-import type { Plugin } from 'vite';
+import type { Plugin, ServerHook } from 'vite';
 import type { SourceMap } from 'rollup';
 import { cssModules, cssModuleRE, type PatchConfig } from './plugin/index.js';
 import type { PluginMeta } from './plugin/types.js';
@@ -134,11 +134,8 @@ const supportCssModulesHMR = (
 	if (typeof transform !== 'function') {
 		throw new TypeError('vite:css-analysis plugin transform is not a function');
 	}
-	if (typeof configureServer !== 'function') {
-		throw new TypeError('vite:css-analysis plugin transform is not a function');
-	}
-
 	const tag = '?vite-css-modules?inline';
+
 	viteCssAnalysisPlugin.configureServer = function (server) {
 		const { getModuleById } = server.moduleGraph;
 		server.moduleGraph.getModuleById = function (id: string) {
@@ -148,15 +145,19 @@ const supportCssModulesHMR = (
 			}
 			return Reflect.apply(getModuleById, this, [id]);
 		};
-		return Reflect.apply(configureServer, this, [server]);
+
+		if (configureServer) {
+			return Reflect.apply(configureServer as ServerHook, this, [server]);
+		}
 	};
 
 	viteCssAnalysisPlugin.transform = async function (css, id, options) {
 		if (cssModuleRE.test(id)) {
 			// Disable self-accept by adding `?inline` for:
-			// https://github.com/privatenumber/vite/blob/775bb5026ee1d7e15b75c8829e7f528c1b26c493/packages/vite/src/node/plugins/css.ts#L955-L958
+			// https://github.com/vitejs/vite/blob/775bb5026ee1d7e15b75c8829e7f528c1b26c493/packages/vite/src/node/plugins/css.ts#L955-L958
 			id += tag;
 		}
+
 		return Reflect.apply(transform, this, [css, id, options]);
 	};
 };
@@ -184,7 +185,6 @@ export const patchCssModules = (
 		// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192
 		if (cssConfig.transformer === 'lightningcss') {
 			if (cssConfig.lightningcss) {
-				// @ts-expect-error type doesn't accept false but Vite will pass down false
 				// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
 				cssConfig.lightningcss.cssModules = false;
 			}
@@ -197,7 +197,7 @@ export const patchCssModules = (
 			 * So instead we have to revert back to PostCSS, and then
 			 * disable CSS Modules on PostCSS
 			 */
-			cssConfig.transformer = undefined;
+			cssConfig.transformer = 'postcss';
 		}
 
 		cssConfig.modules = false;

@@ -32,6 +32,7 @@ export const viteBuild = async (
 			lib: {
 				entry: 'index.js',
 				formats: ['es'],
+				cssFileName: 'style.css',
 			},
 			...config?.build,
 		},
