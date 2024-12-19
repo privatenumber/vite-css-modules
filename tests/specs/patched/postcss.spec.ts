@@ -564,11 +564,13 @@ export default testSuite(({ describe }) => {
 					style: {
 						plain: expect.stringMatching(/_plain_\w+/),
 						composed: expect.stringMatching(/_composed_\w+ _plain_\w+/),
+						nested: expect.stringMatching(/_nested_\w+ _extra_\w+ _base_\w+/),
 					},
 				});
 				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				expect(dts).toMatch('const plain: string;');
 				expect(dts).toMatch('const composed: string;');
+				expect(dts).toMatch('const nested: string;');
 			});
 
 			test('array', async () => {
@@ -588,11 +590,13 @@ export default testSuite(({ describe }) => {
 					style: {
 						plain: expect.stringMatching(/_plain_\w+/),
 						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
+						nested: [expect.stringMatching(/_nested_\w+/), expect.stringMatching(/_extra_\w+/), expect.stringMatching(/_base_\w+/)],
 					},
 				});
 				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				expect(dts).toMatch('const plain: string;');
 				expect(dts).toMatch('const composed: string[];');
+				expect(dts).toMatch('const nested: string[];');
 			});
 
 			test('all-array', async () => {
@@ -612,11 +616,13 @@ export default testSuite(({ describe }) => {
 					style: {
 						plain: [expect.stringMatching(/_plain_\w+/)],
 						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
+						nested: [expect.stringMatching(/_nested_\w+/), expect.stringMatching(/_extra_\w+/), expect.stringMatching(/_base_\w+/)],
 					},
 				});
 				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				expect(dts).toMatch('const plain: string[];');
 				expect(dts).toMatch('const composed: string[];');
+				expect(dts).toMatch('const nested: string[];');
 			});
 		});
 

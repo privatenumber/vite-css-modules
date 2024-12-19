@@ -57,7 +57,7 @@ const exportsToCode = (
 			if (composedClassesMode === 'string' || (composedClassesMode === 'array' && !value.includes(' '))) {
 				variables.add(`const ${jsVariable} = \`${value}\`;`);
 			} else {
-				variables.add(`const ${jsVariable} = [${value.split(' ').map(v => `\`${v}\``).join(', ')}];`);
+				variables.add(`const ${jsVariable} = [${value.split(' ').map(v => (v.search(/^\$\{.*\}$/) === 0 ? v.slice(2, -1) : `\`${v}\``)).join(', ')}].flat();`);
 			}
 
 			return Array.from(exportAs).map((exportAsName) => {
