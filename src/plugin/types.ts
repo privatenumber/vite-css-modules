@@ -21,3 +21,4 @@ export type PluginMeta = {
 };
 
 export type ExportMode = 'both' | 'named' | 'default';
+export type ComposedClassesMode = 'string' | 'array' | 'all-array';
