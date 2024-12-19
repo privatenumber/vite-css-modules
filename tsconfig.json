@@ -7,11 +7,9 @@
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"noEmit": true,
-
-		// Necessary for excluding it from type-check
-		"outDir": "dist",
 		"esModuleInterop": true,
 		"verbatimModuleSyntax": true,
 		"skipLibCheck": true,
 	},
+	"exclude": ["dist"]
 }

@@ -72,7 +72,7 @@
 	"devDependencies": {
 		"@types/icss-utils": "^5.1.2",
 		"@types/lodash.camelcase": "^4.3.9",
-		"@types/node": "^20.11.25",
+		"@types/node": "^22.10.2",
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
@@ -90,7 +90,7 @@
 		"rollup": "^4.24.0",
 		"sass": "^1.71.1",
 		"tsx": "^4.19.1",
-		"typescript": "^5.6.3",
+		"typescript": "^5.7.2",
 		"vite": "^5.1.5",
 		"vue": "^3.4.21"
 	}
