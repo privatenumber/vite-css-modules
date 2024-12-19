@@ -142,6 +142,22 @@ export const composedAndFlat = Object.freeze({
       composes: plain;
       color: blue;
     }
+
+    .nested {
+       composes: extra from './utils.css';
+       color: green;
+    }
+	`,
+
+	'utils.css': outdent`
+	.base {
+	  color: red;
+	}
+
+	.extra {
+	  composes: base;
+	  color: blue;
+	}
 	`,
 
 	'postcss.config.js': postcssConfig,
