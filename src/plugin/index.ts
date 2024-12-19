@@ -17,8 +17,12 @@ export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postc
 
 export const pluginName = 'vite:css-modules';
 
-const postfixRE = /[?#].*$/;
-const cleanUrl = (url: string): string => url.replace(postfixRE, '');
+const moduleCssQuery = '?.module.css';
+const cleanUrl = (url: string) => (
+	url.endsWith(moduleCssQuery)
+		? url.slice(0, -moduleCssQuery.length)
+		: url
+);
 
 const loadExports = async (
 	context: TransformPluginContext,
@@ -184,7 +188,7 @@ export const cssModules = (
 						const composedClasses = await Promise.all(
 							exported.composes.map(async (dep) => {
 								if (dep.type === 'dependency') {
-									const loaded = await loadExports(this, `${dep.specifier}?.module.css`, id);
+									const loaded = await loadExports(this, `${dep.specifier}${moduleCssQuery}`, id);
 									const exportedEntry = loaded[dep.name]!;
 									if (!exportedEntry) {
 										throw new Error(`Cannot resolve ${JSON.stringify(dep.name)} from ${JSON.stringify(dep.specifier)}`);
@@ -223,7 +227,7 @@ export const cssModules = (
 				const ms = new MagicString(outputCss);
 				await Promise.all(
 					references.map(async ([placeholder, source]) => {
-						const loaded = await loadExports(this, `${source.specifier}?.module.css`, id);
+						const loaded = await loadExports(this, `${source.specifier}${moduleCssQuery}`, id);
 						const exported = loaded[source.name];
 						if (!exported) {
 							throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);

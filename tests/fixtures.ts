@@ -374,3 +374,24 @@ export const moduleNamespace = Object.freeze({
 	}
 	`,
 });
+
+export const requestQuery = Object.freeze({
+	'index.js': outdent`
+	export * as style from './style.module.css?some-query';
+	`,
+
+	'style.module.css': outdent`
+	.class-name {
+		composes: util-class from './utils.css?another-query';
+	}
+	`,
+
+	'utils.css': outdent`
+	.util-class {
+		--name: 'foo';
+		color: blue;
+	}
+	`,
+
+	'postcss.config.js': postcssConfig,
+});

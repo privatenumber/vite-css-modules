@@ -732,7 +732,7 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
-				})).rejects.toThrow('[vite:css-modules] Cannot resolve "non-existent" from "./utils.css"');
+				})).rejects.toThrow('Cannot resolve "non-existent" from "./utils.css"');
 			});
 
 			test('exporting a non-safe class name via esm doesnt throw', async () => {
@@ -899,6 +899,19 @@ export default testSuite(({ describe }) => {
 					},
 				});
 			});
+		});
+
+		test('queries in requests should be preserved', async () => {
+			await using fixture = await createFixture(fixtures.requestQuery);
+			const { css } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+			expect(css).toMatch('style.module.css?some-query');
 		});
 	});
 });
