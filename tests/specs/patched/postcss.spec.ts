@@ -551,7 +551,10 @@ export default testSuite(({ describe }) => {
 				await using fixture = await createFixture(fixtures.composedAndFlat);
 
 				const { js } = await viteBuild(fixture.path, {
-					plugins: [patchCssModules({ composedClassesMode: 'string' })],
+					plugins: [patchCssModules({
+						composedClassesMode: 'string',
+						generateSourceTypes: true,
+					})],
 					build: {
 						target: 'es2022',
 					},
@@ -563,13 +566,19 @@ export default testSuite(({ describe }) => {
 						composed: expect.stringMatching(/_composed_\w+ _plain_\w+/),
 					},
 				});
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('const plain: string;');
+				expect(dts).toMatch('const composed: string;');
 			});
 
 			test('array', async () => {
 				await using fixture = await createFixture(fixtures.composedAndFlat);
 
 				const { js } = await viteBuild(fixture.path, {
-					plugins: [patchCssModules({ composedClassesMode: 'array' })],
+					plugins: [patchCssModules({
+						composedClassesMode: 'array',
+						generateSourceTypes: true,
+					})],
 					build: {
 						target: 'es2022',
 					},
@@ -581,13 +590,19 @@ export default testSuite(({ describe }) => {
 						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
 					},
 				});
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('const plain: string;');
+				expect(dts).toMatch('const composed: string[];');
 			});
 
 			test('all-array', async () => {
 				await using fixture = await createFixture(fixtures.composedAndFlat);
 
 				const { js } = await viteBuild(fixture.path, {
-					plugins: [patchCssModules({ composedClassesMode: 'all-array' })],
+					plugins: [patchCssModules({
+						composedClassesMode: 'all-array',
+						generateSourceTypes: true,
+					})],
 					build: {
 						target: 'es2022',
 					},
@@ -599,6 +614,9 @@ export default testSuite(({ describe }) => {
 						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
 					},
 				});
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('const plain: string[];');
+				expect(dts).toMatch('const composed: string[];');
 			});
 		});
 
