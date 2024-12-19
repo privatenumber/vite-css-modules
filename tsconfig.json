@@ -1,13 +1,15 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"lib": ["ESNext", "DOM"],
+		"lib": ["ESNext"],
+		"moduleDetection": "force",
 		"module": "Preserve",
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"noEmit": true,
 		"esModuleInterop": true,
-		"isolatedModules": true,
-		"skipLibCheck": true
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
 	},
+	"exclude": ["dist"]
 }
