@@ -318,7 +318,7 @@ export const cssModules = (
 					if (fileExists) {
 						await writeFile(
 							`${id}.d.ts`,
-							generateTypes(exports, allowArbitraryNamedExports),
+							generateTypes(exports, composedClassesMode, allowArbitraryNamedExports),
 						);
 					}
 				}
