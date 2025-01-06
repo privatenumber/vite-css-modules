@@ -46,7 +46,7 @@ const supportNewCssModules = (
 
 	viteCssPostPlugin.transform = async function (jsCode, id, options) {
 		if (cssModuleRE.test(id)) {
-			if (this.environment.name === 'dev') {
+			if (this.environment?.name === 'dev') {
 				(this.environment as DevEnvironment).pluginContainer.watcher?.add(path.resolve(id));
 			}
 			const inlined = inlineRE.test(id);
