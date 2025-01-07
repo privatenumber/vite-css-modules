@@ -1,5 +1,5 @@
 import path from 'path';
-import { DevEnvironment, type Plugin, type ServerHook } from 'vite';
+import type { Plugin, ServerHook } from 'vite';
 import type { SourceMap } from 'rollup';
 import { cssModules, cssModuleRE, type PatchConfig } from './plugin/index.js';
 import type { PluginMeta } from './plugin/types.js';
@@ -46,8 +46,8 @@ const supportNewCssModules = (
 
 	viteCssPostPlugin.transform = async function (jsCode, id, options) {
 		if (cssModuleRE.test(id)) {
-			if (this.environment?.name === 'dev') {
-				(this.environment as DevEnvironment).pluginContainer.watcher?.add(path.resolve(id));
+			if (this.environment?.mode === 'dev') {
+				this.environment.pluginContainer.watcher?.add(path.resolve(id));
 			}
 			const inlined = inlineRE.test(id);
 			const info = this.getModuleInfo(id)!;
