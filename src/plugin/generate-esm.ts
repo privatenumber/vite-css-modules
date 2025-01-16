@@ -152,31 +152,37 @@ export const generateTypes = (
 		},
 	);
 
-	const namedExports = `export {\n${
-		exportedVariables
-			.map(
-				([jsVariable, exportName]) => (
-					jsVariable === exportName
-						? `\t${jsVariable}`
-						: (
-							exportName[0] !== '"' || allowArbitraryNamedExports
-								? `\t${jsVariable} as ${exportName}`
-								: ''
-						)
-				),
-			)
-			.filter(Boolean)
-			.join(',\n')
-	}\n};`;
+	const prepareNamedExports = exportedVariables.map(
+		([jsVariable, exportName]) => (
+			jsVariable === exportName
+				? `\t${jsVariable}`
+				: (
+					exportName[0] !== '"' || allowArbitraryNamedExports
+						? `\t${jsVariable} as ${exportName}`
+						: ''
+				)
+		),
+	).filter(Boolean);
 
-	const defaultExports = `export default {\n${
-		exportedVariables.map(
-			([jsVariable, exportName]) => `\t${
-				jsVariable === exportName
-					? jsVariable
-					: `${exportName}: ${jsVariable}`}`,
-		).join(',\n')
-	}\n}`;
-
-	return `${dtsComment}\n${Array.from(variables).join('\n')}\n\n${namedExports}\n\n${defaultExports}\n`;
+	return `${[
+		dtsComment,
+		...Array.from(variables),
+		(
+			prepareNamedExports.length > 0
+				? `export {\n${prepareNamedExports.join(',\n')}\n};`
+				: ''
+		),
+		(
+			exportedVariables.length > 0
+				? `export default {\n${
+					exportedVariables.map(
+						([jsVariable, exportName]) => `\t${
+							jsVariable === exportName
+								? jsVariable
+								: `${exportName}: ${jsVariable}`}`,
+					).join(',\n')
+				}\n}`
+				: ''
+		),
+	].filter(Boolean).join('\n')}\n`;
 };

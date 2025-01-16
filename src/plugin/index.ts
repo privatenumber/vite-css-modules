@@ -89,6 +89,8 @@ export const cssModules = (
 
 	const exportMode = patchConfig?.exportMode ?? 'both';
 
+	let isVitest = false;
+
 	return {
 		name: pluginName,
 		buildStart: async () => {
@@ -111,6 +113,25 @@ export const cssModules = (
 		async transform(inputCss, id) {
 			if (!filter(id)) {
 				return;
+			}
+
+			/**
+			 * Handle Vitest disabling CSS
+			 * https://github.com/vitest-dev/vitest/blob/v2.1.8/packages/vitest/src/node/plugins/cssEnabler.ts#L55-L68
+			 */
+			if (inputCss === '') {
+				if (!isVitest) {
+					const checkVitest = config.plugins.some(plugin => plugin.name === 'vitest:css-disable');
+					if (checkVitest) {
+						isVitest = true;
+					}
+				}
+				if (isVitest) {
+					return {
+						code: 'export default {};',
+						map: null,
+					};
+				}
 			}
 
 			const cssModule = transform(
