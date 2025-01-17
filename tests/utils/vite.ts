@@ -106,7 +106,7 @@ const viteServe = async <T>(
 		envFile: false,
 		logLevel: 'error',
 		server: {
-			port: 9999,
+			port: 0,
 		},
 		...viteConfig,
 	});
