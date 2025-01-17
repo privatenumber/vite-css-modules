@@ -262,7 +262,7 @@ export default testSuite(({ describe }) => {
 			test('devSourcemap with Vue.js', async () => {
 				await using fixture = await createFixture({
 					...fixtures.vue,
-					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules'), 'dir'),
 				});
 
 				const code = await getViteDevCode(fixture.path, {
