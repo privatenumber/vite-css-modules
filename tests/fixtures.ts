@@ -1,5 +1,9 @@
 import outdent from 'outdent';
 
+const random255 = () => Math.floor(Math.random() * 256);
+
+export const newRgb = () => `rgb(${random255()}, ${random255()}, ${random255()})`;
+
 export const emptyCssModule = Object.freeze({
 	'index.js': outdent`
 	export * from './style.module.css';
@@ -412,4 +416,28 @@ export const viteDev = Object.freeze({
 	</div>
 	\`;
 	`,
+});
+
+export const viteDevOutsideRoot = Object.freeze({
+	...multiCssModules,
+	'nested-dir': {
+		'index.html': `
+		<!DOCTYPE html>
+		<html>
+			<body>
+				<div id="app"></div>
+				<script type="module" src="/main.js"></script>
+			</body>
+		</html>
+		`,
+		'main.js': `
+		import style from '../style1.module.css';
+
+		document.querySelector('#app').innerHTML =\`
+		<div id="myText" class="\${style.className1}">
+			Hello world
+		</div>
+		\`;
+		`,
+	},
 });

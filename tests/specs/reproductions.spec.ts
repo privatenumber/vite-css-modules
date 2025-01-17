@@ -1,11 +1,12 @@
 import path from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../utils/base64-module.js';
 import * as fixtures from '../fixtures.js';
-import { viteBuild, getViteDevCode } from '../utils/vite.js';
+import { viteBuild, getViteDevCode, viteDevBrowser } from '../utils/vite.js';
 import { getCssSourceMaps } from '../utils/get-css-source-maps.js';
 
 export default testSuite(({ describe }) => {
@@ -323,6 +324,52 @@ export default testSuite(({ describe }) => {
 					});
 				});
 			});
+
+			test('hmr should work inside of root', async () => {
+				await using fixture = await createFixture(fixtures.viteDev);
+
+				await viteDevBrowser(
+					fixture.path,
+					{},
+					async (page, server) => {
+						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorBefore).toBe('rgb(255, 0, 0)');
+
+						const newColor = fixtures.newRgb();
+						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
+						fixture.writeFile('style1.module.css', newFile);
+
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
+						await setTimeout(1000);
+
+						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorAfter).toBe(newColor);
+					},
+				);
+			}, 10_000);
+
+			test('hmr should work outside of root', async () => {
+				await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
+
+				await viteDevBrowser(
+					fixture.getPath('nested-dir'),
+					{},
+					async (page, server) => {
+						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorBefore).toBe('rgb(255, 0, 0)');
+
+						const newColor = fixtures.newRgb();
+						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
+						fixture.writeFile('style1.module.css', newFile);
+
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
+						await setTimeout(1000);
+
+						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorAfter).toBe(newColor);
+					},
+				);
+			}, 10_000);
 		});
 
 		describe('LightningCSS', ({ describe, test }) => {
@@ -452,6 +499,60 @@ export default testSuite(({ describe }) => {
 					},
 				]);
 			});
+
+			test('hmr should work inside of root', async () => {
+				await using fixture = await createFixture(fixtures.viteDev);
+
+				await viteDevBrowser(
+					fixture.path,
+					{
+						css: {
+							transformer: 'lightningcss',
+						},
+					},
+					async (page, server) => {
+						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorBefore).toBe('rgb(255, 0, 0)');
+
+						const newColor = fixtures.newRgb();
+						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
+						fixture.writeFile('style1.module.css', newFile);
+
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
+						await setTimeout(1000);
+
+						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorAfter).toBe(newColor);
+					},
+				);
+			}, 10_000);
+
+			test('hmr should work outside of root', async () => {
+				await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
+
+				await viteDevBrowser(
+					fixture.getPath('nested-dir'),
+					{
+						css: {
+							transformer: 'lightningcss',
+						},
+					},
+					async (page, server) => {
+						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorBefore).toBe('rgb(255, 0, 0)');
+
+						const newColor = fixtures.newRgb();
+						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
+						fixture.writeFile('style1.module.css', newFile);
+
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
+						await setTimeout(1000);
+
+						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
+						expect(textColorAfter).toBe(newColor);
+					},
+				);
+			}, 10_000);
 		});
 	});
 });
