@@ -1,5 +1,9 @@
 import outdent from 'outdent';
 
+const random255 = () => Math.floor(Math.random() * 256);
+
+export const newRgb = () => `rgb(${random255()}, ${random255()}, ${random255()})`;
+
 export const emptyCssModule = Object.freeze({
 	'index.js': outdent`
 	export * from './style.module.css';
