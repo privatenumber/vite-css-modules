@@ -46,9 +46,6 @@ const supportNewCssModules = (
 
 	viteCssPostPlugin.transform = async function (jsCode, id, options) {
 		if (cssModuleRE.test(id)) {
-			if (this.environment?.mode === 'dev') {
-				this.environment.pluginContainer.watcher?.add(path.resolve(id));
-			}
 			const inlined = inlineRE.test(id);
 			const info = this.getModuleInfo(id)!;
 			const pluginMeta = info.meta[pluginInstance.name] as PluginMeta | undefined;
