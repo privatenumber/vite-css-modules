@@ -551,6 +551,9 @@ export default testSuite(({ describe }) => {
 					plugins: [
 						patchCssModules(),
 					],
+					css: {
+						transformer: 'lightningcss',
+					},
 				},
 				async (page) => {
 					const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
