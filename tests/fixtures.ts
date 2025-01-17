@@ -74,8 +74,6 @@ export const multiCssModules = Object.freeze({
 		color: green;
 	}
 	`,
-
-	...postcssLogFile,
 });
 
 export const reservedKeywords = Object.freeze({
@@ -104,8 +102,6 @@ export const reservedKeywords = Object.freeze({
 		color: yellow;
 	}
 	`,
-
-	...postcssLogFile,
 });
 
 export const exportModeBoth = Object.freeze({
@@ -126,8 +122,6 @@ export const exportModeBoth = Object.freeze({
 		color: blue;
 	}
 	`,
-
-	...postcssLogFile,
 });
 
 export const defaultAsName = Object.freeze({
@@ -148,8 +142,6 @@ export const defaultAsName = Object.freeze({
 		color: blue;
 	}
 	`,
-
-	...postcssLogFile,
 });
 
 export const cssModulesValues = Object.freeze({

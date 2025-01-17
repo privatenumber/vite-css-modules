@@ -1,4 +1,5 @@
 import { readdir } from 'node:fs/promises';
+import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import vitePluginVue from '@vitejs/plugin-vue';
@@ -13,7 +14,10 @@ export default testSuite(({ describe }) => {
 	describe('PostCSS', ({ test, describe }) => {
 		describe('no config', ({ test }) => {
 			test('build', async () => {
-				await using fixture = await createFixture(fixtures.multiCssModules);
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+				});
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
@@ -155,7 +159,11 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('dev server', async () => {
-				await using fixture = await createFixture(fixtures.multiCssModules);
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(
 					fixture.path,
@@ -182,7 +190,10 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap', async () => {
-				await using fixture = await createFixture(fixtures.cssModulesValues);
+				await using fixture = await createFixture({
+					...fixtures.cssModulesValues,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(
 					fixture.path,
@@ -261,7 +272,10 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap with Vue.js', async () => {
-				await using fixture = await createFixture(fixtures.vue);
+				await using fixture = await createFixture({
+					...fixtures.vue,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(fixture.path, {
 					plugins: [
@@ -325,7 +339,10 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('PostCSS configured', async () => {
-			await using fixture = await createFixture(fixtures.multiCssModules);
+			await using fixture = await createFixture({
+				...fixtures.multiCssModules,
+				...fixtures.postcssLogFile,
+			});
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
@@ -698,7 +715,10 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('dev server', async () => {
-				await using fixture = await createFixture(fixtures.cssModulesValues);
+				await using fixture = await createFixture({
+					...fixtures.cssModulesValues,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(fixture.path, {
 					plugins: [
@@ -766,18 +786,15 @@ export default testSuite(({ describe }) => {
 						},
 					},
 				});
-
 				const files = await readdir(fixture.path);
 				expect(files).toStrictEqual([
 					'dist',
 					'index.js',
 					'node_modules',
-					'postcss.config.js',
 					'style.module.css',
 					'style.module.css.d.ts',
 					'utils.css',
 				]);
-
 				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				expect(dts).toMatch('const _import: string');
 				expect(dts).toMatch('_import as "import"');
@@ -788,7 +805,6 @@ export default testSuite(({ describe }) => {
 					'index.js': 'export * as style from \'./style.module.css\';',
 					'style.module.css': '',
 				});
-
 				await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
@@ -804,7 +820,6 @@ export default testSuite(({ describe }) => {
 						},
 					},
 				});
-
 				const files = await readdir(fixture.path);
 				expect(files).toStrictEqual([
 					'dist',
@@ -813,7 +828,6 @@ export default testSuite(({ describe }) => {
 					'style.module.css',
 					'style.module.css.d.ts',
 				]);
-
 				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				expect(dts).toBe(
 					outdent`

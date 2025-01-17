@@ -123,15 +123,8 @@ const viteServe = async <T>(
 export const getViteDevCode = async (
 	fixturePath: string,
 	config?: InlineConfig,
-) => {
-	await fs.symlink(
-		path.resolve('node_modules'),
-		path.join(fixturePath, 'node_modules'),
-	);
-
-	return await viteServe(
-		fixturePath,
-		config,
-		url => bundleHttpJs(url, `@fs${fixturePath}/index.js`),
-	);
-};
+) => await viteServe(
+	fixturePath,
+	config,
+	url => bundleHttpJs(url, `@fs${fixturePath}/index.js`),
+);

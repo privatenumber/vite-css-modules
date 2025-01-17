@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
@@ -11,7 +12,10 @@ export default testSuite(({ describe }) => {
 	describe('reproductions', ({ describe }) => {
 		describe('postcss (no config)', ({ test, describe }) => {
 			test('build', async () => {
-				await using fixture = await createFixture(fixtures.multiCssModules);
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+				});
 
 				const { js, css } = await viteBuild(fixture.path);
 				const exported = await import(base64Module(js));
@@ -55,7 +59,11 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('dev server', async () => {
-				await using fixture = await createFixture(fixtures.multiCssModules);
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(fixture.path);
 
@@ -76,7 +84,10 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap', async () => {
-				await using fixture = await createFixture(fixtures.cssModulesValues);
+				await using fixture = await createFixture({
+					...fixtures.cssModulesValues,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(fixture.path, {
 					css: {
@@ -116,7 +127,10 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap with Vue.js', async () => {
-				await using fixture = await createFixture(fixtures.vue);
+				await using fixture = await createFixture({
+					...fixtures.vue,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(fixture.path, {
 					plugins: [
@@ -157,7 +171,10 @@ export default testSuite(({ describe }) => {
 
 			// https://github.com/vitejs/vite/issues/10340
 			test('mixed css + scss types doesnt build', async () => {
-				await using fixture = await createFixture(fixtures.mixedScssModules);
+				await using fixture = await createFixture({
+					...fixtures.mixedScssModules,
+					...fixtures.postcssLogFile,
+				});
 
 				let error: CssSyntaxError | undefined;
 				process.once('unhandledRejection', (reason) => {

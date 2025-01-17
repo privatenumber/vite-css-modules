@@ -1,4 +1,5 @@
 import { readdir } from 'node:fs/promises';
+import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import { Features } from 'lightningcss';
@@ -258,7 +259,10 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap with Vue.js', async () => {
-				await using fixture = await createFixture(fixtures.vue);
+				await using fixture = await createFixture({
+					...fixtures.vue,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
 				const code = await getViteDevCode(fixture.path, {
 					plugins: [
@@ -347,7 +351,6 @@ export default testSuite(({ describe }) => {
 				'dist',
 				'index.js',
 				'node_modules',
-				'postcss.config.js',
 				'style.module.css',
 				'style.module.css.d.ts',
 				'utils.css',
