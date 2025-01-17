@@ -12,6 +12,7 @@ export const viteBuild = async (
 		await fs.symlink(
 			path.resolve('node_modules'),
 			path.join(fixturePath, 'node_modules'),
+			'dir',
 		);
 	} catch {}
 
