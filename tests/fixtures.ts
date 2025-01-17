@@ -29,6 +29,10 @@ module.exports = {
 };
 `;
 
+export const postcssLogFile = Object.freeze({
+	'postcss.config.js': postcssConfig,
+});
+
 export const multiCssModules = Object.freeze({
 	'index.js': outdent`
 	export * as style1 from './style1.module.css';
@@ -71,7 +75,7 @@ export const multiCssModules = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const reservedKeywords = Object.freeze({
@@ -101,7 +105,7 @@ export const reservedKeywords = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const exportModeBoth = Object.freeze({
@@ -123,7 +127,7 @@ export const exportModeBoth = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const defaultAsName = Object.freeze({
@@ -145,7 +149,7 @@ export const defaultAsName = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const cssModulesValues = Object.freeze({
@@ -185,7 +189,7 @@ export const cssModulesValues = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const lightningCustomPropertiesFrom = Object.freeze({
@@ -244,7 +248,7 @@ export const scssModules = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const mixedScssModules = Object.freeze({
@@ -269,7 +273,7 @@ export const mixedScssModules = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const inlineCssModules = Object.freeze({
@@ -296,7 +300,7 @@ export const inlineCssModules = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const globalModule = Object.freeze({
@@ -360,7 +364,7 @@ export const vue = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const moduleNamespace = Object.freeze({
@@ -393,5 +397,5 @@ export const requestQuery = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
