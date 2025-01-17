@@ -541,5 +541,30 @@ export default testSuite(({ describe }) => {
 				},
 			);
 		});
+
+		test('hmr outside root', async () => {
+			await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
+
+			await viteDevBrowser(
+				path.join(fixture.path, 'src'),
+				{
+					plugins: [
+						patchCssModules(),
+					],
+				},
+				async (page) => {
+					const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
+					expect(textColorBefore).toBe('rgb(255, 0, 0)');
+
+					const newFile = fixtures.viteDev['style1.module.css'].replace('red', 'blue');
+					await fixture.writeFile('style1.module.css', newFile);
+
+					await setTimeout(1000);
+
+					const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
+					expect(textColorAfter).toBe('rgb(0, 0, 255)');
+				},
+			);
+		});
 	});
 });
