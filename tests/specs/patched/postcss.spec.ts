@@ -1017,7 +1017,7 @@ export default testSuite(({ describe }) => {
 					const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
 					expect(textColorBefore).toBe('rgb(255, 0, 0)');
 
-					const newFile = fixtures.viteDev['style1.module.css'].replace('red', 'blue');
+					const newFile = fixtures.viteDevOutsideRoot['style1.module.css'].replace('red', 'blue');
 					await fixture.writeFile('style1.module.css', newFile);
 
 					await setTimeout(1000);
