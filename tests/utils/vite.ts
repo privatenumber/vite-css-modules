@@ -114,11 +114,12 @@ const viteServe = async <T>(
 	await server.listen();
 
 	const url = server.resolvedUrls!.local[0]!;
-	const result = await callback(url);
 
-	await server.close();
-
-	return result;
+	try {
+		return await callback(url);
+	} finally {
+		await server.close();
+	}
 };
 
 export const getViteDevCode = async (
@@ -139,15 +140,15 @@ export const viteDevBrowser = async (
 		fixturePath,
 		viteConfig,
 		async (url) => {
-			const browser = await chromium.launch({ headless: true });
-			const context = await browser.newContext();
-			const page = await context.newPage();
+			const browser = await chromium.launch();
+			const page = await browser.newPage();
 
-			await page.goto(url);
-
-			await callback(page);
-
-			await browser.close();
+			try {
+				await page.goto(url);
+				await callback(page);
+			} finally {
+				await browser.close();
+			}
 		},
 	);
 };
