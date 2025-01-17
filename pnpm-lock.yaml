@@ -84,6 +84,9 @@ importers:
       pkgroll:
         specifier: ^2.5.1
         version: 2.5.1(typescript@5.7.2)
+      playwright-chromium:
+        specifier: ^1.49.1
+        version: 1.49.1
       postcss:
         specifier: ^8.4.49
         version: 8.4.49
@@ -2461,6 +2464,16 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  playwright-chromium@1.49.1:
+    resolution: {integrity: sha512-XAQDkZ1Eem1OONhfS8B2LM2mgHG/i5jIxooxjvqjbF/9GnLnRTJHdQamNjo1e4FZvt7J0BFD/15+qAcT0eKlfA==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright-core@1.49.1:
+    resolution: {integrity: sha512-BzmpVcs4kE2CH15rWfzpjzVGhWERJfmnXmniSyKeRZUs9Ws65m+RGIi7mjJK/euCegfn3i7jvqWeWyHe9y3Vgg==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
@@ -5453,6 +5466,12 @@ snapshots:
       rollup: 4.28.1
     optionalDependencies:
       typescript: 5.7.2
+
+  playwright-chromium@1.49.1:
+    dependencies:
+      playwright-core: 1.49.1
+
+  playwright-core@1.49.1: {}
 
   pluralize@8.0.0: {}
 

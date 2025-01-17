@@ -391,3 +391,25 @@ export const requestQuery = Object.freeze({
 
 	...postcssLogFile,
 });
+
+export const viteDev = Object.freeze({
+	...multiCssModules,
+	'index.html': `
+	<!DOCTYPE html>
+	<html>
+		<body>
+			<div id="app"></div>
+			<script type="module" src="/main.js"></script>
+		</body>
+	</html>
+	`,
+	'main.js': `
+	import style from './style1.module.css';
+
+	document.querySelector('#app').innerHTML =\`
+	<div id="myText" class="\${style.className1}">
+		Hello world
+	</div>
+	\`;
+	`,
+});

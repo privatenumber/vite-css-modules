@@ -1,12 +1,13 @@
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import { Features } from 'lightningcss';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
-import { viteBuild, getViteDevCode } from '../../utils/vite.js';
+import { viteBuild, getViteDevCode, viteDevBrowser } from '../../utils/vite.js';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
 import { patchCssModules } from '#vite-css-modules';
 
@@ -511,6 +512,34 @@ export default testSuite(({ describe }) => {
 				},
 			});
 			expect(css).toMatch('style.module.css?some-query');
+		});
+
+		test('hmr', async () => {
+			await using fixture = await createFixture(fixtures.viteDev);
+
+			await viteDevBrowser(
+				fixture.path,
+				{
+					plugins: [
+						patchCssModules(),
+					],
+					css: {
+						transformer: 'lightningcss',
+					},
+				},
+				async (page) => {
+					const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
+					expect(textColorBefore).toBe('rgb(255, 0, 0)');
+
+					const newFile = fixtures.viteDev['style1.module.css'].replace('red', 'blue');
+					await fixture.writeFile('style1.module.css', newFile);
+
+					await setTimeout(1000);
+
+					const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
+					expect(textColorAfter).toBe('rgb(0, 0, 255)');
+				},
+			);
 		});
 	});
 });

@@ -137,8 +137,11 @@ const supportCssModulesHMR = (
 	const tag = '?vite-css-modules?inline';
 
 	viteCssAnalysisPlugin.configureServer = function (server) {
-		const { getModuleById } = server.moduleGraph;
-		server.moduleGraph.getModuleById = function (id: string) {
+		const moduleGraph = server.environments
+			? server.environments.client.moduleGraph
+			: server.moduleGraph;
+		const { getModuleById } = moduleGraph;
+		moduleGraph.getModuleById = function (id: string) {
 			const tagIndex = id.indexOf(tag);
 			if (tagIndex !== -1) {
 				id = id.slice(0, tagIndex) + id.slice(tagIndex + tag.length);

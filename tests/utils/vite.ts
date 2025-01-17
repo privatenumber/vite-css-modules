@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { build, createServer, type InlineConfig } from 'vite';
 import { rollup } from 'rollup';
+import { chromium, type Page } from 'playwright-chromium';
 
 export const viteBuild = async (
 	fixturePath: string,
@@ -128,3 +129,25 @@ export const getViteDevCode = async (
 	config,
 	url => bundleHttpJs(url, `@fs${fixturePath}/index.js`),
 );
+
+export const viteDevBrowser = async (
+	fixturePath: string,
+	viteConfig: InlineConfig,
+	callback: (page: Page) => Promise<void>,
+) => {
+	await viteServe(
+		fixturePath,
+		viteConfig,
+		async (url) => {
+			const browser = await chromium.launch({ headless: true });
+			const context = await browser.newContext();
+			const page = await context.newPage();
+
+			await page.goto(url);
+
+			await callback(page);
+
+			await browser.close();
+		},
+	);
+};
