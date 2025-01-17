@@ -435,5 +435,5 @@ export const viteDevOutsideRoot = Object.freeze({
 		</div>
 		\`;
 		`,
-	}
+	},
 });
