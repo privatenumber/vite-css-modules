@@ -51,7 +51,8 @@ const supportNewCssModules = (
 			const info = this.getModuleInfo(id)!;
 			const pluginMeta = info.meta[pluginInstance.name] as PluginMeta | undefined;
 			if (!pluginMeta) {
-				throw new Error(`${pluginInstance.name} meta not found`);
+				// In Vitest, CSS gets disabled
+				return Reflect.apply(viteCssPostPluginTransform, this, arguments);
 			}
 
 			let { css } = pluginMeta;

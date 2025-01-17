@@ -166,7 +166,7 @@ export const generateTypes = (
 
 	return `${[
 		dtsComment,
-		...Array.from(variables),
+		Array.from(variables).join('\n'),
 		(
 			prepareNamedExports.length > 0
 				? `export {\n${prepareNamedExports.join(',\n')}\n};`
@@ -181,8 +181,8 @@ export const generateTypes = (
 								? jsVariable
 								: `${exportName}: ${jsVariable}`}`,
 					).join(',\n')
-				}\n}`
+				}\n};`
 				: ''
 		),
-	].filter(Boolean).join('\n')}\n`;
+	].filter(Boolean).join('\n\n')}\n`;
 };
