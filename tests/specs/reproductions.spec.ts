@@ -331,21 +331,22 @@ export default testSuite(({ describe }) => {
 				await viteDevBrowser(
 					fixture.path,
 					{},
-					async (page) => {
+					async (page, server) => {
 						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorBefore).toBe('rgb(255, 0, 0)');
 
 						const newColor = fixtures.newRgb();
 						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
-						await fixture.writeFile('style1.module.css', newFile);
+						fixture.writeFile('style1.module.css', newFile);
 
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
 						await setTimeout(1000);
 
 						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorAfter).toBe(newColor);
 					},
 				);
-			});
+			}, 10_000);
 
 			test('hmr should work outside of root', async () => {
 				await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
@@ -353,21 +354,22 @@ export default testSuite(({ describe }) => {
 				await viteDevBrowser(
 					fixture.getPath('nested-dir'),
 					{},
-					async (page) => {
+					async (page, server) => {
 						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorBefore).toBe('rgb(255, 0, 0)');
 
 						const newColor = fixtures.newRgb();
 						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
-						await fixture.writeFile('style1.module.css', newFile);
+						fixture.writeFile('style1.module.css', newFile);
 
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
 						await setTimeout(1000);
 
 						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorAfter).toBe(newColor);
 					},
 				);
-			});
+			}, 10_000);
 		});
 
 		describe('LightningCSS', ({ describe, test }) => {
@@ -508,21 +510,22 @@ export default testSuite(({ describe }) => {
 							transformer: 'lightningcss',
 						},
 					},
-					async (page) => {
+					async (page, server) => {
 						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorBefore).toBe('rgb(255, 0, 0)');
 
 						const newColor = fixtures.newRgb();
 						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
-						await fixture.writeFile('style1.module.css', newFile);
+						fixture.writeFile('style1.module.css', newFile);
 
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
 						await setTimeout(1000);
 
 						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorAfter).toBe(newColor);
 					},
 				);
-			});
+			}, 10_000);
 
 			test('hmr should work outside of root', async () => {
 				await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
@@ -534,21 +537,22 @@ export default testSuite(({ describe }) => {
 							transformer: 'lightningcss',
 						},
 					},
-					async (page) => {
+					async (page, server) => {
 						const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorBefore).toBe('rgb(255, 0, 0)');
 
 						const newColor = fixtures.newRgb();
 						const newFile = fixtures.viteDev['style1.module.css'].replace('red', newColor);
-						await fixture.writeFile('style1.module.css', newFile);
+						fixture.writeFile('style1.module.css', newFile);
 
+						await new Promise((resolve) => { server.watcher.once('change', resolve); });
 						await setTimeout(1000);
 
 						const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 						expect(textColorAfter).toBe(newColor);
 					},
 				);
-			});
+			}, 10_000);
 		});
 	});
 });

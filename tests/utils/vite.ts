@@ -1,6 +1,8 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { build, createServer, type InlineConfig } from 'vite';
+import {
+	build, createServer, type InlineConfig, type ViteDevServer,
+} from 'vite';
 import { rollup } from 'rollup';
 import { chromium, type Page } from 'playwright-chromium';
 
@@ -97,7 +99,7 @@ const bundleHttpJs = async (
 const viteServe = async <T>(
 	fixturePath: string,
 	viteConfig: InlineConfig | undefined,
-	callback: (url: string) => Promise<T>,
+	callback: (url: string, server: ViteDevServer) => Promise<T>,
 ): Promise<T> => {
 	// This adds a SIGTERM listener to process, which emits a memory leak warning
 	const server = await createServer({
@@ -116,7 +118,7 @@ const viteServe = async <T>(
 	const url = server.resolvedUrls!.local[0]!;
 
 	try {
-		return await callback(url);
+		return await callback(url, server);
 	} finally {
 		await server.close();
 	}
@@ -134,18 +136,18 @@ export const getViteDevCode = async (
 export const viteDevBrowser = async (
 	fixturePath: string,
 	viteConfig: InlineConfig,
-	callback: (page: Page) => Promise<void>,
+	callback: (page: Page, server: ViteDevServer) => Promise<void>,
 ) => {
 	await viteServe(
 		fixturePath,
 		viteConfig,
-		async (url) => {
+		async (url, server) => {
 			const browser = await chromium.launch();
 			const page = await browser.newPage();
 
 			try {
 				await page.goto(url);
-				await callback(page);
+				await callback(page, server);
 			} finally {
 				await browser.close();
 			}
