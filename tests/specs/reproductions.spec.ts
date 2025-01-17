@@ -4,7 +4,7 @@ import type { CssSyntaxError } from 'postcss';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../utils/base64-module.js';
 import * as fixtures from '../fixtures.js';
-import { viteBuild, viteServe } from '../utils/vite.js';
+import { viteBuild, getViteDevCode } from '../utils/vite.js';
 import { getCssSourceMaps } from '../utils/get-css-source-maps.js';
 
 export default testSuite(({ describe }) => {
@@ -57,7 +57,7 @@ export default testSuite(({ describe }) => {
 			test('dev server', async () => {
 				await using fixture = await createFixture(fixtures.multiCssModules);
 
-				const code = await viteServe(fixture.path);
+				const code = await getViteDevCode(fixture.path);
 
 				const cssSourcemaps = getCssSourceMaps(code);
 				expect(cssSourcemaps.length).toBe(0);
@@ -78,7 +78,7 @@ export default testSuite(({ describe }) => {
 			test('devSourcemap', async () => {
 				await using fixture = await createFixture(fixtures.cssModulesValues);
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					css: {
 						devSourcemap: true,
 					},
@@ -118,7 +118,7 @@ export default testSuite(({ describe }) => {
 			test('devSourcemap with Vue.js', async () => {
 				await using fixture = await createFixture(fixtures.vue);
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					plugins: [
 						vitePluginVue(),
 					],
@@ -344,7 +344,7 @@ export default testSuite(({ describe }) => {
 				test('dev server', async () => {
 					await using fixture = await createFixture(fixtures.multiCssModules);
 
-					const code = await viteServe(fixture.path, {
+					const code = await getViteDevCode(fixture.path, {
 						css: {
 							transformer: 'lightningcss',
 						},
@@ -383,7 +383,7 @@ export default testSuite(({ describe }) => {
 			test('devSourcemap', async () => {
 				await using fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					css: {
 						transformer: 'lightningcss',
 						devSourcemap: true,

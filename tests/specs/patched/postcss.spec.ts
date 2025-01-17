@@ -5,7 +5,7 @@ import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
-import { viteBuild, viteServe } from '../../utils/vite.js';
+import { viteBuild, getViteDevCode } from '../../utils/vite.js';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
 import { patchCssModules } from '#vite-css-modules';
 
@@ -157,7 +157,7 @@ export default testSuite(({ describe }) => {
 			test('dev server', async () => {
 				await using fixture = await createFixture(fixtures.multiCssModules);
 
-				const code = await viteServe(
+				const code = await getViteDevCode(
 					fixture.path,
 					{
 						plugins: [
@@ -184,7 +184,7 @@ export default testSuite(({ describe }) => {
 			test('devSourcemap', async () => {
 				await using fixture = await createFixture(fixtures.cssModulesValues);
 
-				const code = await viteServe(
+				const code = await getViteDevCode(
 					fixture.path,
 					{
 						plugins: [
@@ -263,7 +263,7 @@ export default testSuite(({ describe }) => {
 			test('devSourcemap with Vue.js', async () => {
 				await using fixture = await createFixture(fixtures.vue);
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					plugins: [
 						patchCssModules(),
 						vitePluginVue(),
@@ -700,7 +700,7 @@ export default testSuite(({ describe }) => {
 			test('dev server', async () => {
 				await using fixture = await createFixture(fixtures.cssModulesValues);
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					plugins: [
 						patchCssModules(),
 					],

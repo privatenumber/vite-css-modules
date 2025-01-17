@@ -61,7 +61,7 @@ export const viteBuild = async (
 	};
 };
 
-const collectJsFromHttp = async (
+const bundleHttpJs = async (
 	baseUrl: string,
 	input: string,
 ) => {
@@ -93,15 +93,11 @@ const collectJsFromHttp = async (
 	return generated.output[0].code;
 };
 
-export const viteServe = async (
+const viteServe = async <T>(
 	fixturePath: string,
-	config?: InlineConfig,
-) => {
-	await fs.symlink(
-		path.resolve('node_modules'),
-		path.join(fixturePath, 'node_modules'),
-	);
-
+	viteConfig: InlineConfig | undefined,
+	callback: (url: string) => Promise<T>,
+): Promise<T> => {
 	// This adds a SIGTERM listener to process, which emits a memory leak warning
 	const server = await createServer({
 		root: fixturePath,
@@ -111,15 +107,31 @@ export const viteServe = async (
 		server: {
 			port: 9999,
 		},
-		...config,
+		...viteConfig,
 	});
 
 	await server.listen();
 
 	const url = server.resolvedUrls!.local[0]!;
-	const code = await collectJsFromHttp(url, `@fs${fixturePath}/index.js`);
+	const result = await callback(url);
 
 	await server.close();
 
-	return code;
+	return result;
+};
+
+export const getViteDevCode = async (
+	fixturePath: string,
+	config?: InlineConfig,
+) => {
+	await fs.symlink(
+		path.resolve('node_modules'),
+		path.join(fixturePath, 'node_modules'),
+	);
+
+	return await viteServe(
+		fixturePath,
+		config,
+		url => bundleHttpJs(url, `@fs${fixturePath}/index.js`),
+	);
 };
