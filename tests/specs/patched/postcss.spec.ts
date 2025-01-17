@@ -1007,7 +1007,7 @@ export default testSuite(({ describe }) => {
 			await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
 
 			await viteDevBrowser(
-				path.join(fixture.path, 'src'),
+				path.join(fixture.path, 'nested-dir'),
 				{
 					plugins: [
 						patchCssModules(),
