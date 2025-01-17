@@ -792,7 +792,6 @@ export default testSuite(({ describe }) => {
 					'dist',
 					'index.js',
 					'node_modules',
-					'postcss.config.js',
 					'style.module.css',
 					'style.module.css.d.ts',
 					'utils.css',
