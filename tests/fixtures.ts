@@ -29,6 +29,10 @@ module.exports = {
 };
 `;
 
+export const postcssLogFile = Object.freeze({
+	'postcss.config.js': postcssConfig,
+});
+
 export const multiCssModules = Object.freeze({
 	'index.js': outdent`
 	export * as style1 from './style1.module.css';
@@ -70,8 +74,6 @@ export const multiCssModules = Object.freeze({
 		color: green;
 	}
 	`,
-
-	'postcss.config.js': postcssConfig,
 });
 
 export const reservedKeywords = Object.freeze({
@@ -100,8 +102,6 @@ export const reservedKeywords = Object.freeze({
 		color: yellow;
 	}
 	`,
-
-	'postcss.config.js': postcssConfig,
 });
 
 export const exportModeBoth = Object.freeze({
@@ -122,8 +122,6 @@ export const exportModeBoth = Object.freeze({
 		color: blue;
 	}
 	`,
-
-	'postcss.config.js': postcssConfig,
 });
 
 export const defaultAsName = Object.freeze({
@@ -144,8 +142,6 @@ export const defaultAsName = Object.freeze({
 		color: blue;
 	}
 	`,
-
-	'postcss.config.js': postcssConfig,
 });
 
 export const cssModulesValues = Object.freeze({
@@ -185,7 +181,7 @@ export const cssModulesValues = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const lightningCustomPropertiesFrom = Object.freeze({
@@ -244,7 +240,7 @@ export const scssModules = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const mixedScssModules = Object.freeze({
@@ -269,7 +265,7 @@ export const mixedScssModules = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const inlineCssModules = Object.freeze({
@@ -296,7 +292,7 @@ export const inlineCssModules = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const globalModule = Object.freeze({
@@ -360,7 +356,7 @@ export const vue = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
 });
 
 export const moduleNamespace = Object.freeze({
@@ -393,5 +389,27 @@ export const requestQuery = Object.freeze({
 	}
 	`,
 
-	'postcss.config.js': postcssConfig,
+	...postcssLogFile,
+});
+
+export const viteDev = Object.freeze({
+	...multiCssModules,
+	'index.html': `
+	<!DOCTYPE html>
+	<html>
+		<body>
+			<div id="app"></div>
+			<script type="module" src="/main.js"></script>
+		</body>
+	</html>
+	`,
+	'main.js': `
+	import style from './style1.module.css';
+
+	document.querySelector('#app').innerHTML =\`
+	<div id="myText" class="\${style.className1}">
+		Hello world
+	</div>
+	\`;
+	`,
 });

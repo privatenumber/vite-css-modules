@@ -1,10 +1,12 @@
+import { setTimeout } from 'node:timers/promises';
 import { readdir } from 'node:fs/promises';
+import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../../utils/base64-module.js';
 import * as fixtures from '../../fixtures.js';
-import { viteBuild, viteServe } from '../../utils/vite.js';
+import { viteBuild, getViteDevCode, viteDevBrowser } from '../../utils/vite.js';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.js';
 import { patchCssModules } from '#vite-css-modules';
 
@@ -12,7 +14,10 @@ export default testSuite(({ describe }) => {
 	describe('PostCSS', ({ test, describe }) => {
 		describe('no config', ({ test }) => {
 			test('build', async () => {
-				await using fixture = await createFixture(fixtures.multiCssModules);
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+				});
 
 				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
@@ -154,9 +159,13 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('dev server', async () => {
-				await using fixture = await createFixture(fixtures.multiCssModules);
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
-				const code = await viteServe(
+				const code = await getViteDevCode(
 					fixture.path,
 					{
 						plugins: [
@@ -181,9 +190,12 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap', async () => {
-				await using fixture = await createFixture(fixtures.cssModulesValues);
+				await using fixture = await createFixture({
+					...fixtures.cssModulesValues,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
-				const code = await viteServe(
+				const code = await getViteDevCode(
 					fixture.path,
 					{
 						plugins: [
@@ -260,9 +272,12 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('devSourcemap with Vue.js', async () => {
-				await using fixture = await createFixture(fixtures.vue);
+				await using fixture = await createFixture({
+					...fixtures.vue,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					plugins: [
 						patchCssModules(),
 						vitePluginVue(),
@@ -324,7 +339,10 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('PostCSS configured', async () => {
-			await using fixture = await createFixture(fixtures.multiCssModules);
+			await using fixture = await createFixture({
+				...fixtures.multiCssModules,
+				...fixtures.postcssLogFile,
+			});
 
 			const { js, css } = await viteBuild(fixture.path, {
 				plugins: [
@@ -697,9 +715,12 @@ export default testSuite(({ describe }) => {
 			});
 
 			test('dev server', async () => {
-				await using fixture = await createFixture(fixtures.cssModulesValues);
+				await using fixture = await createFixture({
+					...fixtures.cssModulesValues,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					plugins: [
 						patchCssModules(),
 					],
@@ -770,7 +791,6 @@ export default testSuite(({ describe }) => {
 				'dist',
 				'index.js',
 				'node_modules',
-				'postcss.config.js',
 				'style.module.css',
 				'style.module.css.d.ts',
 				'utils.css',
@@ -912,6 +932,31 @@ export default testSuite(({ describe }) => {
 				},
 			});
 			expect(css).toMatch('style.module.css?some-query');
+		});
+
+		test('hmr', async () => {
+			await using fixture = await createFixture(fixtures.viteDev);
+
+			await viteDevBrowser(
+				fixture.path,
+				{
+					plugins: [
+						patchCssModules(),
+					],
+				},
+				async (page) => {
+					const textColorBefore = await page.evaluate('getComputedStyle(myText).color');
+					expect(textColorBefore).toBe('rgb(255, 0, 0)');
+
+					const newFile = fixtures.viteDev['style1.module.css'].replace('red', 'blue');
+					await fixture.writeFile('style1.module.css', newFile);
+
+					await setTimeout(1000);
+
+					const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
+					expect(textColorAfter).toBe('rgb(0, 0, 255)');
+				},
+			);
 		});
 	});
 });

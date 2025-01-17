@@ -1,18 +1,21 @@
+import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../utils/base64-module.js';
 import * as fixtures from '../fixtures.js';
-import { viteBuild, viteServe } from '../utils/vite.js';
+import { viteBuild, getViteDevCode } from '../utils/vite.js';
 import { getCssSourceMaps } from '../utils/get-css-source-maps.js';
 
 export default testSuite(({ describe }) => {
 	describe('reproductions', ({ describe }) => {
 		describe('postcss (no config)', ({ test, describe }) => {
-			test('build', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.multiCssModules);
-				onTestFinish(() => fixture.rm());
+			test('build', async () => {
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+				});
 
 				const { js, css } = await viteBuild(fixture.path);
 				const exported = await import(base64Module(js));
@@ -45,9 +48,8 @@ export default testSuite(({ describe }) => {
 				expect(utilClass.length).toBeGreaterThan(1);
 			});
 
-			test('inline', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.inlineCssModules);
-				onTestFinish(() => fixture.rm());
+			test('inline', async () => {
+				await using fixture = await createFixture(fixtures.inlineCssModules);
 
 				const { js } = await viteBuild(fixture.path);
 				const exported = await import(base64Module(js));
@@ -56,11 +58,14 @@ export default testSuite(({ describe }) => {
 				expect(exported.default).toMatch('--file: "style.module.css?inline"');
 			});
 
-			test('dev server', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.multiCssModules);
-				onTestFinish(() => fixture.rm());
+			test('dev server', async () => {
+				await using fixture = await createFixture({
+					...fixtures.multiCssModules,
+					...fixtures.postcssLogFile,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
-				const code = await viteServe(fixture.path);
+				const code = await getViteDevCode(fixture.path);
 
 				const cssSourcemaps = getCssSourceMaps(code);
 				expect(cssSourcemaps.length).toBe(0);
@@ -78,11 +83,13 @@ export default testSuite(({ describe }) => {
 				expect(utilClass.length).toBeGreaterThan(1);
 			});
 
-			test('devSourcemap', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.cssModulesValues);
-				onTestFinish(() => fixture.rm());
+			test('devSourcemap', async () => {
+				await using fixture = await createFixture({
+					...fixtures.cssModulesValues,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					css: {
 						devSourcemap: true,
 					},
@@ -119,11 +126,13 @@ export default testSuite(({ describe }) => {
 				]);
 			});
 
-			test('devSourcemap with Vue.js', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.vue);
-				onTestFinish(() => fixture.rm());
+			test('devSourcemap with Vue.js', async () => {
+				await using fixture = await createFixture({
+					...fixtures.vue,
+					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+				});
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					plugins: [
 						vitePluginVue(),
 					],
@@ -161,9 +170,11 @@ export default testSuite(({ describe }) => {
 			});
 
 			// https://github.com/vitejs/vite/issues/10340
-			test('mixed css + scss types doesnt build', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.mixedScssModules);
-				onTestFinish(() => fixture.rm());
+			test('mixed css + scss types doesnt build', async () => {
+				await using fixture = await createFixture({
+					...fixtures.mixedScssModules,
+					...fixtures.postcssLogFile,
+				});
 
 				let error: CssSyntaxError | undefined;
 				process.once('unhandledRejection', (reason) => {
@@ -179,9 +190,8 @@ export default testSuite(({ describe }) => {
 			});
 
 			// https://github.com/vitejs/vite/issues/14050
-			test('reserved keywords', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.reservedKeywords);
-				onTestFinish(() => fixture.rm());
+			test('reserved keywords', async () => {
+				await using fixture = await createFixture(fixtures.reservedKeywords);
 
 				const { js } = await viteBuild(fixture.path);
 				const exported = await import(base64Module(js));
@@ -200,9 +210,8 @@ export default testSuite(({ describe }) => {
 			});
 
 			// This one is more for understanding expected behavior
-			test('@values', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.cssModulesValues);
-				onTestFinish(() => fixture.rm());
+			test('@values', async () => {
+				await using fixture = await createFixture(fixtures.cssModulesValues);
 
 				const { js, css } = await viteBuild(fixture.path);
 				const exported = await import(base64Module(js));
@@ -230,9 +239,8 @@ export default testSuite(({ describe }) => {
 			});
 
 			// To understand expected behavior
-			test('globalModulePaths', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.globalModule);
-				onTestFinish(() => fixture.rm());
+			test('globalModulePaths', async () => {
+				await using fixture = await createFixture(fixtures.globalModule);
 
 				const { js, css } = await viteBuild(fixture.path, {
 					css: {
@@ -254,9 +262,8 @@ export default testSuite(({ describe }) => {
 			});
 
 			// To understand expected behavior
-			test('getJSON', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.multiCssModules);
-				onTestFinish(() => fixture.rm());
+			test('getJSON', async () => {
+				await using fixture = await createFixture(fixtures.multiCssModules);
 
 				type JSON = {
 					inputFile: string;
@@ -303,9 +310,8 @@ export default testSuite(({ describe }) => {
 			});
 
 			describe('error handling', ({ test }) => {
-				test('missing class export does not error', async ({ onTestFinish }) => {
-					const fixture = await createFixture(fixtures.missingClassExport);
-					onTestFinish(() => fixture.rm());
+				test('missing class export does not error', async () => {
+					await using fixture = await createFixture(fixtures.missingClassExport);
 
 					const { js } = await viteBuild(fixture.path);
 					const exported = await import(base64Module(js));
@@ -321,9 +327,8 @@ export default testSuite(({ describe }) => {
 
 		describe('LightningCSS', ({ describe, test }) => {
 			describe('no config', ({ test }) => {
-				test('build', async ({ onTestFinish }) => {
-					const fixture = await createFixture(fixtures.multiCssModules);
-					onTestFinish(() => fixture.rm());
+				test('build', async () => {
+					await using fixture = await createFixture(fixtures.multiCssModules);
 
 					const { js, css } = await viteBuild(fixture.path, {
 						css: {
@@ -353,11 +358,10 @@ export default testSuite(({ describe }) => {
 					expect(utilClass.length).toBeGreaterThan(1);
 				});
 
-				test('dev server', async ({ onTestFinish }) => {
-					const fixture = await createFixture(fixtures.multiCssModules);
-					onTestFinish(() => fixture.rm());
+				test('dev server', async () => {
+					await using fixture = await createFixture(fixtures.multiCssModules);
 
-					const code = await viteServe(fixture.path, {
+					const code = await getViteDevCode(fixture.path, {
 						css: {
 							transformer: 'lightningcss',
 						},
@@ -373,9 +377,8 @@ export default testSuite(({ describe }) => {
 				});
 			});
 
-			test('dashedIdents', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
-				onTestFinish(() => fixture.rm());
+			test('dashedIdents', async () => {
+				await using fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
 
 				const { css } = await viteBuild(fixture.path, {
 					css: {
@@ -394,11 +397,10 @@ export default testSuite(({ describe }) => {
 				expect(utilClass.length).toBeGreaterThan(1);
 			});
 
-			test('devSourcemap', async ({ onTestFinish }) => {
-				const fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
-				onTestFinish(() => fixture.rm());
+			test('devSourcemap', async () => {
+				await using fixture = await createFixture(fixtures.lightningCustomPropertiesFrom);
 
-				const code = await viteServe(fixture.path, {
+				const code = await getViteDevCode(fixture.path, {
 					css: {
 						transformer: 'lightningcss',
 						devSourcemap: true,
