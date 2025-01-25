@@ -180,9 +180,9 @@ export const cssModules = (
 				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
 					if (
 						exportName === 'default'
-						&& exportMode !== 'named'
+						&& exportMode !== 'default'
 					) {
-						this.warn('You cannot use "default" as a class name as it conflicts with the default export. Set "exportMode: named" to use "default" as a class name.');
+						this.warn('You cannot use "default" as a class name as it conflicts with the default export. Set "exportMode: default" to use "default" as a class name.');
 					}
 
 					const exportAs = new Set<string>();
