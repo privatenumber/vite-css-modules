@@ -73,7 +73,6 @@ const exportsToCode = (
 					([jsVariable, exportName]) => {
 						if (
 							exportName === '"default"'
-							&& exportMode !== 'named'
 						) {
 							return;
 						}
