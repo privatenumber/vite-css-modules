@@ -447,8 +447,8 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('default as named export', ({ test }) => {
-			test('should warn & omit named export', async () => {
-				await using fixture = await createFixture(fixtures.defaultAsName);
+			test('should work with composed classes', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsComposedName);
 
 				const { js } = await viteBuild(fixture.path, {
 					plugins: [
@@ -465,6 +465,61 @@ export default testSuite(({ describe }) => {
 				expect(exported).toMatchObject({
 					style: {
 						default: {
+							typeof: 'fk9XWG_typeof fk9XWG_default',
+						},
+						typeof: 'fk9XWG_typeof fk9XWG_default',
+					},
+				});
+			});
+
+			test('should work with default export', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'default',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							default: 'fk9XWG_default',
+							typeof: 'fk9XWG_typeof',
+						},
+					},
+				});
+			});
+
+			test('should omit in named exports (both)', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'both',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							default: 'fk9XWG_default',
 							typeof: 'fk9XWG_typeof',
 						},
 						typeof: 'fk9XWG_typeof',
@@ -472,7 +527,7 @@ export default testSuite(({ describe }) => {
 				});
 			});
 
-			test('should work', async () => {
+			test('should omit in named exports', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
 				const { js } = await viteBuild(fixture.path, {
@@ -492,6 +547,11 @@ export default testSuite(({ describe }) => {
 				expect(exported).toMatchObject({
 					style: {
 						typeof: 'fk9XWG_typeof',
+					},
+				});
+				expect(exported).not.toMatchObject({
+					style: {
+						default: expect.anything(),
 					},
 				});
 			});

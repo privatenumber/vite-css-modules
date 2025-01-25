@@ -921,8 +921,8 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('default as named export', ({ test }) => {
-			test('should warn & omit named export', async () => {
-				await using fixture = await createFixture(fixtures.defaultAsName);
+			test('should work with composed classes', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsComposedName);
 
 				const { js } = await viteBuild(fixture.path, {
 					plugins: [
@@ -943,7 +943,56 @@ export default testSuite(({ describe }) => {
 				});
 			});
 
-			test('should work', async () => {
+			test('should work with default export', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'default',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							default: '_default_1733f38',
+							typeof: '_typeof_06003d4',
+						},
+					},
+				});
+			});
+
+			test('should omit in named exports (both)', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'both',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							default: '_default_1733f38',
+							typeof: '_typeof_06003d4',
+						},
+						typeof: '_typeof_06003d4',
+					},
+				});
+			});
+
+			test('should omit in named exports', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
 				const { js } = await viteBuild(fixture.path, {
@@ -959,7 +1008,12 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style: {
-						typeof: '_typeof_06003d4 _default_59c1934',
+						typeof: '_typeof_06003d4',
+					},
+				});
+				expect(exported).not.toMatchObject({
+					style: {
+						default: expect.anything(),
 					},
 				});
 			});
