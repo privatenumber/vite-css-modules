@@ -191,8 +191,8 @@ To use this feature, set your Vite build target to `es2022` or above in your `vi
 ```json5
 {
     build: {
-        target: 'es2022'
-    }
+        target: 'es2022',
+    },
 }
 ```
 

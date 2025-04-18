@@ -1,7 +1,9 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"lib": ["ESNext"],
+		"lib": [
+			"ESNext",
+		],
 		"moduleDetection": "force",
 		"module": "Preserve",
 		"strict": true,
@@ -11,5 +13,7 @@
 		"verbatimModuleSyntax": true,
 		"skipLibCheck": true,
 	},
-	"exclude": ["dist"]
+	"exclude": [
+		"dist",
+	],
 }

@@ -11,6 +11,8 @@ import {
 } from './generate-esm.js';
 import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
+import type { transform as PostcssTransform } from './transformers/postcss/index.js';
+import type { transform as LightningcssTransform } from './transformers/lightningcss.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
 export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
@@ -82,10 +84,7 @@ export const cssModules = (
 			: import('./transformers/postcss/index.js')
 	);
 
-	let transform: (
-		typeof import('./transformers/postcss/index.js').transform
-		| typeof import('./transformers/lightningcss.js').transform
-	);
+	let transform: typeof PostcssTransform | typeof LightningcssTransform;
 
 	const exportMode = patchConfig?.exportMode ?? 'both';
 
