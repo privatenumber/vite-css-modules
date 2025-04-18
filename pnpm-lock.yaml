@@ -106,7 +106,7 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       vite:
-        specifier: ^6.3.2
+        specifier: '6'
         version: 6.3.2(@types/node@22.10.2)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.19.2)
       vite5:
         specifier: npm:vite@5
