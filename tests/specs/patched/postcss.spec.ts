@@ -565,6 +565,86 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
+		describe('composedClasses', () => {
+			test('string', async () => {
+				await using fixture = await createFixture(fixtures.composedAndFlat);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [patchCssModules({
+						composedClassesMode: 'string',
+						generateSourceTypes: true,
+					})],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						plain: expect.stringMatching(/_plain_\w+/),
+						composed: expect.stringMatching(/_composed_\w+ _plain_\w+/),
+						nested: expect.stringMatching(/_nested_\w+ _extra_\w+ _base_\w+/),
+					},
+				});
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('const plain: string;');
+				expect(dts).toMatch('const composed: string;');
+				expect(dts).toMatch('const nested: string;');
+			});
+
+			test('array', async () => {
+				await using fixture = await createFixture(fixtures.composedAndFlat);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [patchCssModules({
+						composedClassesMode: 'array',
+						generateSourceTypes: true,
+					})],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						plain: expect.stringMatching(/_plain_\w+/),
+						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
+						nested: [expect.stringMatching(/_nested_\w+/), expect.stringMatching(/_extra_\w+/), expect.stringMatching(/_base_\w+/)],
+					},
+				});
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('const plain: string;');
+				expect(dts).toMatch('const composed: string[];');
+				expect(dts).toMatch('const nested: string[];');
+			});
+
+			test('all-array', async () => {
+				await using fixture = await createFixture(fixtures.composedAndFlat);
+
+				const { js } = await viteBuild(fixture.path, {
+					plugins: [patchCssModules({
+						composedClassesMode: 'all-array',
+						generateSourceTypes: true,
+					})],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						plain: [expect.stringMatching(/_plain_\w+/)],
+						composed: [expect.stringMatching(/_composed_\w+/), expect.stringMatching(/_plain_\w+/)],
+						nested: [expect.stringMatching(/_nested_\w+/), expect.stringMatching(/_extra_\w+/), expect.stringMatching(/_base_\w+/)],
+					},
+				});
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('const plain: string[];');
+				expect(dts).toMatch('const composed: string[];');
+				expect(dts).toMatch('const nested: string[];');
+			});
+		});
+
 		test('globalModulePaths', async () => {
 			await using fixture = await createFixture(fixtures.globalModule);
 

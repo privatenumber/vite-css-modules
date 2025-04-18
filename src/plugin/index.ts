@@ -9,7 +9,7 @@ import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals
 import {
 	generateEsm, generateTypes, type Imports, type Exports,
 } from './generate-esm.js';
-import type { PluginMeta, ExportMode } from './types.js';
+import type { PluginMeta, ExportMode, ComposedClassesMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
@@ -60,6 +60,15 @@ export type PatchConfig = {
 	 * next to it, containing type definitions for the exported CSS class names
 	 */
 	generateSourceTypes?: boolean;
+
+	/**
+	 * Choose how to output composed classes.
+	 *
+	 * - 'string': space separated string
+	 * - 'array': composed classes as arrays of strings
+	 * - 'all-array': all classes as arrays of strings
+	 */
+	composedClassesMode?: ComposedClassesMode;
 };
 
 // This plugin is designed to be used by Vite internally
@@ -88,6 +97,7 @@ export const cssModules = (
 	);
 
 	const exportMode = patchConfig?.exportMode ?? 'both';
+	const composedClassesMode = patchConfig?.composedClassesMode ?? 'string';
 
 	let isVitest = false;
 
@@ -295,6 +305,7 @@ export const cssModules = (
 				imports,
 				exports,
 				exportMode,
+				composedClassesMode,
 				allowArbitraryNamedExports,
 			);
 
@@ -307,7 +318,7 @@ export const cssModules = (
 					if (fileExists) {
 						await writeFile(
 							`${id}.d.ts`,
-							generateTypes(exports, allowArbitraryNamedExports),
+							generateTypes(exports, composedClassesMode, allowArbitraryNamedExports),
 						);
 					}
 				}
