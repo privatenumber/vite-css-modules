@@ -475,7 +475,7 @@ export default testSuite(({ describe }) => {
 						// mappings: 'ACAA,oCDAA',
 						sources: [
 							'style1.module.css',
-							expect.stringMatching(/\/vars\.module\.css$/),
+							expect.stringMatching(/\bvars\.module\.css$/),
 						],
 						sourcesContent: [
 							'.button {\n\tbackground: var(--accent-color from "./vars.module.css");\n}',
@@ -489,7 +489,7 @@ export default testSuite(({ describe }) => {
 						// mappings: 'ACAA,oCDAA',
 						sources: [
 							'style2.module.css',
-							expect.stringMatching(/\/vars\.module\.css$/),
+							expect.stringMatching(/\bvars\.module\.css$/),
 						],
 						sourcesContent: [
 							'.input {\n\tcolor: var(--accent-color from "./vars.module.css");\n}',

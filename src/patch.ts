@@ -128,10 +128,13 @@ const supportCssModulesHMR = (
 		return;
 	}
 
-	const {
-		configureServer,
-		transform,
-	} = viteCssAnalysisPlugin;
+	const { configureServer } = viteCssAnalysisPlugin;
+	let { transform } = viteCssAnalysisPlugin;
+
+	// For Vite v6.3.2
+	if (transform && 'handler' in transform) {
+		transform = transform.handler;
+	}
 
 	if (typeof transform !== 'function') {
 		throw new TypeError('vite:css-analysis plugin transform is not a function');
