@@ -305,7 +305,7 @@ export const cssModules = (
 					const fileExists = await access(filePath).then(() => true, () => false);
 					if (fileExists) {
 						await writeFile(
-							`${id}.d.ts`,
+							`${filePath}.d.ts`,
 							generateTypes(exports, allowArbitraryNamedExports),
 						);
 					}
