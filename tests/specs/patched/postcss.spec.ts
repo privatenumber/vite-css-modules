@@ -745,6 +745,31 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
+		describe('@value class reference', ({ test }) => {
+			test('build', async () => {
+				await using fixture = await createFixture(fixtures.cssModulesValueClassReferences);
+
+				const { js, css } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					'class-name1': expect.stringMatching(/^_class-name1_\w+$/),
+					'class-name2': expect.stringMatching(/^_class-name2_\w+$/),
+				});
+
+				// class-name2 is not duplicated
+				const utilClass = Array.from(css!.matchAll(/^\._class-name2_/gm));
+				expect(utilClass.length).toBe(1);
+			});
+		});
+
 		describe('error handling', ({ test }) => {
 			test('missing class export', async () => {
 				await using fixture = await createFixture(fixtures.missingClassExport);
