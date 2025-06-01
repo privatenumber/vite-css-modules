@@ -188,6 +188,62 @@ export const cssModulesValues = Object.freeze({
 	...postcssLogFile,
 });
 
+export const cssModulesValuesMultipleExports = Object.freeze({
+	'index.js': outdent`
+	export * from './style.module.css';
+	export * from './style2.module.css';
+	`,
+
+	'style.module.css': outdent`
+	@value primary as p1, simple-border from './style2.module.css';
+
+	.class-name1 {
+		color: p1;
+		border: simple-border;
+		composes: class-name2 from './style2.module.css';
+	}
+	`,
+
+	'style2.module.css': outdent`
+	@value primary: #fff;
+	@value simple-border: 1px solid black;
+
+	.class-name2 {
+		border: primary;
+	}
+	`,
+
+	...postcssLogFile,
+});
+
+export const cssModulesValueClassReferences = Object.freeze({
+	'index.js': outdent`
+	export * from './style.module.css';
+	export * from './style2.module.css';
+	`,
+
+	'style.module.css': outdent`
+	@value class-name2 from './style2.module.css';
+
+	.class-name1 {
+		color: #000;
+	}
+	.class-name1 .class-name2 {
+		color: p2;
+		border: #000
+	}
+	`,
+
+	'style2.module.css': outdent`
+
+	.class-name2 {
+		border: #fff;
+	}
+	`,
+
+	...postcssLogFile,
+});
+
 export const lightningCustomPropertiesFrom = Object.freeze({
 	'index.js': outdent`
 	export { default as style1 } from './style1.module.css';
