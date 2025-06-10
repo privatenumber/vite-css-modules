@@ -314,7 +314,7 @@ export const cssModules = (
 
 			return {
 				code: jsCode,
-				map,
+				map: map ?? { mappings: '' },
 				meta: {
 					[pluginName]: {
 						css: outputCss,

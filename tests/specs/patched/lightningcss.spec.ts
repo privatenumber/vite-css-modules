@@ -455,18 +455,12 @@ export default testSuite(({ describe }) => {
 			test('should warn & omit named export', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
-				const warnings: string[] = [];
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules(),
 					],
 					build: {
 						target: 'es2022',
-						rollupOptions: {
-							onwarn: ({ message }) => {
-								warnings.push(message);
-							},
-						},
 					},
 					css: {
 						transformer: 'lightningcss',
@@ -487,8 +481,7 @@ export default testSuite(({ describe }) => {
 			test('should work', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
-				const warnings: string[] = [];
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
 							exportMode: 'named',
@@ -496,11 +489,6 @@ export default testSuite(({ describe }) => {
 					],
 					build: {
 						target: 'es2022',
-						rollupOptions: {
-							onwarn: ({ message }) => {
-								warnings.push(message);
-							},
-						},
 					},
 					css: {
 						transformer: 'lightningcss',
@@ -590,6 +578,24 @@ export default testSuite(({ describe }) => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
+		});
+
+		test('enabling sourcemap doesnt emit warning', async () => {
+			await using fixture = await createFixture(fixtures.multiCssModules);
+
+			const { warnings } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				build: {
+					sourcemap: true,
+				},
+				css: {
+					transformer: 'lightningcss',
+				},
+			});
+
+			expect(warnings).toHaveLength(0);
 		});
 	});
 });
