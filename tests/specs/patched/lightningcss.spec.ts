@@ -447,15 +447,26 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('default as named export', ({ test }) => {
+			/**
+			 * This test is actually not working in LightningCSS because it has
+			 * a special case to prevent `default` from being imported
+			 * https://github.com/parcel-bundler/lightningcss/issues/908
+			 */
 			test('should warn & omit named export', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
+				const warnings: string[] = [];
 				const { js } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules(),
 					],
 					build: {
 						target: 'es2022',
+						rollupOptions: {
+							onwarn: ({ message }) => {
+								warnings.push(message);
+							},
+						},
 					},
 					css: {
 						transformer: 'lightningcss',
@@ -470,11 +481,13 @@ export default testSuite(({ describe }) => {
 						typeof: 'fk9XWG_typeof',
 					},
 				});
+				expect(warnings).toHaveLength(0);
 			});
 
 			test('should work', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
+				const warnings: string[] = [];
 				const { js } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
@@ -483,6 +496,11 @@ export default testSuite(({ describe }) => {
 					],
 					build: {
 						target: 'es2022',
+						rollupOptions: {
+							onwarn: ({ message }) => {
+								warnings.push(message);
+							},
+						},
 					},
 					css: {
 						transformer: 'lightningcss',
@@ -494,6 +512,8 @@ export default testSuite(({ describe }) => {
 						typeof: 'fk9XWG_typeof',
 					},
 				});
+
+				expect(warnings).toHaveLength(0);
 			});
 		});
 
