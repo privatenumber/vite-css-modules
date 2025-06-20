@@ -6,9 +6,8 @@ import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@ampproject/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
-import {
-	generateEsm, generateTypes, type Imports, type Exports,
-} from './generate-esm.js';
+import { generateEsm, type Imports, type Exports } from './generate-esm.js';
+import { generateTypes } from './generate-types.js';
 import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';
