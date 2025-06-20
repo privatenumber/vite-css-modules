@@ -172,9 +172,12 @@ export const cssModules = (
 				return importFrom[exportName];
 			};
 
-			const exports: Exports = {};
-
-			await Promise.all(
+			/**
+			 * Passes Promise.all result to Object.fromEntries to preserve export order
+			 * This avoids unnecessary git diffs from non-deterministic ordering
+			 * (e.g. generated types) when the CSS module itself hasn't changed
+			 */
+			const exportEntries = await Promise.all(
 				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
 					if (
 						exportName === 'default'
@@ -230,13 +233,18 @@ export const cssModules = (
 						resolved = [exported.name, ...composedClasses.map(c => c.resolved)].join(' ');
 					}
 
-					exports[exportName] = {
-						code,
-						resolved,
-						exportAs,
-					};
+					return [
+						exportName,
+						{
+							code,
+							resolved,
+							exportAs,
+						},
+					] as const;
 				}),
 			);
+
+			const exports: Exports = Object.fromEntries(exportEntries);
 
 			let { map } = cssModule;
 
