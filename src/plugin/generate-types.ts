@@ -1,5 +1,6 @@
 import { makeLegalIdentifier } from '@rollup/pluginutils';
 import type { Exports } from './generate-esm.js';
+import type { ExportMode } from './types.js';
 
 const dtsComment = `
 /* eslint-disable */
@@ -13,6 +14,7 @@ const dtsComment = `
 
 export const generateTypes = (
 	exports: Exports,
+	exportMode: ExportMode,
 	allowArbitraryNamedExports = false,
 ) => {
 	const variables = new Set<string>();
@@ -32,27 +34,33 @@ export const generateTypes = (
 	);
 
 	const prepareNamedExports = exportedVariables.map(
-		([jsVariable, exportName]) => (
-			jsVariable === exportName
-				? `\t${jsVariable}`
-				: (
-					exportName[0] !== '"' || allowArbitraryNamedExports
-						? `\t${jsVariable} as ${exportName}`
-						: ''
-				)
-		),
+		([jsVariable, exportName]) => {
+			if (exportName === '"default"' && exportMode === 'named') {
+				return;
+			}
+
+			return (
+				jsVariable === exportName
+					? `\t${jsVariable}`
+					: (
+						exportName[0] !== '"' || allowArbitraryNamedExports
+							? `\t${jsVariable} as ${exportName}`
+							: ''
+					)
+			);
+		},
 	).filter(Boolean);
 
 	return `${[
 		dtsComment,
 		Array.from(variables).join('\n'),
 		(
-			prepareNamedExports.length > 0
+			(exportMode === 'both' || exportMode === 'named') && prepareNamedExports.length > 0
 				? `export {\n${prepareNamedExports.join(',\n')}\n};`
 				: ''
 		),
 		(
-			exportedVariables.length > 0
+			(exportMode === 'both' || exportMode === 'default') && exportedVariables.length > 0
 				? `export default {\n${
 					exportedVariables.map(
 						([jsVariable, exportName]) => `\t${
