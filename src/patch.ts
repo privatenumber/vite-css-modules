@@ -39,12 +39,18 @@ const supportNewCssModules = (
 	},
 	pluginInstance: Plugin,
 ) => {
-	const { transform: viteCssPostPluginTransform } = viteCssPostPlugin;
-	if (typeof viteCssPostPluginTransform !== 'function') {
+	let { transform } = viteCssPostPlugin;
+
+	// For Vite v7.0.0
+	if (transform && 'handler' in transform) {
+		transform = transform.handler;
+	}
+
+	if (typeof transform !== 'function') {
 		throw new TypeError('vite:css-post plugin transform is not a function');
 	}
 
-	viteCssPostPlugin.transform = async function (jsCode, id, options) {
+	const newTransform: typeof transform = async function (jsCode, id, options) {
 		if (cssModuleRE.test(id)) {
 			this.addWatchFile(path.resolve(id));
 			const inlined = inlineRE.test(id);
@@ -52,7 +58,7 @@ const supportNewCssModules = (
 			const pluginMeta = info.meta[pluginInstance.name] as PluginMeta | undefined;
 			if (!pluginMeta) {
 				// In Vitest, CSS gets disabled
-				return Reflect.apply(viteCssPostPluginTransform, this, arguments);
+				return Reflect.apply(transform, this, arguments);
 			}
 
 			let { css } = pluginMeta;
@@ -101,7 +107,7 @@ const supportNewCssModules = (
 			 * can generate an aggregated style.css file
 			 * https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L524C9-L524C15
 			 */
-			const result = await Reflect.apply(viteCssPostPluginTransform, this, [css, id]);
+			const result = await Reflect.apply(transform, this, [css, id]);
 
 			// If it's inlined, return the minified CSS
 			// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L530-L536
@@ -116,8 +122,14 @@ const supportNewCssModules = (
 			};
 		}
 
-		return Reflect.apply(viteCssPostPluginTransform, this, arguments);
+		return Reflect.apply(transform, this, arguments);
 	};
+
+	if (viteCssPostPlugin.transform && 'handler' in viteCssPostPlugin.transform) {
+		viteCssPostPlugin.transform.handler = newTransform;
+	} else {
+		viteCssPostPlugin.transform = newTransform;
+	}
 };
 
 const supportCssModulesHMR = (
