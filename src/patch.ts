@@ -50,7 +50,7 @@ const supportNewCssModules = (
 		throw new TypeError('vite:css-post plugin transform is not a function');
 	}
 
-	const newTransform: typeof transform = async function (jsCode, id, options) {
+	viteCssPostPlugin.transform = async function (jsCode, id, options) {
 		if (cssModuleRE.test(id)) {
 			this.addWatchFile(path.resolve(id));
 			const inlined = inlineRE.test(id);
@@ -124,12 +124,6 @@ const supportNewCssModules = (
 
 		return Reflect.apply(transform, this, arguments);
 	};
-
-	if (viteCssPostPlugin.transform && 'handler' in viteCssPostPlugin.transform) {
-		viteCssPostPlugin.transform.handler = newTransform;
-	} else {
-		viteCssPostPlugin.transform = newTransform;
-	}
 };
 
 const supportCssModulesHMR = (
