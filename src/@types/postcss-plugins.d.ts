@@ -1,6 +1,6 @@
 declare module 'postcss-modules-scope' {
-	import { PluginCreator } from 'postcss';
-	import { ClassName } from 'postcss-selector-parser';
+	import type { PluginCreator } from 'postcss';
+	import type { ClassName } from 'postcss-selector-parser';
 
 	type GenerateScopedName = (
 		name: string,

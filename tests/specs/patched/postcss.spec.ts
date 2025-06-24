@@ -924,7 +924,7 @@ export default testSuite(({ describe }) => {
 			test('should work with composed classes', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsComposedName);
 
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules(),
 					],
@@ -941,6 +941,8 @@ export default testSuite(({ describe }) => {
 						typeof: '_typeof_06003d4 _default_59c1934',
 					},
 				});
+				expect(warnings).toHaveLength(1);
+				expect(warnings[0]).toMatch('You cannot use "default" as a class name as it conflicts with the default export. Set "exportMode: default" to use "default" as a class name.');
 			});
 
 			test('should work with default export', async () => {
@@ -970,7 +972,7 @@ export default testSuite(({ describe }) => {
 			test('should omit in named exports (both)', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
 							exportMode: 'both',
@@ -990,12 +992,13 @@ export default testSuite(({ describe }) => {
 						typeof: '_typeof_06003d4',
 					},
 				});
+				expect(warnings).toHaveLength(1);
 			});
 
 			test('should omit in named exports', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
 							exportMode: 'named',
@@ -1016,6 +1019,7 @@ export default testSuite(({ describe }) => {
 						default: expect.anything(),
 					},
 				});
+				expect(warnings).toHaveLength(1);
 			});
 		});
 
@@ -1082,6 +1086,21 @@ export default testSuite(({ describe }) => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
+		});
+
+		test('enabling sourcemap doesnt emit warning', async () => {
+			await using fixture = await createFixture(fixtures.multiCssModules);
+
+			const { warnings } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				build: {
+					sourcemap: true,
+				},
+			});
+
+			expect(warnings).toHaveLength(0);
 		});
 	});
 });

@@ -447,6 +447,11 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('default as named export', ({ test }) => {
+			/**
+			 * This test is actually not working in LightningCSS because it has
+			 * a special case to prevent `default` from being imported
+			 * https://github.com/parcel-bundler/lightningcss/issues/908
+			 */
 			test('should work with composed classes', async () => {
 				// This test has incorrect assertions owing to https://github.com/parcel-bundler/lightningcss/issues/908
 				// Once this has been fixed upstream, this test will need updating to correctly show the
@@ -478,7 +483,7 @@ export default testSuite(({ describe }) => {
 			test('should work with default export', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
 							exportMode: 'default',
@@ -500,12 +505,13 @@ export default testSuite(({ describe }) => {
 						},
 					},
 				});
+				expect(warnings).toHaveLength(0);
 			});
 
 			test('should omit in named exports (both)', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
 							exportMode: 'both',
@@ -528,12 +534,13 @@ export default testSuite(({ describe }) => {
 						typeof: 'fk9XWG_typeof',
 					},
 				});
+				expect(warnings).toHaveLength(1);
 			});
 
 			test('should omit in named exports', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
-				const { js } = await viteBuild(fixture.path, {
+				const { js, warnings } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules({
 							exportMode: 'named',
@@ -552,11 +559,13 @@ export default testSuite(({ describe }) => {
 						typeof: 'fk9XWG_typeof',
 					},
 				});
+
 				expect(exported).not.toMatchObject({
 					style: {
 						default: expect.anything(),
 					},
 				});
+				expect(warnings).toHaveLength(1);
 			});
 		});
 
@@ -633,6 +642,24 @@ export default testSuite(({ describe }) => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
+		});
+
+		test('enabling sourcemap doesnt emit warning', async () => {
+			await using fixture = await createFixture(fixtures.multiCssModules);
+
+			const { warnings } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				build: {
+					sourcemap: true,
+				},
+				css: {
+					transformer: 'lightningcss',
+				},
+			});
+
+			expect(warnings).toHaveLength(0);
 		});
 	});
 });

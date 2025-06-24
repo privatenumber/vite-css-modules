@@ -6,11 +6,12 @@ import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@ampproject/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
-import {
-	generateEsm, generateTypes, type Imports, type Exports,
-} from './generate-esm.js';
+import { generateEsm, type Imports, type Exports } from './generate-esm.js';
+import { generateTypes } from './generate-types.js';
 import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
+import type { transform as PostcssTransform } from './transformers/postcss/index.js';
+import type { transform as LightningcssTransform } from './transformers/lightningcss.js';
 
 // https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
 export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
@@ -82,10 +83,7 @@ export const cssModules = (
 			: import('./transformers/postcss/index.js')
 	);
 
-	let transform: (
-		typeof import('./transformers/postcss/index.js').transform
-		| typeof import('./transformers/lightningcss.js').transform
-	);
+	let transform: typeof PostcssTransform | typeof LightningcssTransform;
 
 	const exportMode = patchConfig?.exportMode ?? 'both';
 
@@ -174,9 +172,12 @@ export const cssModules = (
 				return importFrom[exportName];
 			};
 
-			const exports: Exports = {};
-
-			await Promise.all(
+			/**
+			 * Passes Promise.all result to Object.fromEntries to preserve export order
+			 * This avoids unnecessary git diffs from non-deterministic ordering
+			 * (e.g. generated types) when the CSS module itself hasn't changed
+			 */
+			const exportEntries = await Promise.all(
 				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
 					if (
 						exportName === 'default'
@@ -232,13 +233,18 @@ export const cssModules = (
 						resolved = [exported.name, ...composedClasses.map(c => c.resolved)].join(' ');
 					}
 
-					exports[exportName] = {
-						code,
-						resolved,
-						exportAs,
-					};
+					return [
+						exportName,
+						{
+							code,
+							resolved,
+							exportAs,
+						},
+					] as const;
 				}),
 			);
+
+			const exports: Exports = Object.fromEntries(exportEntries);
 
 			let { map } = cssModule;
 
@@ -306,7 +312,7 @@ export const cssModules = (
 					const fileExists = await access(filePath).then(() => true, () => false);
 					if (fileExists) {
 						await writeFile(
-							`${id}.d.ts`,
+							`${filePath}.d.ts`,
 							generateTypes(exports, allowArbitraryNamedExports),
 						);
 					}
@@ -315,7 +321,7 @@ export const cssModules = (
 
 			return {
 				code: jsCode,
-				map,
+				map: map ?? { mappings: '' },
 				meta: {
 					[pluginName]: {
 						css: outputCss,

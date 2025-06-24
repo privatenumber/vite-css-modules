@@ -17,6 +17,7 @@ export const viteBuild = async (
 		);
 	} catch {}
 
+	const warnings: string[] = [];
 	const built = await build({
 		root: fixturePath,
 		configFile: false,
@@ -36,6 +37,11 @@ export const viteBuild = async (
 				entry: 'index.js',
 				formats: ['es'],
 				cssFileName: 'style.css',
+			},
+			rollupOptions: {
+				onwarn: ({ message }) => {
+					warnings.push(message);
+				},
 			},
 			...config?.build,
 		},
@@ -61,6 +67,7 @@ export const viteBuild = async (
 	return {
 		js: output[0].code,
 		css: css?.source.toString(),
+		warnings,
 	};
 };
 
