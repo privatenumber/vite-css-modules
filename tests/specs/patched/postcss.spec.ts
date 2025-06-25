@@ -942,7 +942,7 @@ export default testSuite(({ describe }) => {
 					},
 				});
 				expect(warnings).toHaveLength(1);
-				expect(warnings[0]).toMatch('You cannot use "default" as a class name as it conflicts with the default export. Set "exportMode: default" to use "default" as a class name.');
+				expect(warnings[0]).toMatch('You cannot use "default" as a class name');
 			});
 
 			test('should work with default export', async () => {
@@ -1012,14 +1012,10 @@ export default testSuite(({ describe }) => {
 				expect(exported).toMatchObject({
 					style: {
 						typeof: '_typeof_06003d4',
+						default: '_default_1733f38',
 					},
 				});
-				expect(exported).not.toMatchObject({
-					style: {
-						default: expect.anything(),
-					},
-				});
-				expect(warnings).toHaveLength(1);
+				expect(warnings).toHaveLength(0);
 			});
 		});
 

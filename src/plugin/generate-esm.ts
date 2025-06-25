@@ -72,7 +72,7 @@ const exportsToCode = (
 				.map(
 					([jsVariable, exportName]) => {
 						if (
-							exportName === '"default"'
+							exportName === '"default"' && exportMode === 'both'
 						) {
 							return;
 						}

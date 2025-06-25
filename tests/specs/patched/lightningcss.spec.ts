@@ -556,16 +556,11 @@ export default testSuite(({ describe }) => {
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style: {
+						default: 'fk9XWG_default',
 						typeof: 'fk9XWG_typeof',
 					},
 				});
-
-				expect(exported).not.toMatchObject({
-					style: {
-						default: expect.anything(),
-					},
-				});
-				expect(warnings).toHaveLength(1);
+				expect(warnings).toHaveLength(0);
 			});
 		});
 
