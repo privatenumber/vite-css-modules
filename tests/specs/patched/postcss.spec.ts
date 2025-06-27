@@ -921,10 +921,83 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('default as named export', ({ test }) => {
-			test('should warn & omit named export', async () => {
+			test('should warn & omit `default` from named export', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
 
 				const { js, warnings } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							typeof: '_typeof_06003d4',
+							default: '_default_1733f38',
+						},
+						typeof: '_typeof_06003d4',
+					},
+				});
+				expect(warnings).toHaveLength(1);
+				expect(warnings[0]).toMatch('you cannot use "default" as a class name');
+			});
+
+			test('should work with exportMode: \'default\'', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js, warnings } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'default',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							default: '_default_1733f38',
+							typeof: '_typeof_06003d4',
+						},
+					},
+				});
+				expect(warnings).toHaveLength(0);
+			});
+
+			test('should work with exportMode: \'named\'', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js, warnings } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'named',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						typeof: '_typeof_06003d4',
+						default: '_default_1733f38',
+					},
+				});
+				expect(warnings).toHaveLength(0);
+			});
+
+			test('composes default', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsComposedName);
+
+				const { js } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules(),
 					],
@@ -941,30 +1014,6 @@ export default testSuite(({ describe }) => {
 						typeof: '_typeof_06003d4 _default_59c1934',
 					},
 				});
-				expect(warnings).toHaveLength(1);
-				expect(warnings[0]).toMatch('You cannot use "default" as a class name as it conflicts with the default export. Set "exportMode: named" to use "default" as a class name.');
-			});
-
-			test('should work', async () => {
-				await using fixture = await createFixture(fixtures.defaultAsName);
-
-				const { js, warnings } = await viteBuild(fixture.path, {
-					plugins: [
-						patchCssModules({
-							exportMode: 'named',
-						}),
-					],
-					build: {
-						target: 'es2022',
-					},
-				});
-				const exported = await import(base64Module(js));
-				expect(exported).toMatchObject({
-					style: {
-						typeof: '_typeof_06003d4 _default_59c1934',
-					},
-				});
-				expect(warnings).toHaveLength(0);
 			});
 		});
 

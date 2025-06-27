@@ -128,7 +128,7 @@ export const exportModeBoth = Object.freeze({
 	`,
 });
 
-export const defaultAsName = Object.freeze({
+export const defaultAsComposedName = Object.freeze({
 	'index.js': outdent`
 	export * as style from './style.module.css';
 	`,
@@ -143,6 +143,22 @@ export const defaultAsName = Object.freeze({
 	'utils.css': outdent`
 	.default {
 		--name: 'foo';
+		color: blue;
+	}
+	`,
+});
+
+export const defaultAsName = Object.freeze({
+	'index.js': outdent`
+	export * as style from './style.module.css';
+	`,
+
+	'style.module.css': outdent`
+	.typeof {
+		color: red;
+	}
+
+	.default {
 		color: blue;
 	}
 	`,
