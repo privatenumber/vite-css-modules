@@ -72,7 +72,8 @@ const exportsToCode = (
 				.map(
 					([jsVariable, exportName]) => {
 						if (
-							exportName === '"default"' && exportMode === 'both'
+							exportName === '"default"'
+							&& exportMode === 'both'
 						) {
 							return;
 						}
