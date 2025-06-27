@@ -94,6 +94,10 @@ export const reservedKeywords = Object.freeze({
 	.export {
 		composes: with from './utils.css';
 	}
+	
+	.default {
+		color: blue;
+	}
 	`,
 
 	'utils.css': outdent`

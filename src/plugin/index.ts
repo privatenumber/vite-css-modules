@@ -313,7 +313,7 @@ export const cssModules = (
 					if (fileExists) {
 						await writeFile(
 							`${filePath}.d.ts`,
-							generateTypes(exports, allowArbitraryNamedExports),
+							generateTypes(exports, exportMode, allowArbitraryNamedExports),
 						);
 					}
 				}
