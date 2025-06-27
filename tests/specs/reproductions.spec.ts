@@ -200,8 +200,8 @@ export default testSuite(({ describe }) => {
 				expect(exported).toMatchObject({
 					style: {
 						default: {
-							import: '_import_3y4f1_1 _if_1bsbm_1',
-							export: '_export_3y4f1_6 _with_1bsbm_6',
+							import: '_import_1inzh_1 _if_1bsbm_1',
+							export: '_export_1inzh_6 _with_1bsbm_6',
 						},
 					},
 				});

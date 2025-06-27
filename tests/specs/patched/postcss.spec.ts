@@ -809,6 +809,7 @@ export default testSuite(({ describe }) => {
 
 					const _import: string;
 					const _export: string;
+					const _default: string;
 
 					export {
 						_import as "import",
@@ -817,7 +818,8 @@ export default testSuite(({ describe }) => {
 
 					export default {
 						"import": _import,
-						"export": _export
+						"export": _export,
+						"default": _default
 					};
 
 					`,
@@ -865,10 +867,12 @@ export default testSuite(({ describe }) => {
 
 					const _import: string;
 					const _export: string;
+					const _default: string;
 
 					export {
 						_import as "import",
-						_export as "export"
+						_export as "export",
+						_default as "default"
 					};
 
 					`,
@@ -916,10 +920,12 @@ export default testSuite(({ describe }) => {
 
 					const _import: string;
 					const _export: string;
+					const _default: string;
 
 					export default {
 						"import": _import,
-						"export": _export
+						"export": _export,
+						"default": _default
 					};
 
 					`,
