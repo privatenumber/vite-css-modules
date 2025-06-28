@@ -447,8 +447,90 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('default as named export', ({ test }) => {
-			test('should warn & omit named export', async () => {
+			test('should warn & omit `default` from named export', async () => {
 				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js, warnings } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules(),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							typeof: 'fk9XWG_typeof',
+							default: 'fk9XWG_default',
+						},
+						typeof: 'fk9XWG_typeof',
+					},
+				});
+				expect(warnings).toHaveLength(1);
+				expect(warnings[0]).toMatch('you cannot use "default" as a class name');
+			});
+
+			test('should work with exportMode: \'default\'', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js, warnings } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'default',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						default: {
+							default: 'fk9XWG_default',
+							typeof: 'fk9XWG_typeof',
+						},
+					},
+				});
+				expect(warnings).toHaveLength(0);
+			});
+
+			test('should work with exportMode: \'named\'', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsName);
+
+				const { js, warnings } = await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							exportMode: 'named',
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					style: {
+						typeof: 'fk9XWG_typeof',
+						default: 'fk9XWG_default',
+					},
+				});
+				expect(warnings).toHaveLength(0);
+			});
+
+			test('composes default (not working)', async () => {
+				await using fixture = await createFixture(fixtures.defaultAsComposedName);
 
 				const { js } = await viteBuild(fixture.path, {
 					plugins: [
@@ -467,30 +549,12 @@ export default testSuite(({ describe }) => {
 						default: {
 							typeof: 'fk9XWG_typeof',
 						},
-						typeof: 'fk9XWG_typeof',
-					},
-				});
-			});
 
-			test('should work', async () => {
-				await using fixture = await createFixture(fixtures.defaultAsName);
-
-				const { js } = await viteBuild(fixture.path, {
-					plugins: [
-						patchCssModules({
-							exportMode: 'named',
-						}),
-					],
-					build: {
-						target: 'es2022',
-					},
-					css: {
-						transformer: 'lightningcss',
-					},
-				});
-				const exported = await import(base64Module(js));
-				expect(exported).toMatchObject({
-					style: {
+						/**
+						 * This should actually compose `default` from `utils.css` (Compare with postcss test)
+						 * LightningCSS has special case to prevent `default` from being imported
+						 * https://github.com/parcel-bundler/lightningcss/issues/908
+						 */
 						typeof: 'fk9XWG_typeof',
 					},
 				});
@@ -570,6 +634,24 @@ export default testSuite(({ describe }) => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
+		});
+
+		test('enabling sourcemap doesnt emit warning', async () => {
+			await using fixture = await createFixture(fixtures.multiCssModules);
+
+			const { warnings } = await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules(),
+				],
+				build: {
+					sourcemap: true,
+				},
+				css: {
+					transformer: 'lightningcss',
+				},
+			});
+
+			expect(warnings).toHaveLength(0);
 		});
 	});
 });

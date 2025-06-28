@@ -6,9 +6,8 @@ import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@ampproject/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
-import {
-	generateEsm, generateTypes, type Imports, type Exports,
-} from './generate-esm.js';
+import { generateEsm, type Imports, type Exports } from './generate-esm.js';
+import { generateTypes } from './generate-types.js';
 import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';
@@ -173,15 +172,18 @@ export const cssModules = (
 				return importFrom[exportName];
 			};
 
-			const exports: Exports = {};
-
-			await Promise.all(
+			/**
+			 * Passes Promise.all result to Object.fromEntries to preserve export order
+			 * This avoids unnecessary git diffs from non-deterministic ordering
+			 * (e.g. generated types) when the CSS module itself hasn't changed
+			 */
+			const exportEntries = await Promise.all(
 				Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
 					if (
 						exportName === 'default'
-						&& exportMode !== 'named'
+						&& exportMode === 'both'
 					) {
-						this.warn('You cannot use "default" as a class name as it conflicts with the default export. Set "exportMode: named" to use "default" as a class name.');
+						this.warn('With `exportMode: both`, you cannot use "default" as a class name as it conflicts with the default export. Set `exportMode` to `default` or `named` to use "default" as a class name.');
 					}
 
 					const exportAs = new Set<string>();
@@ -231,13 +233,18 @@ export const cssModules = (
 						resolved = [exported.name, ...composedClasses.map(c => c.resolved)].join(' ');
 					}
 
-					exports[exportName] = {
-						code,
-						resolved,
-						exportAs,
-					};
+					return [
+						exportName,
+						{
+							code,
+							resolved,
+							exportAs,
+						},
+					] as const;
 				}),
 			);
+
+			const exports: Exports = Object.fromEntries(exportEntries);
 
 			let { map } = cssModule;
 
@@ -306,7 +313,7 @@ export const cssModules = (
 					if (fileExists) {
 						await writeFile(
 							`${filePath}.d.ts`,
-							generateTypes(exports, allowArbitraryNamedExports),
+							generateTypes(exports, exportMode, allowArbitraryNamedExports),
 						);
 					}
 				}
@@ -314,7 +321,7 @@ export const cssModules = (
 
 			return {
 				code: jsCode,
-				map,
+				map: map ?? { mappings: '' },
 				meta: {
 					[pluginName]: {
 						css: outputCss,

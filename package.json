@@ -34,6 +34,7 @@
 	},
 	"imports": {
 		"vite": {
+			"vite6": "vite6",
 			"vite5": "vite5",
 			"default": "vite"
 		},
@@ -47,8 +48,9 @@
 	"scripts": {
 		"build": "pkgroll",
 		"test:vite5": "tsx --import alias-imports -C vite5 tests",
-		"test:vite6": "tsx tests",
-		"test": "pnpm test:vite5 && pnpm test:vite6",
+		"test:vite6": "tsx --import alias-imports -C vite6 tests",
+		"test:vite7": "tsx tests",
+		"test": "pnpm test:vite5 && pnpm test:vite6 && pnpm test:vite7",
 		"dev": "tsx watch --conditions=development --ignore='/private/**' tests",
 		"type-check": "tsc",
 		"lint": "lintroll .",
@@ -68,7 +70,7 @@
 	"peerDependencies": {
 		"lightningcss": "^1.23.0",
 		"postcss": "^8.4.33",
-		"vite": "^5.0.12 || ^6.0.0"
+		"vite": "^5.0.12 || ^6.0.0 || ^7.0.0"
 	},
 	"peerDependenciesMeta": {
 		"lightningcss": {
@@ -78,29 +80,30 @@
 	"devDependencies": {
 		"@types/icss-utils": "^5.1.2",
 		"@types/lodash.camelcase": "^4.3.9",
-		"@types/node": "^22.10.2",
+		"@types/node": "^22.12.0",
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
 		"@vitejs/plugin-vue": "^5.2.1",
 		"alias-imports": "^1.1.0",
-		"clean-pkg-json": "^1.2.1",
-		"fs-fixture": "^2.7.1",
+		"clean-pkg-json": "^1.3.0",
+		"fs-fixture": "^2.8.1",
 		"lightningcss": "^1.28.2",
-		"lintroll": "^1.15.0",
+		"lintroll": "^1.16.1",
 		"lodash.camelcase": "^4.3.0",
-		"manten": "^1.3.0",
+		"manten": "^1.5.0",
 		"outdent": "^0.8.0",
-		"pkgroll": "^2.12.1",
+		"pkgroll": "^2.13.1",
 		"playwright-chromium": "^1.52.0",
 		"postcss": "^8.4.49",
 		"postcss-selector-parser": "^6.1.2",
 		"rollup": "^4.40.0",
 		"sass": "^1.83.0",
-		"tsx": "^4.19.3",
+		"tsx": "^4.20.3",
 		"typescript": "^5.8.3",
-		"vite": "6",
+		"vite": "7",
 		"vite5": "npm:vite@5",
+		"vite6": "npm:vite@6",
 		"vue": "^3.5.13"
 	}
 }
