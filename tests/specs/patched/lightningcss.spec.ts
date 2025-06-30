@@ -31,16 +31,16 @@ export default testSuite(({ describe }) => {
 			const exported = await import(base64Module(js));
 			expect(exported).toMatchObject({
 				style1: {
-					className1: expect.stringMatching(/^[\w-]+_className1\s+[\w-]+_util-class$/),
+					className1: expect.stringMatching(/^[\w-]+_className1 [\w-]+_util-class$/),
 					default: {
-						className1: expect.stringMatching(/^[\w-]+_className1\s+[\w-]+_util-class$/),
-						'class-name2': expect.stringMatching(/^[\w-]+_class-name2\s+[\w-]+_util-class\s+[\w-]+_util-class$/),
+						className1: expect.stringMatching(/^[\w-]+_className1 [\w-]+_util-class$/),
+						'class-name2': expect.stringMatching(/^[\w-]+_class-name2 [\w-]+_util-class [\w-]+_util-class [\w-]+_class-name2 [\w-]+_util-class$/),
 					},
 				},
 				style2: {
-					'class-name2': expect.stringMatching(/^[\w-]+_class-name2\s+[\w-]+_util-class$/),
+					'class-name2': expect.stringMatching(/^[\w-]+_class-name2 [\w-]+_util-class$/),
 					default: {
-						'class-name2': expect.stringMatching(/^[\w-]+_class-name2\s+[\w-]+_util-class$/),
+						'class-name2': expect.stringMatching(/^[\w-]+_class-name2 [\w-]+_util-class$/),
 					},
 				},
 			});

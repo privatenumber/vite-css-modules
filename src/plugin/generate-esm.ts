@@ -1,4 +1,5 @@
 import { makeLegalIdentifier } from '@rollup/pluginutils';
+import { getCssModuleUrl } from './url-utils.js';
 import type { ExportMode } from './types.js';
 
 type ImportSpecifiers = Record<string /* exportName */, string /* importAs */>;
@@ -23,7 +24,7 @@ const importsToCode = (
 ) => Array.from(imports)
 	.map(
 		([file, importedAs], index) => {
-			const importFrom = `${file}?.module.css`;
+			const importFrom = getCssModuleUrl(file);
 			if (!allowArbitraryNamedExports || exportMode !== 'named') {
 				const importDefault = `cssModule${index}`;
 				return `${importStatement(importDefault, importFrom)}const {${Object.entries(importedAs).map(

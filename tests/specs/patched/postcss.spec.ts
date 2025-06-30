@@ -40,6 +40,13 @@ export default testSuite(({ describe }) => {
 				const utilClass = Array.from(css!.matchAll(/foo/g));
 				expect(utilClass.length).toBe(1);
 
+				/*
+				class-name2 from style2 is not duplicated
+				despite being directly imported and also composed from
+				*/
+				const style2className = Array.from(css!.matchAll(/pink/g));
+				expect(style2className.length).toBe(1);
+
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {
@@ -106,7 +113,7 @@ export default testSuite(({ describe }) => {
 				});
 
 				expect(css).toMatch('--file: "css.module.css"');
-				expect(css).toMatch('--file: "scss.module.scss?.module.css"');
+				expect(css).toMatch('--file: "scss.module.scss"');
 
 				const exported = await import(base64Module(js));
 
@@ -715,33 +722,27 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch('--file: "utils2.css?.module.css"');
 			});
 
-			test('dev server', async () => {
-				await using fixture = await createFixture({
-					...fixtures.cssModulesValues,
-					node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
-				});
+			test('@value multiple exports', async () => {
+				await using fixture = await createFixture(fixtures.cssModulesValuesMultipleExports);
 
-				const code = await getViteDevCode(fixture.path, {
+				const { js, css } = await viteBuild(fixture.path, {
 					plugins: [
 						patchCssModules(),
 					],
-					css: {
-						modules: {
-							generateScopedName: 'asdf_[local]',
-						},
+					build: {
+						target: 'es2022',
 					},
 				});
 
-				expect(code).toMatch('color: #fff');
-				expect(code).toMatch('border: #fff');
-				expect(code).toMatch('color: #000');
-				expect(code).toMatch('border: #000');
-				expect(code).toMatch('border: 1px solid black');
+				const exported = await import(base64Module(js));
+				expect(exported).toMatchObject({
+					'class-name1': expect.stringMatching(/^_class-name1_\w+ _class-name2_\w+/),
+					'class-name2': expect.stringMatching(/^_class-name2_\w+$/),
+				});
 
-				// Ensure that PostCSS is applied to the composed files
-				expect(code).toMatch(String.raw`--file: \"style.module.css\"`);
-				expect(code).toMatch(String.raw`--file: \"utils1.css?.module.css\"`);
-				expect(code).toMatch(String.raw`--file: \"utils2.css?.module.css\"`);
+				// Assert that class-name2 only appears once
+				const utilClass = Array.from(css!.matchAll(/\._class-name2_/g));
+				expect(utilClass.length).toBe(1);
 			});
 		});
 
