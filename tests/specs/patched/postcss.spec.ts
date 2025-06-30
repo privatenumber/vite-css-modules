@@ -734,7 +734,7 @@ export default testSuite(({ describe }) => {
 				});
 
 				// Assert that class-name2 only appears once
-				const utilClass = Array.from(css!.matchAll(/\._class-name2_/gm));
+				const utilClass = Array.from(css!.matchAll(/\._class-name2_/g));
 				expect(utilClass.length).toBe(1);
 			});
 		});

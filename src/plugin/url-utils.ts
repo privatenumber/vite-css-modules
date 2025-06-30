@@ -3,14 +3,14 @@ export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postc
 
 const moduleCssQuery = '?.module.css';
 export const cleanUrl = (url: string) => (
-    url.endsWith(moduleCssQuery)
-        ? url.slice(0, -moduleCssQuery.length)
-        : url
+	url.endsWith(moduleCssQuery)
+		? url.slice(0, -moduleCssQuery.length)
+		: url
 );
 
 export const getCssModuleUrl = (url: string) => {
-    if (cssModuleRE.test(url)) {
-        return url;
-    }
-    return url + moduleCssQuery;
+	if (cssModuleRE.test(url)) {
+		return url;
+	}
+	return url + moduleCssQuery;
 };

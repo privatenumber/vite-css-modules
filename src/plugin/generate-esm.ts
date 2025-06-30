@@ -1,5 +1,5 @@
 import { makeLegalIdentifier } from '@rollup/pluginutils';
-import { getCssModuleUrl } from './url-utils.js'
+import { getCssModuleUrl } from './url-utils.js';
 import type { ExportMode } from './types.js';
 
 type ImportSpecifiers = Record<string /* exportName */, string /* importAs */>;
