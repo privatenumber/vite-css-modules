@@ -40,6 +40,13 @@ export default testSuite(({ describe }) => {
 				const utilClass = Array.from(css!.matchAll(/foo/g));
 				expect(utilClass.length).toBe(1);
 
+				/*
+				class-name2 from style2 is not duplicated
+				despite being directly imported and also composed from
+				*/
+				const style2className = Array.from(css!.matchAll(/pink/g));
+				expect(style2className.length).toBe(1);
+
 				const exported = await import(base64Module(js));
 				expect(exported).toMatchObject({
 					style1: {

@@ -52,13 +52,14 @@ export const multiCssModules = Object.freeze({
 	.class-name2 {
 		composes: util-class from './utils1.css';
 		composes: util-class from './utils2.css';
+		composes: class-name2 from './style2.module.css';
 	}
 	`,
 
 	'style2.module.css': outdent`
 	.class-name2 {
 		composes: util-class from './utils1.css';
-		color: red;
+		color: pink;
 	}
 	`,
 

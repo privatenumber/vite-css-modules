@@ -25,7 +25,7 @@ export default testSuite(({ describe }) => {
 						className1: expect.stringMatching(/^_className1_\w+ _util-class_\w+$/),
 						default: {
 							className1: expect.stringMatching(/^_className1_\w+ _util-class_\w+$/),
-							'class-name2': expect.stringMatching(/^_class-name2_\w+ _util-class_\w+ _util-class_\w+$/),
+							'class-name2': expect.stringMatching(/^_class-name2_\w+ _util-class_\w+ _util-class_\w+ _class-name2_\w+ _util-class_\w+$/),
 						},
 					},
 					style2: {
@@ -389,7 +389,7 @@ export default testSuite(({ describe }) => {
 							className1: expect.stringMatching(/^[\w-]+_className1 [\w-]+_util-class$/),
 							default: {
 								className1: expect.stringMatching(/^[\w-]+_className1 [\w-]+_util-class$/),
-								'class-name2': expect.stringMatching(/^[\w-]+_class-name2 [\w-]+_util-class [\w-]+_util-class$/),
+								'class-name2': expect.stringMatching(/^[\w-]+_class-name2 [\w-]+_util-class [\w-]+_util-class [\w-]+_class-name2 [\w-]+_util-class$/),
 							},
 						},
 						style2: {
