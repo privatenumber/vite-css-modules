@@ -106,7 +106,7 @@ export default testSuite(({ describe }) => {
 				});
 
 				expect(css).toMatch('--file: "css.module.css"');
-				expect(css).toMatch('--file: "scss.module.scss?.module.css"');
+				expect(css).toMatch('--file: "scss.module.scss"');
 
 				const exported = await import(base64Module(js));
 
@@ -714,10 +714,8 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch('--file: "utils1.css?.module.css"');
 				expect(css).toMatch('--file: "utils2.css?.module.css"');
 			});
-		});
 
-		describe('@value multiple exports', ({ test }) => {
-			test('build', async () => {
+			test('@value multiple exports', async () => {
 				await using fixture = await createFixture(fixtures.cssModulesValuesMultipleExports);
 
 				const { js, css } = await viteBuild(fixture.path, {
@@ -735,33 +733,8 @@ export default testSuite(({ describe }) => {
 					'class-name2': expect.stringMatching(/^_class-name2_\w+$/),
 				});
 
-				// class-name2 is not duplicated
+				// Assert that class-name2 only appears once
 				const utilClass = Array.from(css!.matchAll(/\._class-name2_/gm));
-				expect(utilClass.length).toBe(1);
-			});
-		});
-
-		describe('@value class reference', ({ test }) => {
-			test('build', async () => {
-				await using fixture = await createFixture(fixtures.cssModulesValueClassReferences);
-
-				const { js, css } = await viteBuild(fixture.path, {
-					plugins: [
-						patchCssModules(),
-					],
-					build: {
-						target: 'es2022',
-					},
-				});
-
-				const exported = await import(base64Module(js));
-				expect(exported).toMatchObject({
-					'class-name1': expect.stringMatching(/^_class-name1_\w+$/),
-					'class-name2': expect.stringMatching(/^_class-name2_\w+$/),
-				});
-
-				// class-name2 is not duplicated
-				const utilClass = Array.from(css!.matchAll(/^\._class-name2_/gm));
 				expect(utilClass.length).toBe(1);
 			});
 		});

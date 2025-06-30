@@ -1,7 +1,8 @@
 import path from 'path';
 import type { Plugin, ServerHook } from 'vite';
 import type { SourceMap } from 'rollup';
-import { cssModules, cssModuleRE, type PatchConfig } from './plugin/index.js';
+import { cssModules, type PatchConfig } from './plugin/index.js';
+import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195

@@ -12,18 +12,9 @@ import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';
 import type { transform as LightningcssTransform } from './transformers/lightningcss.js';
-
-// https://github.com/vitejs/vite/blob/37af8a7be417f1fb2cf9a0d5e9ad90b76ff211b4/packages/vite/src/node/plugins/css.ts#L185
-export const cssModuleRE = /\.module\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
+import { getCssModuleUrl, cleanUrl, cssModuleRE } from './url-utils.js';
 
 export const pluginName = 'vite:css-modules';
-
-const moduleCssQuery = '?.module.css';
-const cleanUrl = (url: string) => (
-	url.endsWith(moduleCssQuery)
-		? url.slice(0, -moduleCssQuery.length)
-		: url
-);
 
 const loadExports = async (
 	context: TransformPluginContext,
@@ -210,7 +201,7 @@ export const cssModules = (
 						const composedClasses = await Promise.all(
 							exported.composes.map(async (dep) => {
 								if (dep.type === 'dependency') {
-									const loaded = await loadExports(this, `${dep.specifier}${moduleCssQuery}`, id);
+									const loaded = await loadExports(this, getCssModuleUrl(dep.specifier), id);
 									const exportedEntry = loaded[dep.name]!;
 									if (!exportedEntry) {
 										throw new Error(`Cannot resolve ${JSON.stringify(dep.name)} from ${JSON.stringify(dep.specifier)}`);
@@ -254,7 +245,7 @@ export const cssModules = (
 				const ms = new MagicString(outputCss);
 				await Promise.all(
 					references.map(async ([placeholder, source]) => {
-						const loaded = await loadExports(this, `${source.specifier}${moduleCssQuery}`, id);
+						const loaded = await loadExports(this, getCssModuleUrl(source.specifier), id);
 						const exported = loaded[source.name];
 						if (!exported) {
 							throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
