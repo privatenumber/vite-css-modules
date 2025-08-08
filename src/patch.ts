@@ -1,5 +1,5 @@
 import path from 'path';
-import { version as viteVersion, type Plugin, type ServerHook } from 'vite';
+import type { Plugin, ServerHook } from 'vite';
 import type { SourceMap } from 'rollup';
 import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
@@ -126,7 +126,7 @@ const supportNewCssModules = (
 		return Reflect.apply(transform, this, arguments);
 	};
 
-	if (viteVersion.startsWith('7') && viteCssPostPlugin.transform && 'handler' in viteCssPostPlugin.transform) {
+	if (viteCssPostPlugin.transform && 'handler' in viteCssPostPlugin.transform) {
 		viteCssPostPlugin.transform.handler = newTransform;
 	} else {
 		viteCssPostPlugin.transform = newTransform;
@@ -182,7 +182,7 @@ const supportCssModulesHMR = (
 		return Reflect.apply(transform, this, [css, id, options]);
 	};
 
-	if (viteVersion.startsWith('7') && viteCssAnalysisPlugin.transform && 'handler' in viteCssAnalysisPlugin.transform) {
+	if (viteCssAnalysisPlugin.transform && 'handler' in viteCssAnalysisPlugin.transform) {
 		viteCssAnalysisPlugin.transform.handler = newTransform;
 	} else {
 		viteCssAnalysisPlugin.transform = newTransform;

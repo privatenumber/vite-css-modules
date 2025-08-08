@@ -50,9 +50,8 @@
 		"build": "pkgroll",
 		"test:vite5": "tsx --import alias-imports -C vite5 tests",
 		"test:vite6": "tsx --import alias-imports -C vite6 tests",
-		"test:vite7.0": "tsx --import alias-imports -C vite7-0 tests",
 		"test:vite7": "tsx tests",
-		"test": "pnpm test:vite5 && pnpm test:vite6 && pnpm test:vite7.0 && pnpm test:vite7",
+		"test": "pnpm test:vite5 && pnpm test:vite6 && pnpm test:vite7",
 		"dev": "tsx watch --conditions=development --ignore='/private/**' tests",
 		"type-check": "tsc",
 		"lint": "lintroll .",
@@ -103,10 +102,9 @@
 		"sass": "^1.83.0",
 		"tsx": "^4.20.3",
 		"typescript": "^5.8.3",
-		"vite": "^7.1",
+		"vite": "7",
 		"vite5": "npm:vite@5",
 		"vite6": "npm:vite@6",
-		"vite7-0": "npm:vite@~7.0",
 		"vue": "^3.5.13"
 	}
 }
