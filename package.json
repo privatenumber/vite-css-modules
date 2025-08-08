@@ -58,7 +58,7 @@
 	},
 	"dependencies": {
 		"@ampproject/remapping": "^2.3.0",
-		"@rollup/pluginutils": "^5.1.4",
+		"@rollup/pluginutils": "^5.2.0",
 		"generic-names": "^4.0.0",
 		"icss-utils": "^5.1.0",
 		"magic-string": "^0.30.17",
@@ -97,7 +97,7 @@
 		"playwright-chromium": "^1.52.0",
 		"postcss": "^8.4.49",
 		"postcss-selector-parser": "^6.1.2",
-		"rollup": "^4.40.0",
+		"rollup": "^4.46.2",
 		"sass": "^1.83.0",
 		"tsx": "^4.20.3",
 		"typescript": "^5.8.3",
