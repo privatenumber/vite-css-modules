@@ -1,6 +1,8 @@
 import path from 'path';
 import type { Plugin, ServerHook } from 'vite';
-import type { SourceMap } from 'rollup';
+import type {
+	SourceMap, ObjectHook, TransformPluginContext, TransformResult,
+} from 'rollup';
 import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
@@ -29,6 +31,49 @@ const appendInlineSoureMap = (
 	return `\n/*# sourceMappingURL=${sourceMapUrl} */`;
 };
 
+type getObjectHook <T extends ObjectHook<unknown>> = (
+	T extends ObjectHook<infer U>
+		? NonNullable<U>
+		: never
+);
+type TransformHandler = getObjectHook<Plugin['transform']>;
+
+type NewTransformHandler = (
+	this: TransformPluginContext,
+	originalTransformHandler: TransformHandler,
+	code: string,
+	id: string,
+	options?: {
+		ssr?: boolean;
+	},
+) => Promise<TransformResult> | TransformResult;
+
+const createTransformWrapper = (
+	originalTransform: TransformHandler,
+	newTransform: NewTransformHandler,
+): TransformHandler => function () {
+	return Reflect.apply(newTransform, this, [originalTransform, ...arguments]);
+};
+
+const patchTransform = (
+	plugin: Plugin,
+	newTransform: NewTransformHandler,
+) => {
+	if (!plugin.transform) {
+		throw new Error('Plugin does not have a transform method');
+	}
+
+	// For Vite v6.3.2
+	if (
+		typeof plugin.transform === 'object'
+		&& 'handler' in plugin.transform
+	) {
+		plugin.transform.handler = createTransformWrapper(plugin.transform.handler, newTransform);
+	} else {
+		plugin.transform = createTransformWrapper(plugin.transform, newTransform);
+	}
+};
+
 const supportNewCssModules = (
 	viteCssPostPlugin: Plugin,
 	config: {
@@ -40,18 +85,7 @@ const supportNewCssModules = (
 	},
 	pluginInstance: Plugin,
 ) => {
-	let { transform } = viteCssPostPlugin;
-
-	// For Vite v7.0.0
-	if (transform && 'handler' in transform) {
-		transform = transform.handler;
-	}
-
-	if (typeof transform !== 'function') {
-		throw new TypeError('vite:css-post plugin transform is not a function');
-	}
-
-	viteCssPostPlugin.transform = async function (jsCode, id, options) {
+	patchTransform(viteCssPostPlugin, async function (originalTransform, jsCode, id, options) {
 		if (cssModuleRE.test(id)) {
 			this.addWatchFile(path.resolve(id));
 			const inlined = inlineRE.test(id);
@@ -59,7 +93,7 @@ const supportNewCssModules = (
 			const pluginMeta = info.meta[pluginInstance.name] as PluginMeta | undefined;
 			if (!pluginMeta) {
 				// In Vitest, CSS gets disabled
-				return Reflect.apply(transform, this, arguments);
+				return Reflect.apply(originalTransform, this, [jsCode, id, options]);
 			}
 
 			let { css } = pluginMeta;
@@ -108,7 +142,7 @@ const supportNewCssModules = (
 			 * can generate an aggregated style.css file
 			 * https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L524C9-L524C15
 			 */
-			const result = await Reflect.apply(transform, this, [css, id]);
+			const result = await Reflect.apply(originalTransform, this, [css, id]);
 
 			// If it's inlined, return the minified CSS
 			// https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L530-L536
@@ -123,8 +157,8 @@ const supportNewCssModules = (
 			};
 		}
 
-		return Reflect.apply(transform, this, arguments);
-	};
+		return Reflect.apply(originalTransform, this, [jsCode, id, options]);
+	});
 };
 
 const supportCssModulesHMR = (
@@ -136,18 +170,7 @@ const supportCssModulesHMR = (
 	}
 
 	const { configureServer } = viteCssAnalysisPlugin;
-	let { transform } = viteCssAnalysisPlugin;
-
-	// For Vite v6.3.2
-	if (transform && 'handler' in transform) {
-		transform = transform.handler;
-	}
-
-	if (typeof transform !== 'function') {
-		throw new TypeError('vite:css-analysis plugin transform is not a function');
-	}
 	const tag = '?vite-css-modules?inline';
-
 	viteCssAnalysisPlugin.configureServer = function (server) {
 		const moduleGraph = server.environments
 			? server.environments.client.moduleGraph
@@ -166,15 +189,15 @@ const supportCssModulesHMR = (
 		}
 	};
 
-	viteCssAnalysisPlugin.transform = async function (css, id, options) {
+	patchTransform(viteCssAnalysisPlugin, async function (originalTransform, css, id, options) {
 		if (cssModuleRE.test(id)) {
 			// Disable self-accept by adding `?inline` for:
 			// https://github.com/vitejs/vite/blob/775bb5026ee1d7e15b75c8829e7f528c1b26c493/packages/vite/src/node/plugins/css.ts#L955-L958
 			id += tag;
 		}
 
-		return Reflect.apply(transform, this, [css, id, options]);
-	};
+		return Reflect.apply(originalTransform, this, [css, id, options]);
+	});
 };
 
 export const patchCssModules = (
