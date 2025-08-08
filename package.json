@@ -34,7 +34,6 @@
 	},
 	"imports": {
 		"vite": {
-			"vite7-0": "vite7-0",
 			"vite6": "vite6",
 			"vite5": "vite5",
 			"default": "vite"
