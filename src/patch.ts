@@ -126,7 +126,12 @@ const supportNewCssModules = (
 		return Reflect.apply(transform, this, arguments);
 	};
 
-	if (viteCssPostPlugin.transform && 'handler' in viteCssPostPlugin.transform) {
+	if (
+		viteCssPostPlugin.transform
+		// They assign `handler` as a property of the transform function in Vite v6
+		&& typeof viteCssPostPlugin.transform === 'object'
+		&& 'handler' in viteCssPostPlugin.transform
+	) {
 		viteCssPostPlugin.transform.handler = newTransform;
 	} else {
 		viteCssPostPlugin.transform = newTransform;
