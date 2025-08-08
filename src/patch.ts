@@ -51,7 +51,7 @@ const supportNewCssModules = (
 		throw new TypeError('vite:css-post plugin transform is not a function');
 	}
 
-	viteCssPostPlugin.transform = async function (jsCode, id, options) {
+	const newTransform: typeof transform = async function (jsCode, id, options) {
 		if (cssModuleRE.test(id)) {
 			this.addWatchFile(path.resolve(id));
 			const inlined = inlineRE.test(id);
@@ -125,6 +125,12 @@ const supportNewCssModules = (
 
 		return Reflect.apply(transform, this, arguments);
 	};
+
+	if (viteCssPostPlugin.transform && 'handler' in viteCssPostPlugin.transform) {
+		viteCssPostPlugin.transform.handler = newTransform;
+	} else {
+		viteCssPostPlugin.transform = newTransform;
+	}
 };
 
 const supportCssModulesHMR = (
@@ -166,7 +172,7 @@ const supportCssModulesHMR = (
 		}
 	};
 
-	viteCssAnalysisPlugin.transform = async function (css, id, options) {
+	const newTransform: typeof transform = async function (css, id, options) {
 		if (cssModuleRE.test(id)) {
 			// Disable self-accept by adding `?inline` for:
 			// https://github.com/vitejs/vite/blob/775bb5026ee1d7e15b75c8829e7f528c1b26c493/packages/vite/src/node/plugins/css.ts#L955-L958
@@ -175,6 +181,12 @@ const supportCssModulesHMR = (
 
 		return Reflect.apply(transform, this, [css, id, options]);
 	};
+
+	if (viteCssAnalysisPlugin.transform && 'handler' in viteCssAnalysisPlugin.transform) {
+		viteCssAnalysisPlugin.transform.handler = newTransform;
+	} else {
+		viteCssAnalysisPlugin.transform = newTransform;
+	}
 };
 
 export const patchCssModules = (
