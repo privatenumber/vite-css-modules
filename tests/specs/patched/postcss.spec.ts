@@ -37,8 +37,8 @@ export default testSuite(({ describe }) => {
 				expect(css).toMatch('--file: "utils2.css?.module.css"');
 
 				// Util is not duplicated despite being used twice
-				const utilClass = Array.from(css!.matchAll(/foo/g));
-				expect(utilClass.length).toBe(1);
+				const utilityClass = Array.from(css!.matchAll(/foo/g));
+				expect(utilityClass.length).toBe(1);
 
 				/*
 				class-name2 from style2 is not duplicated
@@ -193,8 +193,8 @@ export default testSuite(({ describe }) => {
 				expect(code).toMatch(String.raw`--file: \"utils2.css?.module.css\"`);
 
 				// Util is not duplicated despite being used twice
-				const utilClass = Array.from(code.matchAll(/foo/g));
-				expect(utilClass.length).toBe(1);
+				const utilityClass = Array.from(code.matchAll(/foo/g));
+				expect(utilityClass.length).toBe(1);
 			});
 
 			test('devSourcemap', async () => {
@@ -384,8 +384,8 @@ export default testSuite(({ describe }) => {
 			expect(css).toMatch('--file: "utils2.css?.module.css"');
 
 			// Util is not duplicated
-			const utilClass = Array.from(css!.matchAll(/foo/g));
-			expect(utilClass.length).toBe(1);
+			const utilityClass = Array.from(css!.matchAll(/foo/g));
+			expect(utilityClass.length).toBe(1);
 		});
 
 		describe('localsConvention', ({ test }) => {
@@ -741,8 +741,8 @@ export default testSuite(({ describe }) => {
 				});
 
 				// Assert that class-name2 only appears once
-				const utilClass = Array.from(css!.matchAll(/\._class-name2_/g));
-				expect(utilClass.length).toBe(1);
+				const utilityClass = Array.from(css!.matchAll(/\._class-name2_/g));
+				expect(utilityClass.length).toBe(1);
 			});
 		});
 

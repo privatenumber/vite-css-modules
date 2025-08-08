@@ -46,8 +46,8 @@ export default testSuite(({ describe }) => {
 			});
 
 			// Util is not duplicated
-			const utilClass = Array.from(css!.matchAll(/foo/g));
-			expect(utilClass.length).toBe(1);
+			const utilityClass = Array.from(css!.matchAll(/foo/g));
+			expect(utilityClass.length).toBe(1);
 		});
 
 		test('Empty CSS Module', async () => {

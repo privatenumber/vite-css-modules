@@ -45,8 +45,8 @@ export default testSuite(({ describe }) => {
 
 				// util class is duplicated
 				// https://github.com/vitejs/vite/issues/15683
-				const utilClass = Array.from(css!.matchAll(/util-class/g));
-				expect(utilClass.length).toBeGreaterThan(1);
+				const utilityClass = Array.from(css!.matchAll(/util-class/g));
+				expect(utilityClass.length).toBeGreaterThan(1);
 			});
 
 			test('inline', async () => {
@@ -80,8 +80,8 @@ export default testSuite(({ describe }) => {
 
 				// util class is duplicated
 				// https://github.com/vitejs/vite/issues/15683
-				const utilClass = Array.from(code.matchAll(/util-class/g));
-				expect(utilClass.length).toBeGreaterThan(1);
+				const utilityClass = Array.from(code.matchAll(/util-class/g));
+				expect(utilityClass.length).toBeGreaterThan(1);
 			});
 
 			test('devSourcemap', async () => {
@@ -401,8 +401,8 @@ export default testSuite(({ describe }) => {
 
 					// util class is duplicated
 					// https://github.com/vitejs/vite/issues/15683
-					const utilClass = Array.from(css!.matchAll(/util-class/g));
-					expect(utilClass.length).toBeGreaterThan(1);
+					const utilityClass = Array.from(css!.matchAll(/util-class/g));
+					expect(utilityClass.length).toBeGreaterThan(1);
 				});
 
 				test('dev server', async () => {
@@ -419,8 +419,8 @@ export default testSuite(({ describe }) => {
 
 					// util class is duplicated
 					// https://github.com/vitejs/vite/issues/15683
-					const utilClass = Array.from(code.matchAll(/util-class/g));
-					expect(utilClass.length).toBeGreaterThan(1);
+					const utilityClass = Array.from(code.matchAll(/util-class/g));
+					expect(utilityClass.length).toBeGreaterThan(1);
 				});
 			});
 
@@ -440,8 +440,8 @@ export default testSuite(({ describe }) => {
 
 				// util custom property is duplicated
 				// https://github.com/vitejs/vite/issues/15683
-				const utilClass = Array.from(css!.matchAll(/hotpink/g));
-				expect(utilClass.length).toBeGreaterThan(1);
+				const utilityClass = Array.from(css!.matchAll(/hotpink/g));
+				expect(utilityClass.length).toBeGreaterThan(1);
 			});
 
 			test('devSourcemap', async () => {

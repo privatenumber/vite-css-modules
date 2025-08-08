@@ -31,7 +31,7 @@ const parseTarget = (
 		version!.split('.').map(Number),
 	] as [
 		keyof typeof arbitraryModuleNamespaceNames,
-		Version
+		Version,
 	];
 };
 
