@@ -101,7 +101,7 @@
 		"sass": "^1.83.0",
 		"tsx": "^4.20.3",
 		"typescript": "^5.8.3",
-		"vite": "7",
+		"vite": "^7.1",
 		"vite5": "npm:vite@5",
 		"vite6": "npm:vite@6",
 		"vue": "^3.5.13"
