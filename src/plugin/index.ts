@@ -4,7 +4,7 @@ import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
 import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
-import remapping, { type SourceMapInput } from '@ampproject/remapping';
+import remapping, { type SourceMapInput } from '@jridgewell/remapping';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import { generateTypes } from './generate-types.js';
