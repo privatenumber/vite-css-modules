@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@jridgewell/remapping':
-        specifier: ^2.3.4
-        version: 2.3.4
+        specifier: ^2.3.5
+        version: 2.3.5
       '@rollup/pluginutils':
-        specifier: ^5.2.0
-        version: 5.2.0(rollup@4.46.2)
+        specifier: ^5.3.0
+        version: 5.3.0(rollup@4.46.2)
       generic-names:
         specifier: ^4.0.0
         version: 4.0.0
@@ -21,8 +21,8 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0(postcss@8.5.6)
       magic-string:
-        specifier: ^0.30.17
-        version: 0.30.17
+        specifier: ^0.30.19
+        version: 0.30.19
       postcss-modules-extract-imports:
         specifier: ^3.1.0
         version: 3.1.0(postcss@8.5.6)
@@ -536,26 +536,21 @@ packages:
     resolution: {integrity: sha512-u3UPsIilWKOM3F9CXtrG8LEJmNxwoCQC/XVj4IKYXvvpx7QIi/Kg1LI5uDmDpKlac62NUtX7eLjRh+jVZcLOzw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  '@jridgewell/gen-mapping@0.3.5':
-    resolution: {integrity: sha512-IzL8ZoEDIBRWEzlCcRhOaCupYyN5gdIK+Q6fbFdPDg6HqX6jpkItn7DFIpW9LQzXG6Df9sA7+OKnq0qlz/GaQg==}
-    engines: {node: '>=6.0.0'}
+  '@jridgewell/gen-mapping@0.3.13':
+    resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
 
-  '@jridgewell/remapping@2.3.4':
-    resolution: {integrity: sha512-aG+WvAz17rhbzhKNkSeMLgbkPPK82ovXdONvmucbGhUqcroRFLLVhoGAk4xEI17gHpXgNX3sr0/B1ybRUsbEWw==}
+  '@jridgewell/remapping@2.3.5':
+    resolution: {integrity: sha512-LI9u/+laYG4Ds1TDKSJW2YPrIlcVYOwi2fUC6xB43lueCjgxV4lffOCZCtYFiH6TNOX+tQKXx97T4IKHbhyHEQ==}
 
   '@jridgewell/resolve-uri@3.1.2':
     resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
     engines: {node: '>=6.0.0'}
 
-  '@jridgewell/set-array@1.2.1':
-    resolution: {integrity: sha512-R8gLRTZeyp03ymzP/6Lil/28tGeGEzhx1q2k703KGWRAI1VdvPIXdG70VJc2pAMw3NA6JKL5hhFu1sJX0Mnn/A==}
-    engines: {node: '>=6.0.0'}
+  '@jridgewell/sourcemap-codec@1.5.5':
+    resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@jridgewell/sourcemap-codec@1.5.0':
-    resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
-
-  '@jridgewell/trace-mapping@0.3.25':
-    resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+  '@jridgewell/trace-mapping@0.3.31':
+    resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
@@ -712,8 +707,8 @@ packages:
       rollup:
         optional: true
 
-  '@rollup/pluginutils@5.2.0':
-    resolution: {integrity: sha512-qWJ2ZTbmumwiLFomfzTyt5Kng4hwPi9rwCYN4SHb6eaRU1KNO4ccxINHr/VhH4GgPlt1XfSTLX2LBTme8ne4Zw==}
+  '@rollup/pluginutils@5.3.0':
+    resolution: {integrity: sha512-5EdhGZtnu3V88ces7s53hhfK5KSASnJZv8Lulpc04cWO3REESroJXg73DFsOmgbU2BhwV0E20bu2IDZb3VKW4Q==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -2163,8 +2158,8 @@ packages:
     resolution: {integrity: sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  magic-string@0.30.17:
-    resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
+  magic-string@0.30.19:
+    resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}
 
   manten@1.5.0:
     resolution: {integrity: sha512-Cdw/Sd3vbq8Y8qUT+YaxTzYMDZQn1kjOUfqD6NwzXTdLWJtIjEoXr0DuaHyb9YkU+567V/TIvj5il5/P5pV9zA==}
@@ -3283,27 +3278,24 @@ snapshots:
       '@types/yargs': 17.0.32
       chalk: 4.1.2
 
-  '@jridgewell/gen-mapping@0.3.5':
+  '@jridgewell/gen-mapping@0.3.13':
     dependencies:
-      '@jridgewell/set-array': 1.2.1
-      '@jridgewell/sourcemap-codec': 1.5.0
-      '@jridgewell/trace-mapping': 0.3.25
+      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/trace-mapping': 0.3.31
 
-  '@jridgewell/remapping@2.3.4':
+  '@jridgewell/remapping@2.3.5':
     dependencies:
-      '@jridgewell/gen-mapping': 0.3.5
-      '@jridgewell/trace-mapping': 0.3.25
+      '@jridgewell/gen-mapping': 0.3.13
+      '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
-  '@jridgewell/set-array@1.2.1': {}
+  '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@jridgewell/sourcemap-codec@1.5.0': {}
-
-  '@jridgewell/trace-mapping@0.3.25':
+  '@jridgewell/trace-mapping@0.3.31':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
@@ -3393,43 +3385,43 @@ snapshots:
 
   '@rollup/plugin-commonjs@28.0.6(rollup@4.46.2)':
     dependencies:
-      '@rollup/pluginutils': 5.2.0(rollup@4.46.2)
+      '@rollup/pluginutils': 5.3.0(rollup@4.46.2)
       commondir: 1.0.1
       estree-walker: 2.0.2
       fdir: 6.4.6(picomatch@4.0.3)
       is-reference: 1.2.1
-      magic-string: 0.30.17
+      magic-string: 0.30.19
       picomatch: 4.0.3
     optionalDependencies:
       rollup: 4.46.2
 
   '@rollup/plugin-dynamic-import-vars@2.1.5(rollup@4.46.2)':
     dependencies:
-      '@rollup/pluginutils': 5.2.0(rollup@4.46.2)
+      '@rollup/pluginutils': 5.3.0(rollup@4.46.2)
       astring: 1.9.0
       estree-walker: 2.0.2
       fast-glob: 3.3.3
-      magic-string: 0.30.17
+      magic-string: 0.30.19
     optionalDependencies:
       rollup: 4.46.2
 
   '@rollup/plugin-inject@5.0.5(rollup@4.46.2)':
     dependencies:
-      '@rollup/pluginutils': 5.2.0(rollup@4.46.2)
+      '@rollup/pluginutils': 5.3.0(rollup@4.46.2)
       estree-walker: 2.0.2
-      magic-string: 0.30.17
+      magic-string: 0.30.19
     optionalDependencies:
       rollup: 4.46.2
 
   '@rollup/plugin-json@6.1.0(rollup@4.46.2)':
     dependencies:
-      '@rollup/pluginutils': 5.2.0(rollup@4.46.2)
+      '@rollup/pluginutils': 5.3.0(rollup@4.46.2)
     optionalDependencies:
       rollup: 4.46.2
 
   '@rollup/plugin-node-resolve@16.0.1(rollup@4.46.2)':
     dependencies:
-      '@rollup/pluginutils': 5.2.0(rollup@4.46.2)
+      '@rollup/pluginutils': 5.3.0(rollup@4.46.2)
       '@types/resolve': 1.20.2
       deepmerge: 4.3.1
       is-module: 1.0.0
@@ -3437,7 +3429,7 @@ snapshots:
     optionalDependencies:
       rollup: 4.46.2
 
-  '@rollup/pluginutils@5.2.0(rollup@4.46.2)':
+  '@rollup/pluginutils@5.3.0(rollup@4.46.2)':
     dependencies:
       '@types/estree': 1.0.8
       estree-walker: 2.0.2
@@ -3765,7 +3757,7 @@ snapshots:
       '@vue/compiler-ssr': 3.5.13
       '@vue/shared': 3.5.13
       estree-walker: 2.0.2
-      magic-string: 0.30.17
+      magic-string: 0.30.19
       postcss: 8.5.6
       source-map-js: 1.2.1
 
@@ -5114,9 +5106,9 @@ snapshots:
 
   lowercase-keys@3.0.0: {}
 
-  magic-string@0.30.17:
+  magic-string@0.30.19:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   manten@1.5.0:
     dependencies:
@@ -5574,10 +5566,10 @@ snapshots:
       '@rollup/plugin-inject': 5.0.5(rollup@4.46.2)
       '@rollup/plugin-json': 6.1.0(rollup@4.46.2)
       '@rollup/plugin-node-resolve': 16.0.1(rollup@4.46.2)
-      '@rollup/pluginutils': 5.2.0(rollup@4.46.2)
+      '@rollup/pluginutils': 5.3.0(rollup@4.46.2)
       cjs-module-lexer: 2.1.0
       esbuild: 0.25.8
-      magic-string: 0.30.17
+      magic-string: 0.30.19
       rollup: 4.46.2
       rollup-pluginutils: 2.8.2
     optionalDependencies:

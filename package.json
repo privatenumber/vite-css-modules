@@ -57,11 +57,11 @@
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"dependencies": {
-		"@jridgewell/remapping": "^2.3.4",
-		"@rollup/pluginutils": "^5.2.0",
+		"@jridgewell/remapping": "^2.3.5",
+		"@rollup/pluginutils": "^5.3.0",
 		"generic-names": "^4.0.0",
 		"icss-utils": "^5.1.0",
-		"magic-string": "^0.30.17",
+		"magic-string": "^0.30.19",
 		"postcss-modules-extract-imports": "^3.1.0",
 		"postcss-modules-local-by-default": "^4.2.0",
 		"postcss-modules-scope": "^3.2.1",
