@@ -808,20 +808,21 @@ export default testSuite(({ describe }) => {
 					 * https://npmjs.com/vite-css-modules
 					 */
 
-					const _import: string;
-					const _export: string;
-					const _default: string;
+					declare const _import: string;
+					declare const _export: string;
+					declare const _default: string;
 
 					export {
 						_import as "import",
 						_export as "export"
 					};
 
-					export default {
-						"import": _import,
-						"export": _export,
-						"default": _default
+					declare const _default: {
+						"import": typeof _import;
+						"export": typeof _export;
+						"default": typeof _default;
 					};
+					export default _default;
 
 					`,
 				);
@@ -866,9 +867,9 @@ export default testSuite(({ describe }) => {
 					 * https://npmjs.com/vite-css-modules
 					 */
 
-					const _import: string;
-					const _export: string;
-					const _default: string;
+					declare const _import: string;
+					declare const _export: string;
+					declare const _default: string;
 
 					export {
 						_import as "import",
@@ -919,15 +920,16 @@ export default testSuite(({ describe }) => {
 					 * https://npmjs.com/vite-css-modules
 					 */
 
-					const _import: string;
-					const _export: string;
-					const _default: string;
+					declare const _import: string;
+					declare const _export: string;
+					declare const _default: string;
 
-					export default {
-						"import": _import,
-						"export": _export,
-						"default": _default
+					declare const _default: {
+						"import": typeof _import;
+						"export": typeof _export;
+						"default": typeof _default;
 					};
+					export default _default;
 
 					`,
 				);

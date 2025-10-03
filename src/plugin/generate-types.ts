@@ -45,14 +45,19 @@ const genereateNamedExports = (
 
 const generateDefaultExport = (
 	exportedVariables: ExportedVariable[],
-) => `export default {\n${
-	exportedVariables.map(
-		([jsVariable, exportName]) => `\t${
-			jsVariable === exportName
+) => {
+	// Generate type-safe default export compatible with rollup-plugin-dts
+	const properties = exportedVariables.map(
+		([jsVariable, exportName]) => {
+			const key = jsVariable === exportName
 				? jsVariable
-				: `${exportName}: ${jsVariable}`}`,
-	).join(',\n')
-}\n};`;
+				: exportName;
+			return `\t${key}: typeof ${jsVariable};`;
+		},
+	).join('\n');
+
+	return `declare const _default: {\n${properties}\n};\nexport default _default;`;
+};
 
 export const generateTypes = (
 	exports: Exports,
@@ -63,7 +68,7 @@ export const generateTypes = (
 	const exportedVariables = Object.entries(exports).flatMap(
 		([exportName, { exportAs }]) => {
 			const jsVariable = makeLegalIdentifier(exportName);
-			variables.add(`const ${jsVariable}: string;`);
+			variables.add(`declare const ${jsVariable}: string;`);
 
 			return Array.from(exportAs).map((exportAsName) => {
 				const exportNameSafe = makeLegalIdentifier(exportAsName);
