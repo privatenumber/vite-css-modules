@@ -1,12 +1,31 @@
-# vite-css-modules
+# vite-css-modules <a href="https://npm.im/vite-css-modules"><img src="https://badgen.net/npm/v/vite-css-modules"></a> <a href="https://npm.im/vite-css-modules"><img src="https://badgen.net/npm/dm/vite-css-modules"></a>
 
-This Vite plugin to fixes the following CSS Module bugs in Vite: [#7504](https://github.com/vitejs/vite/issues/7504), [#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340), & [#15683](https://github.com/vitejs/vite/issues/15683)
+Vite plugin to fix broken CSS Modules handling.
 
-The plugin makes Vite handle CSS Modules as JavaScript modules, allowing integration into Vite's module graph. This lets Vite plugins process individual CSS Modules, and also lets Vite de-duplicate shared CSS Modules.
+[→ Play with a demo on StackBlitz](https://stackblitz.com/edit/vitejs-vite-v9jcwo?file=src%2Fstyle.module.css)
 
-The goal of this package is to integrate this fix directly in Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)) while also offering it as a patch to users that can't upgrade Vite.
+Note: We're working to integrate this fix directly into Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)). Until then, use this plugin to benefit from these improvements now.
 
-For more details, see the [FAQ](#faq) below.
+<br>
+
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=398771"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/donate.webp"></a>
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=416984"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/sponsor.webp"></a>
+</p>
+
+<br>
+
+## Why use this plugin?
+
+Vite's current CSS Modules implementation has critical bugs. This plugin resolves:
+
+- **Dependency Duplication**: Avoid duplicated styles, reducing conflicts and bundle size. ([#7504](https://github.com/vitejs/vite/issues/7504), [#15683](https://github.com/vitejs/vite/issues/15683))
+
+- **HMR Fixes**: Enables proper Hot Module Replacement (HMR) for CSS Modules. ([#16074](https://github.com/vitejs/vite/issues/16074))
+
+- **Plugin Compatibility**: Ensures compatibility with plugins like PostCSS and SCSS. ([#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340))
+
+- **Composition Handling**: Properly errors on missing dependencies and supports reserved JS keyword class names. ([#16075](https://github.com/vitejs/vite/issues/16075), [#14050](https://github.com/vitejs/vite/issues/14050))
 
 ## Install
 ```sh
@@ -15,72 +34,156 @@ npm install -D vite-css-modules
 
 ## Setup
 
-In `vite.config.js`:
+In your Vite config file, add the `patchCssModules()` plugin to patch Vite's CSS Modules behavior:
 
 ```ts
+// vite.config.js
 import { patchCssModules } from 'vite-css-modules'
 
 export default {
     plugins: [
-        patchCssModules()
+        patchCssModules() // ← This is all you need to add!
 
-        // Other plugins
+        // Other plugins...
     ],
-
     css: {
-        // Configure CSS Modules as you previously did
+        // Your existing CSS Modules configuration
         modules: {
             // ...
         },
-
-        // Or LightningCSS
+        // Or if using LightningCSS
         lightningcss: {
             cssModules: {
                 // ...
             }
         }
+    },
+    build: {
+        // Recommended minimum target (See FAQ for more details)
+        target: 'es2022'
     }
 }
 ```
 
 This patches your Vite to handle CSS Modules in a more predictable way.
 
+### Configuration
+Configuring the CSS Modules behavior remains the same as before.
+
+Read the [Vite docs](https://vite.dev/guide/features.html#css-modules) to learn more.
+
+
+### Strongly typed CSS Modules (Optional)
+
+As a bonus feature, this plugin can generate type definitions (`.d.ts` files) for CSS Modules. For example, if `style.module.css` is imported, it will create a `style.module.css.d.ts` file next to it with the type definitions for the exported class names:
+
+```ts
+patchCssModules({
+    generateSourceTypes: true
+})
+```
+
+## API
+
+### `patchCssModules(options)`
+
+#### `exportMode`
+
+- **Type**: `'both' | 'named' | 'default'`
+- **Default**: `'both'`
+
+Specifies how class names are exported from the CSS Module:
+
+- **`both`**: Exports class names as both named and default exports.
+- **`named`**: Exports class names as named exports only.
+- **`default`**: Exports class names as a default export only (an object where keys are class names).
+
+#### `generateSourceTypes`
+
+- **Type**: `boolean`
+- **Default**: `false`
+
+This option generates a `.d.ts` file next to each CSS module file.
+
 
 ## FAQ
 
 ### What issues does this plugin address?
-Vite uses [`postcss-modules`](https://github.com/madyankin/postcss-modules) to bundle CSS Modules per entry point, which leads to the following problems:
 
+Vite delegates bundling each CSS Module to [`postcss-modules`](https://github.com/madyankin/postcss-modules), leading to significant problems:
 
-1. **CSS Modules are not integrated with the Vite build**
+1. **CSS Modules not integrated into Vite's build**
 
-    `postcss-modules` bundles each CSS Module entry-point in a black-box, preventing Vite plugins from accessing any of the dependencies it resolves. This effectively limits further CSS post-processing from Vite plugins (e.g. SCSS, PostCSS, or LightningCSS). 
-    
-    Although `postcss-modules` tries to apply other PostCSS plugins to dependencies, it seems to have issues:
-    
-    - https://github.com/vitejs/vite/issues/10079
-    - https://github.com/vitejs/vite/issues/10340
-
+    Since `postcss-modules` is a black box that only returns the final bundled output, Vite plugins can't hook into the CSS Modules build or process their internal dependencies. This prevents post-processing by plugins like SCSS, PostCSS, or LightningCSS. ([#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340))
 
 2. **Duplicated CSS Module dependencies**
 
-    Since each CSS Module is bundled separately at each entry-point, dependencies shared across those entry-points are duplicated in the final Vite build.
-    
-    This leads to bloated final outputs, and the duplicated composed classes can disrupt the intended style by overriding previously declared classes.
+    Bundling CSS Modules separately duplicates shared dependencies, increasing bundle size and causing style overrides. ([#7504](https://github.com/vitejs/vite/issues/7504), [#15683](https://github.com/vitejs/vite/issues/15683))
 
-    - https://github.com/vitejs/vite/issues/7504
-    - https://github.com/vitejs/vite/issues/15683
+3. **Silent failures on unresolved dependencies**
 
+    `postcss-modules` fails silently when it can't resolve a `composes` dependency—missing exports don't throw errors, making CSS bugs harder to catch. ([#16075](https://github.com/vitejs/vite/issues/16075))
+
+The `vite-css-modules` plugin fixes these issues by seamlessly integrating CSS Modules into Vite's build process.
 
 ### How does this work?
 
-#### Plugin
+The plugin treats CSS Modules as JavaScript modules, fully integrating them into Vite's build pipeline. Here's how:
 
-Inherently, CSS Modules are CSS files with a JavaScript interface exporting the class names.
+- **Transforms CSS into JS modules**
 
-This plugin preserves their nature and compiles each CSS Module into an JS module that loads the CSS. In each CSS Module, the `composes` are transformed into JavaScript imports, and the exports consist of the class names. This allows Vite (or Rollup) to efficiently resolve, bundle, and de-duplicate the CSS Modules.
+  CSS Modules are compiled into JS files that load the CSS. `composes` rules become JS imports, and class names are exported as named JS exports.
 
-This process mirrors the approach taken by Webpack’s `css-loader`, making it easier for those transitioning from Webpack. And since this technically does less work to load CSS Modules, I'm sure it's marginally faster in larger apps.
+- **Integrates with Vite's module graph**
 
-#### Patch
-The patch disables Vite's default CSS Modules behavior, injects this plugin right before Vite's `vite:css-post` plugin, and patches the `vite:css-post` plugin to handle the JS output from the plugin.
+  Because they're now JS modules, CSS Modules join Vite's module graph. This enables proper dependency resolution, bundling, and de-duplication.
+
+- **Unlocks plugin compatibility**
+
+  Other Vite plugins can now access and process CSS Modules—fixing the prior limitation where dependencies inside them were invisible.
+
+This model is similar to Webpack's `css-loader`, making it familiar to devs transitioning from Webpack. It also reduces overhead and improves performance in larger projects.
+
+
+### Does it export class names as named exports?
+
+Yes, but there are a few things to keep in mind:
+
+- **JavaScript naming restrictions**
+
+  Older JavaScript versions don't allow special characters (like `-`) in variable names. So a class like `.foo-bar` couldn't be imported as `foo-bar` and had to be accessed via the default export.
+
+- **Using `localsConvention`**
+
+  To work around this, set `css.modules.localsConvention: 'camelCase'` in your Vite config. This converts `foo-bar` → `fooBar`, making it a valid named export.
+
+- **ES2022 support for arbitrary names**
+
+  With ES2022, you can now export/import names with any characters using quotes. This means `.foo-bar` can be used as a named export directly.
+
+To enable this, set your build target to `es2022`:
+
+```js
+// vite.config.js
+export default {
+    build: {
+        target: 'es2022'
+    }
+}
+```
+
+Then import using:
+
+```js
+import { 'foo-bar' as fooBar } from './styles.module.css'
+```
+
+This gives you full named export access—even for class names with previously invalid characters.
+
+## Sponsors
+
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber">
+		<img src="https://cdn.jsdelivr.net/gh/privatenumber/sponsors/sponsorkit/sponsors.svg">
+	</a>
+</p>

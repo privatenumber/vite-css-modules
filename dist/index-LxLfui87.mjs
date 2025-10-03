@@ -1,12 +1,10 @@
-'use strict';
-
-var postcssModulesValues = require('postcss-modules-values');
-var postcssModulesLocalByDefault = require('postcss-modules-local-by-default');
-var postcssModulesExtractImports = require('postcss-modules-extract-imports');
-var postcssModulesScope = require('postcss-modules-scope');
-var genericNames = require('generic-names');
-var postcss = require('postcss');
-var icssUtils = require('icss-utils');
+import postcssModulesValues from 'postcss-modules-values';
+import postcssModulesLocalByDefault from 'postcss-modules-local-by-default';
+import postcssModulesExtractImports from 'postcss-modules-extract-imports';
+import postcssModulesScope from 'postcss-modules-scope';
+import genericNames from 'generic-names';
+import postcss from 'postcss';
+import { extractICSS } from 'icss-utils';
 
 const processExracted = (icssExports, dependencies, localClasses) => {
   const exports = {};
@@ -47,7 +45,7 @@ const processExracted = (icssExports, dependencies, localClasses) => {
 const postcssExtractIcss = (options) => ({
   postcssPlugin: "extract-icss",
   OnceExit: (root) => {
-    const { icssImports, icssExports } = icssUtils.extractICSS(root);
+    const { icssImports, icssExports } = extractICSS(root);
     const dependencies = new Map(
       Object.entries(icssImports).flatMap(
         ([filePath, fileImports]) => Object.entries(fileImports).map(([hash, name]) => [
@@ -71,22 +69,23 @@ const postcssExtractIcss = (options) => ({
 postcssExtractIcss.postcss = true;
 
 const defaultScopedName = "_[local]_[hash:7]";
-const transform = (code, from, options) => {
-  const generateScopedName = typeof options?.generateScopedName === "function" ? options.generateScopedName : genericNames(options?.generateScopedName ?? defaultScopedName, {
-    hashPrefix: options?.hashPrefix
+const transform = (code, id, options, generateSourceMap) => {
+  const generateScopedName = typeof options.generateScopedName === "function" ? options.generateScopedName : genericNames(options.generateScopedName ?? defaultScopedName, {
+    hashPrefix: options.hashPrefix
   });
+  const isGlobal = options.globalModulePaths?.some((pattern) => pattern.test(id));
   const localClasses = [];
   let extracted;
-  const { css } = postcss([
+  const processed = postcss([
     postcssModulesValues,
     postcssModulesLocalByDefault({
-      mode: options?.scopeBehaviour
+      mode: isGlobal ? "global" : options.scopeBehaviour
     }),
     // Declares imports from composes
     postcssModulesExtractImports(),
     // Resolves & removes composes
     postcssModulesScope({
-      exportGlobals: options?.exportGlobals,
+      exportGlobals: options.exportGlobals,
       generateScopedName: (exportName, resourceFile, rawCss, _node) => {
         const scopedName = generateScopedName(
           exportName,
@@ -104,11 +103,23 @@ const transform = (code, from, options) => {
         extracted = _extracted;
       }
     })
-  ]).process(code, { from });
+  ]).process(code, {
+    from: id,
+    map: generateSourceMap ? {
+      inline: false,
+      annotation: false,
+      sourcesContent: true
+    } : false
+  });
+  console.log({
+    generateSourceMap
+  });
+  console.log("processed", processed.map);
   return {
-    code: css,
+    code: processed.css,
+    map: processed.map?.toJSON(),
     ...extracted
   };
 };
 
-exports.transform = transform;
+export { transform };

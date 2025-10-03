@@ -1,11 +1,14 @@
-import { transform as transform$1 } from 'lightningcss';
+'use strict';
 
-const transform = (code, id, config, options) => {
-  const transformed = transform$1({
+var lightningcss = require('lightningcss');
+
+const transform = (code, id, options, generateSourceMap) => {
+  const transformed = lightningcss.transform({
     ...options,
     filename: id,
     code: Buffer.from(code),
-    cssModules: config || true
+    cssModules: options.cssModules || true,
+    sourceMap: generateSourceMap
   });
   const exports = Object.fromEntries(
     Object.entries(
@@ -16,8 +19,10 @@ const transform = (code, id, config, options) => {
       ([a], [b]) => a < b ? -1 : a > b ? 1 : 0
     )
   );
+  const map = transformed.map ? JSON.parse(Buffer.from(transformed.map).toString()) : void 0;
   return {
     code: transformed.code.toString(),
+    map,
     exports,
     // If `dashedIdents` is enabled
     // https://github.com/parcel-bundler/lightningcss/blob/v1.23.0/node/index.d.ts#L288-L289
@@ -25,4 +30,4 @@ const transform = (code, id, config, options) => {
   };
 };
 
-export { transform };
+exports.transform = transform;
