@@ -56,7 +56,7 @@ const generateDefaultExport = (
 		},
 	).join('\n');
 
-	return `declare const _default: {\n${properties}\n};\nexport default _default;`;
+	return `declare const __default_export__: {\n${properties}\n};\nexport default __default_export__;`;
 };
 
 export const generateTypes = (

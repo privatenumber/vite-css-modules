@@ -817,12 +817,12 @@ export default testSuite(({ describe }) => {
 						_export as "export"
 					};
 
-					declare const _default: {
+					declare const __default_export__: {
 						"import": typeof _import;
 						"export": typeof _export;
 						"default": typeof _default;
 					};
-					export default _default;
+					export default __default_export__;
 
 					`,
 				);
@@ -924,12 +924,12 @@ export default testSuite(({ describe }) => {
 					declare const _export: string;
 					declare const _default: string;
 
-					declare const _default: {
+					declare const __default_export__: {
 						"import": typeof _import;
 						"export": typeof _export;
 						"default": typeof _default;
 					};
-					export default _default;
+					export default __default_export__;
 
 					`,
 				);
