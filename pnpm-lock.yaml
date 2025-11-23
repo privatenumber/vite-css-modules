@@ -55,8 +55,8 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
       '@vitejs/plugin-vue':
-        specifier: ^5.2.1
-        version: 5.2.1(vite@7.1.11(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1))(vue@3.5.13(typescript@5.9.2))
+        specifier: ^6.0.2
+        version: 6.0.2(vite@7.1.11(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1))(vue@3.5.13(typescript@5.9.2))
       alias-imports:
         specifier: ^1.1.0
         version: 1.1.0
@@ -969,6 +969,9 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
+  '@rolldown/pluginutils@1.0.0-beta.50':
+    resolution: {integrity: sha512-5e76wQiQVeL1ICOZVUg4LSOVYg9jyhGCin+icYozhsUzM+fHE7kddi1bdiE0jwVqTfkjba3jUFbEkoC9WkdvyA==}
+
   '@rollup/plugin-alias@5.1.1':
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
     engines: {node: '>=14.0.0'}
@@ -1361,11 +1364,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vitejs/plugin-vue@5.2.1':
-    resolution: {integrity: sha512-cxh314tzaWwOLqVes2gnnCtvBDcM1UMdn+iFR+UjAn411dPT3tOmqrJjbMd7koZpMAmBM/GqeV4n9ge7JSiJJQ==}
-    engines: {node: ^18.0.0 || >=20.0.0}
+  '@vitejs/plugin-vue@6.0.2':
+    resolution: {integrity: sha512-iHmwV3QcVGGvSC1BG5bZ4z6iwa1SOpAPWmnjOErd4Ske+lZua5K9TtAVdx0gMBClJ28DViCbSmZitjWZsWO3LA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
-      vite: ^5.0.0 || ^6.0.0
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
       vue: ^3.2.25
 
   '@vue/compiler-core@3.5.13':
@@ -3888,6 +3891,8 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
+  '@rolldown/pluginutils@1.0.0-beta.50': {}
+
   '@rollup/plugin-alias@5.1.1(rollup@4.46.2)':
     optionalDependencies:
       rollup: 4.46.2
@@ -4240,8 +4245,9 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@vitejs/plugin-vue@5.2.1(vite@7.1.11(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1))(vue@3.5.13(typescript@5.9.2))':
+  '@vitejs/plugin-vue@6.0.2(vite@7.1.11(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1))(vue@3.5.13(typescript@5.9.2))':
     dependencies:
+      '@rolldown/pluginutils': 1.0.0-beta.50
       vite: 7.1.11(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1)
       vue: 3.5.13(typescript@5.9.2)
 
