@@ -112,8 +112,8 @@ importers:
         specifier: npm:vite@5.4.21
         version: vite@5.4.21(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)
       vite6:
-        specifier: npm:vite@6.4.1
-        version: vite@6.4.1(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1)
+        specifier: npm:vite@7.2.4
+        version: vite@7.2.4(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1)
       vue:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.9.2)
@@ -3194,19 +3194,19 @@ packages:
       terser:
         optional: true
 
-  vite@6.4.1:
-    resolution: {integrity: sha512-+Oxm7q9hDoLMyJOYfUYBuHQo+dkAloi33apOPP56pzj+vsdJDzr+j1NISE5pyaAuKL4A3UD34qd0lx5+kfKp2g==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+  vite@7.1.11:
+    resolution: {integrity: sha512-uzcxnSDVjAopEUjljkWh8EIrg6tlzrjFUfMcR1EVsRDGwf/ccef0qQPRyOrROwhrTDaApueq+ja+KLPlzR/zdg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
-      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      '@types/node': ^20.19.0 || >=22.12.0
       jiti: '>=1.21.0'
-      less: '*'
+      less: ^4.0.0
       lightningcss: ^1.21.0
-      sass: '*'
-      sass-embedded: '*'
-      stylus: '*'
-      sugarss: '*'
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
       terser: ^5.16.0
       tsx: ^4.8.1
       yaml: ^2.4.2
@@ -3234,8 +3234,8 @@ packages:
       yaml:
         optional: true
 
-  vite@7.1.11:
-    resolution: {integrity: sha512-uzcxnSDVjAopEUjljkWh8EIrg6tlzrjFUfMcR1EVsRDGwf/ccef0qQPRyOrROwhrTDaApueq+ja+KLPlzR/zdg==}
+  vite@7.2.4:
+    resolution: {integrity: sha512-NL8jTlbo0Tn4dUEXEsUg8KeyG/Lkmc4Fnzb8JXN/Ykm9G4HNImjtABMJgkQoVjOBN/j2WAwDTRytdqJbZsah7w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -6651,7 +6651,7 @@ snapshots:
       lightningcss: 1.28.2
       sass: 1.83.0
 
-  vite@6.4.1(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1):
+  vite@7.1.11(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -6667,7 +6667,7 @@ snapshots:
       tsx: 4.20.3
       yaml: 2.8.1
 
-  vite@7.1.11(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1):
+  vite@7.2.4(@types/node@22.15.32)(lightningcss@1.28.2)(sass@1.83.0)(tsx@4.20.3)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
