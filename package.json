@@ -44,7 +44,7 @@
 			"default": "./dist/index.mjs"
 		}
 	},
-	"packageManager": "pnpm@9.12.1",
+	"packageManager": "pnpm@10.23.0",
 	"scripts": {
 		"build": "pkgroll",
 		"test:vite5": "tsx --import alias-imports -C vite5 tests",
