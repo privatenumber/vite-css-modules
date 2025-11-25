@@ -1,0 +1,7 @@
+ignoredBuiltDependencies:
+  - "@parcel/watcher"
+  - esbuild
+  - unrs-resolver
+
+onlyBuiltDependencies:
+  - playwright-chromium

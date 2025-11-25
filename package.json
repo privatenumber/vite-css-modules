@@ -45,7 +45,7 @@
 			"default": "./dist/index.mjs"
 		}
 	},
-	"packageManager": "pnpm@9.12.1",
+	"packageManager": "pnpm@10.23.0",
 	"scripts": {
 		"build": "pkgroll",
 		"test:vite5": "tsx --import alias-imports -C vite5 tests",
@@ -83,7 +83,7 @@
 	"devDependencies": {
 		"@types/icss-utils": "^5.1.2",
 		"@types/lodash.camelcase": "^4.3.9",
-		"@types/node": "^22.12.0",
+		"@types/node": "^24.10.1",
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
@@ -100,7 +100,7 @@
 		"pkgroll": "^2.17.0",
 		"playwright-chromium": "^1.52.0",
 		"postcss": "^8.4.49",
-		"postcss-selector-parser": "^6.1.2",
+		"postcss-selector-parser": "^7.1.0",
 		"rollup": "^4.46.2",
 		"sass": "^1.83.0",
 		"tsx": "^4.20.3",
