@@ -96,7 +96,7 @@
 		"pkgroll": "^2.17.0",
 		"playwright-chromium": "^1.52.0",
 		"postcss": "^8.4.49",
-		"postcss-selector-parser": "^6.1.2",
+		"postcss-selector-parser": "^7.1.0",
 		"rollup": "^4.46.2",
 		"sass": "^1.83.0",
 		"tsx": "^4.20.3",
