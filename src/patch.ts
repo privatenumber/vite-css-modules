@@ -6,6 +6,7 @@ import type {
 import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
+import { isConfigCaptureEnabled, captureConfig } from './cli/get-vite-config.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
 const directRequestRE = /[?&]direct\b/;
@@ -206,18 +207,29 @@ export const patchCssModules = (
 	name: 'patch-css-modules',
 	enforce: 'pre',
 	configResolved: (config) => {
-		const pluginInstance = cssModules(config, patchConfig);
 		const cssConfig = config.css;
-
 		const isCssModulesDisabled = (
 			cssConfig.transformer === 'lightningcss'
 				? cssConfig.lightningcss?.cssModules
 				: cssConfig.modules
 		) === false;
 
+		// If in config capture mode (CLI), just capture and return
+		if (isConfigCaptureEnabled()) {
+			captureConfig({
+				isCssModulesDisabled,
+				generateSourceTypes: patchConfig?.generateSourceTypes,
+				exportMode: patchConfig?.exportMode ?? 'both',
+				cssModulesOptions: cssConfig.modules,
+			});
+			return;
+		}
+
 		if (isCssModulesDisabled) {
 			return;
 		}
+
+		const pluginInstance = cssModules(config, patchConfig);
 
 		// Disable CSS Modules in Vite in favor of our plugin
 		// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192

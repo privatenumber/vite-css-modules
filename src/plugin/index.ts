@@ -190,7 +190,7 @@ export const cssModules = (
 					Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
 						if (
 							exportName === 'default'
-						&& exportMode === 'both'
+							&& exportMode === 'both'
 						) {
 							this.warn('With `exportMode: both`, you cannot use "default" as a class name as it conflicts with the default export. Set `exportMode` to `default` or `named` to use "default" as a class name.');
 						}
@@ -294,7 +294,7 @@ export const cssModules = (
 
 				if (
 					'getJSON' in cssModuleConfig
-				&& typeof cssModuleConfig.getJSON === 'function'
+					&& typeof cssModuleConfig.getJSON === 'function'
 				) {
 					const json: Record<string, string> = {};
 					for (const exported of Object.values(exports)) {
