@@ -26,9 +26,9 @@ declare module 'postcss-modules-scope' {
 		exportGlobals?: boolean | undefined;
 	};
 
-	interface PostcssModulesScope extends PluginCreator<Options> {
+	type PostcssModulesScope = {
 		generateScopedName: GenerateScopedName;
-	}
+	} & PluginCreator<Options>;
 
 	declare const plugin: PostcssModulesScope;
 	export default plugin;
