@@ -320,10 +320,14 @@ export const cssModules = (
 					if (filePath && cssModuleRE.test(filePath)) {
 						const fileExists = await access(filePath).then(() => true, () => false);
 						if (fileExists) {
-							await writeFile(
-							`${filePath}.d.ts`,
-							generateTypes(exports, exportMode, allowArbitraryNamedExports),
-							);
+							const dtsPath = `${filePath}.d.ts`;
+							const newContent = generateTypes(exports, exportMode, allowArbitraryNamedExports);
+
+							// Skip write if content unchanged to avoid triggering file watchers
+							const existingContent = await readFile(dtsPath, 'utf8').catch(() => null);
+							if (existingContent !== newContent) {
+								await writeFile(dtsPath, newContent);
+							}
 						}
 					}
 				}
