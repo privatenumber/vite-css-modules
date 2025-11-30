@@ -44,7 +44,7 @@
 			"default": "./dist/index.mjs"
 		}
 	},
-	"packageManager": "pnpm@10.23.0",
+	"packageManager": "pnpm@10.24.0",
 	"scripts": {
 		"build": "pkgroll",
 		"test:vite5": "tsx --import alias-imports -C vite5 tests",
@@ -68,8 +68,8 @@
 		"postcss-modules-values": "^4.0.0"
 	},
 	"peerDependencies": {
-		"lightningcss": "^1.23.0",
-		"postcss": "^8.4.33",
+		"lightningcss": "^1.30.2",
+		"postcss": "^8.5.6",
 		"vite": "^5.0.12 || ^6.0.0 || ^7.0.0"
 	},
 	"peerDependenciesMeta": {
@@ -93,13 +93,13 @@
 		"lodash.camelcase": "^4.3.0",
 		"manten": "^1.9.0",
 		"outdent": "^0.8.0",
-		"pkgroll": "^2.21.3",
+		"pkgroll": "^2.21.4",
 		"playwright-chromium": "^1.57.0",
-		"postcss": "^8.4.49",
-		"postcss-selector-parser": "^7.1.0",
+		"postcss": "^8.5.6",
+		"postcss-selector-parser": "^7.1.1",
 		"rollup": "^4.53.3",
 		"sass": "^1.94.2",
-		"tsx": "^4.20.6",
+		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.4",
 		"vite5": "npm:vite@5.4.21",
