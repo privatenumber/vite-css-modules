@@ -46,8 +46,8 @@ const tryImportSass = (
  * This handles SCSS files that only use // comments without other SCSS features.
  */
 const stripScssComments = (code: string): string => code
-	.replace(/^\s*\/\/.*$/gm, '') // Lines that are only comments
-	.replace(/([;{}])\s*\/\/.*$/gm, '$1'); // Inline comments after ; or {}
+	.replaceAll(/^\s*\/\/.*$/gm, '') // Lines that are only comments
+	.replaceAll(/([;{}])\s*\/\/.*$/gm, '$1'); // Inline comments after ; or {}
 
 export type CompileSassResult = {
 	code: string;
@@ -69,9 +69,15 @@ export const compileSass = (
 			url: new URL(`file://${absolutePath}`),
 			loadPaths: [path.dirname(absolutePath)],
 		});
-		return { code: result.css, sassNotFound: false };
+		return {
+			code: result.css,
+			sassNotFound: false,
+		};
 	}
 
 	// No sass compiler - strip // comments as a fallback
-	return { code: stripScssComments(code), sassNotFound: true };
+	return {
+		code: stripScssComments(code),
+		sassNotFound: true,
+	};
 };

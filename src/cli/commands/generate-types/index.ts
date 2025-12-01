@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { command } from 'cleye';
 import { glob } from 'tinyglobby';
 import { green, red, yellow } from 'yoctocolors';
 import type { Exports } from '../../../plugin/generate-esm.js';
-import type { ExportMode } from '../../../plugin/types.js';
 import { generateTypes } from '../../../plugin/generate-types.js';
 import { transform } from '../../../plugin/transformers/postcss/index.js';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from '../../../plugin/locals-convention.js';
@@ -14,13 +14,8 @@ const successIcon = green('✔');
 const failureIcon = red('✖');
 const warningIcon = yellow('⚠');
 
-type LocalsConvention = 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly';
-
-type Options = {
-	exportMode: ExportMode;
-	localsConvention?: LocalsConvention;
-	target?: string;
-};
+const exportModes = ['both', 'named', 'default'] as const;
+const localsConventions = ['camelCase', 'camelCaseOnly', 'dashes', 'dashesOnly'] as const;
 
 const preprocessorExtensions = new Set(['.scss', '.sass', '.less', '.styl', '.stylus']);
 const sassExtensions = new Set(['.scss', '.sass']);
@@ -34,10 +29,53 @@ type Result = {
 	errorType: 'sass-not-found' | 'preprocessor' | 'other';
 };
 
-export const generateTypesCommand = async (
-	directories: string[],
-	options: Options,
-) => {
+export const generateTypesCommand = command({
+	name: 'generate-types',
+
+	parameters: [
+		'[directories...]',
+	],
+
+	flags: {
+		exportMode: {
+			type: String,
+			alias: 'e',
+			description: `Export style: ${exportModes.join(', ')} (default: both)`,
+		},
+		localsConvention: {
+			type: String,
+			alias: 'l',
+			description: `Class name transformation: ${localsConventions.join(', ')}`,
+		},
+		target: {
+			type: String,
+			description: 'Build target for arbitrary module namespace (e.g. es2022, esnext, chrome90)',
+		},
+	},
+
+	help: {
+		description: 'Generate TypeScript declaration files for CSS Modules',
+	},
+}, async (argv) => {
+	const directories = (
+		argv._.directories && argv._.directories.length > 0
+			? argv._.directories
+			: [process.cwd()]
+	);
+
+	const { exportMode, localsConvention, target } = argv.flags;
+
+	if (exportMode && !exportModes.includes(exportMode as typeof exportModes[number])) {
+		throw new Error(`Invalid --export-mode: ${exportMode}. Must be one of: ${exportModes.join(', ')}`);
+	}
+
+	if (
+		localsConvention
+		&& !localsConventions.includes(localsConvention as typeof localsConventions[number])
+	) {
+		throw new Error(`Invalid --locals-convention: ${localsConvention}. Must be one of: ${localsConventions.join(', ')}`);
+	}
+
 	const files = await glob(
 		directories.map(
 			directory => path.posix.join(directory, '**/*.module.{css,scss,sass,less,styl,stylus,pcss,postcss}'),
@@ -58,13 +96,14 @@ export const generateTypesCommand = async (
 		return;
 	}
 
-	files.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+	files.sort((a, b) => (a < b ? -1 : (a > b ? 1 : 0)));
 
 	console.log(`Found ${files.length} CSS Module(s)\n`);
 
-	const { exportMode, localsConvention, target } = options;
+	const validatedExportMode = (exportMode as typeof exportModes[number]) ?? 'both';
+	const validatedLocalsConvention = localsConvention as typeof localsConventions[number];
 
-	const cssModulesOptions = localsConvention ? { localsConvention } : {};
+	const cssModulesOptions = validatedLocalsConvention ? { localsConvention: validatedLocalsConvention } : {};
 	const keepOriginalExport = shouldKeepOriginalExport(cssModulesOptions);
 	const localsConventionFunction = getLocalesConventionFunction(cssModulesOptions);
 
@@ -118,13 +157,16 @@ export const generateTypesCommand = async (
 
 				const dtsContent = generateTypes(
 					exportNames,
-					exportMode,
+					validatedExportMode,
 					allowArbitraryNamedExports,
 				);
 
 				const dtsPath = `${file}.d.ts`;
 				await fs.writeFile(dtsPath, dtsContent, 'utf8');
-				return { file, dtsPath };
+				return {
+					file,
+					dtsPath,
+				};
 			} catch (error) {
 				let errorType: 'sass-not-found' | 'preprocessor' | 'other';
 				if (sassNotFound) {
@@ -150,7 +192,8 @@ export const generateTypesCommand = async (
 		}
 	}
 
-	const failedFiles = results.filter((r): r is Result & { error: string; errorType: string } => 'error' in r);
+	const failedFiles = results.filter((r): r is Result & { error: string;
+		errorType: string; } => 'error' in r);
 
 	if (failedFiles.length > 0) {
 		const sassNotFoundFailures = failedFiles.filter(f => f.errorType === 'sass-not-found');
@@ -188,4 +231,4 @@ export const generateTypesCommand = async (
 	} else {
 		console.log(`\n${successIcon} Successfully generated types for ${files.length} CSS Module(s)`);
 	}
-};
+});
