@@ -83,7 +83,11 @@ export const generateTypesCommand = command({
 	const validatedExportMode = (exportMode as typeof exportModes[number]) ?? 'both';
 	const validatedLocalsConvention = localsConvention as typeof localsConventions[number];
 
-	const cssModulesOptions = validatedLocalsConvention ? { localsConvention: validatedLocalsConvention } : {};
+	const cssModulesOptions = (
+		validatedLocalsConvention
+			? { localsConvention: validatedLocalsConvention }
+			: {}
+	);
 	const keepOriginalExport = shouldKeepOriginalExport(cssModulesOptions);
 	const localsConventionFunction = getLocalesConventionFunction(cssModulesOptions);
 

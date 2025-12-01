@@ -666,6 +666,123 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
+		describe('SCSS comment stripping', ({ test }) => {
+			test('strips full-line // comments', async () => {
+				await using fixture = await createFixture({
+					'style.module.scss': outdent`
+						// This is a full-line comment
+						.button {
+							color: red;
+						}
+						// Another comment
+						.header {
+							font-size: 20px;
+						}
+					`,
+				});
+
+				const { exitCode } = await viteCssModulesCli([], fixture.path);
+
+				expect(exitCode).toBe(0);
+
+				const dtsContent = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+				expect(dtsContent).toContain('declare const button: string');
+				expect(dtsContent).toContain('declare const header: string');
+			});
+
+			test('strips indented // comments', async () => {
+				await using fixture = await createFixture({
+					'style.module.scss': outdent`
+						.button {
+							// This comment is indented inside a rule
+							color: red;
+						}
+					`,
+				});
+
+				const { exitCode } = await viteCssModulesCli([], fixture.path);
+
+				expect(exitCode).toBe(0);
+
+				const dtsContent = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+				expect(dtsContent).toContain('declare const button: string');
+			});
+
+			test('preserves // in url() values', async () => {
+				await using fixture = await createFixture({
+					'style.module.scss': outdent`
+						.icon {
+							background: url(https://example.com/icon.png);
+						}
+					`,
+				});
+
+				const { exitCode } = await viteCssModulesCli([], fixture.path);
+
+				expect(exitCode).toBe(0);
+
+				const dtsContent = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+				expect(dtsContent).toContain('declare const icon: string');
+			});
+
+			test('preserves // in content strings', async () => {
+				await using fixture = await createFixture({
+					'style.module.scss': outdent`
+						.divider {
+							content: "a // b";
+						}
+					`,
+				});
+
+				const { exitCode } = await viteCssModulesCli([], fixture.path);
+
+				expect(exitCode).toBe(0);
+
+				const dtsContent = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+				expect(dtsContent).toContain('declare const divider: string');
+			});
+
+			test('handles mixed comments and URLs', async () => {
+				await using fixture = await createFixture({
+					'style.module.scss': outdent`
+						// Header styles
+						.header {
+							background: url(https://example.com/bg.png);
+						}
+						// Button styles
+						.button {
+							color: blue;
+						}
+					`,
+				});
+
+				const { exitCode } = await viteCssModulesCli([], fixture.path);
+
+				expect(exitCode).toBe(0);
+
+				const dtsContent = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+				expect(dtsContent).toContain('declare const header: string');
+				expect(dtsContent).toContain('declare const button: string');
+			});
+
+			test('does not strip inline // comments (keeps line intact)', async () => {
+				await using fixture = await createFixture({
+					'style.module.scss': outdent`
+						.button {
+							color: red; // inline comment - line kept as-is
+						}
+					`,
+				});
+
+				// This will fail because the regex only strips full-line comments
+				// Inline comments remain and cause PostCSS parse error
+				const { exitCode, stderr } = await viteCssModulesCli([], fixture.path);
+
+				expect(exitCode).toBe(1);
+				expect(stderr).toMatch(/Failed to generate types/);
+			});
+		});
+
 		describe('combined flags', ({ test }) => {
 			test('works with multiple flags combined', async () => {
 				await using fixture = await createFixture({

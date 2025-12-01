@@ -29,6 +29,7 @@ const tryImportSass = (
 		// Try sass-embedded first (faster), then sass
 		let compiler: SassCompiler;
 		try {
+			// eslint-disable-next-line import-x/no-unresolved
 			compiler = require('sass-embedded') as SassCompiler;
 		} catch {
 			compiler = require('sass') as SassCompiler;
@@ -43,11 +44,10 @@ const tryImportSass = (
 
 /**
  * Strip // comments from SCSS/Sass code as a fallback when sass compiler is not available.
- * This handles SCSS files that only use // comments without other SCSS features.
+ * Only strips full-line comments to avoid breaking strings that contain "//".
  */
 const stripScssComments = (code: string): string => code
-	.replaceAll(/^\s*\/\/.*$/gm, '') // Lines that are only comments
-	.replaceAll(/([;{}])\s*\/\/.*$/gm, '$1'); // Inline comments after ; or {}
+	.replaceAll(/^\s*\/\/.*$/gm, ''); // Lines that are only comments
 
 export type CompileSassResult = {
 	code: string;
