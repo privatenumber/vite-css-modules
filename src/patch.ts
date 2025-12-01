@@ -6,7 +6,6 @@ import type {
 import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
-import { isConfigCaptureEnabled, captureConfig } from './cli/get-vite-config.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
 const directRequestRE = /[?&]direct\b/;
@@ -213,17 +212,6 @@ export const patchCssModules = (
 				? cssConfig.lightningcss?.cssModules
 				: cssConfig.modules
 		) === false;
-
-		// If in config capture mode (CLI), just capture and return
-		if (isConfigCaptureEnabled()) {
-			captureConfig({
-				isCssModulesDisabled,
-				generateSourceTypes: patchConfig?.generateSourceTypes,
-				exportMode: patchConfig?.exportMode ?? 'both',
-				cssModulesOptions: cssConfig.modules,
-			});
-			return;
-		}
 
 		if (isCssModulesDisabled) {
 			return;
