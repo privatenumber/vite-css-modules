@@ -1,5 +1,5 @@
 import { cli, command } from 'cleye';
-import { generateTypesCommand } from './commands/generate-types.js';
+import { generateTypesCommand } from './commands/generate-types/index.js';
 
 const exportModes = ['both', 'named', 'default'] as const;
 const localsConventions = ['camelCase', 'camelCaseOnly', 'dashes', 'dashesOnly'] as const;

@@ -1,15 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { glob } from 'tinyglobby';
 import { green, red, yellow } from 'yoctocolors';
-import { up } from 'empathic/find';
-import type { Exports } from '../../plugin/generate-esm.js';
-import type { ExportMode } from '../../plugin/types.js';
-import { generateTypes } from '../../plugin/generate-types.js';
-import { transform } from '../../plugin/transformers/postcss/index.js';
-import { shouldKeepOriginalExport, getLocalesConventionFunction } from '../../plugin/locals-convention.js';
-import { targetSupportsArbitraryModuleNamespace } from '../../plugin/supports-arbitrary-module-namespace.js';
+import type { Exports } from '../../../plugin/generate-esm.js';
+import type { ExportMode } from '../../../plugin/types.js';
+import { generateTypes } from '../../../plugin/generate-types.js';
+import { transform } from '../../../plugin/transformers/postcss/index.js';
+import { shouldKeepOriginalExport, getLocalesConventionFunction } from '../../../plugin/locals-convention.js';
+import { targetSupportsArbitraryModuleNamespace } from '../../../plugin/supports-arbitrary-module-namespace.js';
+import { compileSass } from './sass.js';
 
 const successIcon = green('✔');
 const failureIcon = red('✖');
@@ -33,45 +32,6 @@ type Result = {
 	file: string;
 	error: string;
 	errorType: 'sass-not-found' | 'preprocessor' | 'other';
-};
-
-type SassCompiler = {
-	compileString: (
-		source: string,
-		options?: {
-			syntax?: 'scss' | 'indented';
-			url?: URL;
-			loadPaths?: string[];
-		},
-	) => { css: string };
-};
-
-// Cache sass compilers by package.json location
-const sassCache = new Map<string, SassCompiler | null>();
-
-const tryImportSass = (
-	packageJsonPath: string,
-): SassCompiler | undefined => {
-	const cached = sassCache.get(packageJsonPath);
-	if (cached !== undefined) {
-		return cached ?? undefined;
-	}
-
-	try {
-		const require = createRequire(packageJsonPath);
-		// Try sass-embedded first (faster), then sass
-		let compiler: SassCompiler;
-		try {
-			compiler = require('sass-embedded') as SassCompiler;
-		} catch {
-			compiler = require('sass') as SassCompiler;
-		}
-		sassCache.set(packageJsonPath, compiler);
-		return compiler;
-	} catch {
-		sassCache.set(packageJsonPath, null);
-		return undefined;
-	}
 };
 
 export const generateTypesCommand = async (
@@ -123,25 +83,13 @@ export const generateTypesCommand = async (
 
 				// Compile SCSS/Sass if compiler is available
 				if (isSassFile) {
-					const packageJsonPath = up('package.json', { cwd: path.dirname(file) });
-					const sass = packageJsonPath ? tryImportSass(packageJsonPath) : undefined;
-
-					if (sass) {
-						const absolutePath = path.resolve(file);
-						const result = sass.compileString(code, {
-							syntax: moduleExtension === 'sass' ? 'indented' : 'scss',
-							url: new URL(`file://${absolutePath}`),
-							loadPaths: [path.dirname(absolutePath)],
-						});
-						code = result.css;
-					} else {
-						// No sass compiler - strip // comments as a fallback
-						// This handles SCSS files that only use // comments without other SCSS features
-						code = code
-							.replace(/^\s*\/\/.*$/gm, '') // Lines that are only comments
-							.replace(/([;{}])\s*\/\/.*$/gm, '$1'); // Inline comments after ; or {}
-						sassNotFound = true;
-					}
+					const result = compileSass(
+						code,
+						file,
+						moduleExtension === 'sass' ? 'indented' : 'scss',
+					);
+					code = result.code;
+					sassNotFound = result.sassNotFound;
 				}
 
 				const { exports: cssExports } = transform(code, file, cssModulesOptions);
