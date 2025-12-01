@@ -54,7 +54,7 @@
 		"test": "pnpm test:vite5 && pnpm test:vite6 && pnpm test:vite7",
 		"dev": "tsx watch --conditions=development --ignore='/private/**' tests",
 		"type-check": "tsc",
-		"lint": "lintroll .",
+		"lint": "lintroll . --ignore-pattern README.md",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"dependencies": {

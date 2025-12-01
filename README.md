@@ -17,15 +17,158 @@ Note: We're working to integrate this fix directly into Vite ([PR #16018](https:
 
 ## Why use this plugin?
 
-Vite's current CSS Modules implementation has critical bugs. This plugin resolves:
+Have you encountered any of these Vite CSS Module bugs? They're happening because Vite's CSS Modules implementation delegates everything to `postcss-modules`, creating a black box that Vite can't see into.
 
-- **Dependency Duplication**: Avoid duplicated styles, reducing conflicts and bundle size. ([#7504](https://github.com/vitejs/vite/issues/7504), [#15683](https://github.com/vitejs/vite/issues/15683))
+This plugin fixes these issues by properly integrating CSS Modules into Vite's build pipeline.
 
-- **HMR Fixes**: Enables proper Hot Module Replacement (HMR) for CSS Modules. ([#16074](https://github.com/vitejs/vite/issues/16074))
+### The bugs this fixes
 
-- **Plugin Compatibility**: Ensures compatibility with plugins like PostCSS and SCSS. ([#10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340))
+<details>
+<summary>1. PostCSS plugins don't apply to <code>composes</code> dependencies</summary><br>
 
-- **Composition Handling**: Properly errors on missing dependencies and supports reserved JS keyword class names. ([#16075](https://github.com/vitejs/vite/issues/16075), [#14050](https://github.com/vitejs/vite/issues/14050))
+When you use `composes` to import classes from another CSS file, Vite's PostCSS plugins never process the imported file. This means your PostCSS transformations, auto-prefixing, or custom plugins are silently skipped for dependencies.
+
+**What happens in Vite:**
+- `style.module.css` gets processed by PostCSS ✓
+- `utils.css` does NOT get processed by PostCSS ✗
+- Your PostCSS plugin never sees `utils.css` because `postcss-modules` bundles it internally
+
+**With this plugin:**
+- Both files go through your PostCSS pipeline correctly
+
+[Vite issue #10079](https://github.com/vitejs/vite/issues/10079), [#10340](https://github.com/vitejs/vite/issues/10340) | [Test case](https://github.com/privatenumber/vite-css-modules/blob/develop/tests/specs/reproductions.spec.ts#L62-L85)
+
+</details>
+
+<details>
+<summary>2. Shared classes get duplicated in your bundle</summary><br>
+
+When multiple CSS Modules compose from the same utility file, the utility's styles get bundled multiple times. This increases bundle size and can cause style conflicts.
+
+**Example:**
+```css
+/* utils.css */
+.button { padding: 10px; }
+
+/* header.module.css */
+.title { composes: button from './utils.css'; }
+
+/* footer.module.css */
+.link { composes: button from './utils.css'; }
+```
+
+**What happens in Vite:**
+```css
+/* Final bundle contains .button styles TWICE */
+.button { padding: 10px; }  /* from header.module.css */
+.button { padding: 10px; }  /* from footer.module.css - duplicated! */
+```
+
+**With this plugin:**
+```css
+/* Final bundle contains .button styles ONCE */
+.button { padding: 10px; }  /* deduplicated */
+```
+
+[Vite issue #7504](https://github.com/vitejs/vite/issues/7504), [#15683](https://github.com/vitejs/vite/issues/15683) | [Test case](https://github.com/privatenumber/vite-css-modules/blob/develop/tests/specs/reproductions.spec.ts#L62-L85)
+
+</details>
+
+<details>
+<summary>3. Missing <code>composes</code> classes fail silently</summary><br>
+
+If you typo a class name in `composes`, Vite doesn't error. Instead, it outputs `undefined` in your class names, breaking your UI with no warning.
+
+**Example:**
+```css
+.button {
+  composes: nonexistant from './utils.css';  /* Typo! */
+}
+```
+
+**What happens in Vite:**
+```js
+import styles from './style.module.css'
+
+console.log(styles.button) // "_button_abc123 undefined" - no error!
+```
+
+**With this plugin:**
+```
+Error: Cannot find class 'nonexistent' in './utils.css'
+```
+
+[Vite issue #16075](https://github.com/vitejs/vite/issues/16075) | [Test case](https://github.com/privatenumber/vite-css-modules/blob/develop/tests/specs/reproductions.spec.ts#L314-L326)
+
+</details>
+
+<details>
+<summary>4. Can't compose between CSS and SCSS</summary><br>
+
+Trying to compose from SCSS/Sass files causes syntax errors because `postcss-modules` tries to parse SCSS as plain CSS.
+
+**Example:**
+```scss
+/* base.module.scss */
+.container { display: flex; }
+```
+
+```css
+/* style.module.css */
+.wrapper { composes: container from './base.module.scss'; }
+```
+
+**What happens in Vite:**
+```
+CssSyntaxError: Unexpected '/'
+```
+
+**With this plugin:**
+- Works correctly because each file goes through its proper preprocessor first
+
+[Vite issue #10340](https://github.com/vitejs/vite/issues/10340) | [Test case](https://github.com/privatenumber/vite-css-modules/blob/develop/tests/specs/reproductions.spec.ts#L174-L191)
+
+</details>
+
+<details>
+<summary>5. HMR doesn't work properly</summary><br>
+
+Changing a CSS Module file causes a full page reload instead of a hot update, losing component state.
+
+**What happens in Vite:**
+- Full page reload on CSS Module changes
+
+**With this plugin:**
+- CSS Module changes update instantly without losing component state
+
+[Vite issue #16074](https://github.com/vitejs/vite/issues/16074) | [Test case](https://github.com/privatenumber/vite-css-modules/blob/develop/tests/specs/reproductions.spec.ts#L328-L349)
+
+</details>
+
+<details>
+<summary>6. Reserved JavaScript keywords break exports</summary><br>
+
+Using JavaScript reserved keywords as class names (like `.import`, `.export`) generates invalid JavaScript code.
+
+**Example:**
+```css
+.import { color: red; }
+.export { color: blue; }
+```
+
+**What happens in Vite:**
+```js
+// Tries to generate invalid JavaScript:
+export const import = "...";  // Syntax error "import" is reserved!
+export const export = "...";  // Syntax error "export" is reserved!
+```
+
+**With this plugin:**
+- Properly handles reserved keywords in class names
+
+[Vite issue #14050](https://github.com/vitejs/vite/issues/14050) | [Test case](https://github.com/privatenumber/vite-css-modules/blob/develop/tests/specs/reproductions.spec.ts#L194-L211)
+
+</details>
 
 ## Install
 ```sh
@@ -238,6 +381,9 @@ Then import using:
 
 ```js
 import { 'foo-bar' as fooBar } from './styles.module.css'
+
+// Use it
+console.log(fooBar)
 ```
 
 This gives you full named export access—even for class names with previously invalid characters.
