@@ -155,7 +155,8 @@ export default testSuite(({ describe }) => {
 				const { exitCode, stdout } = await viteCssModulesCli([], fixture.path);
 
 				expect(exitCode).toBe(0);
-				expect(stdout).toMatch(/✓.*style\.module\.css\.d\.ts/);
+				expect(stdout).toMatch(/style\.module\.css\.d\.ts/);
+				expect(stdout).toMatch(/Successfully generated types/);
 
 				const dtsContent = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				expect(dtsContent).toContain('declare const button: string');
@@ -230,7 +231,8 @@ export default testSuite(({ describe }) => {
 				const { exitCode, stdout } = await viteCssModulesCli([], fixture.path);
 
 				expect(exitCode).toBe(0);
-				expect(stdout).toMatch(/✓.*style\.module\.pcss\.d\.ts/);
+				expect(stdout).toMatch(/style\.module\.pcss\.d\.ts/);
+				expect(stdout).toMatch(/Successfully generated types/);
 
 				const dtsContent = await fixture.readFile('style.module.pcss.d.ts', 'utf8');
 				expect(dtsContent).toContain('declare const container: string');
@@ -434,7 +436,8 @@ export default testSuite(({ describe }) => {
 				const { exitCode, stdout } = await viteCssModulesCli([], fixture.path);
 
 				expect(exitCode).toBe(0);
-				expect(stdout).toMatch(/✓.*style\.module\.css\.d\.ts/);
+				expect(stdout).toMatch(/style\.module\.css\.d\.ts/);
+				expect(stdout).toMatch(/Successfully generated types/);
 
 				const dtsContent = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				// Without localsConvention, dashed names are converted to valid identifiers
