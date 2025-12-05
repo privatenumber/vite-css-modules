@@ -45,8 +45,10 @@ const compareSemver = (
 	|| 0
 );
 
-export const supportsArbitraryModuleNamespace = (
-	{ build: { target: targets } }: ResolvedConfig,
+type Target = string | string[];
+
+export const targetSupportsArbitraryModuleNamespace = (
+	targets: Target,
 ) => Boolean(
 	targets
 		&& (Array.isArray(targets) ? targets : [targets]).every((target) => {
@@ -68,3 +70,7 @@ export const supportsArbitraryModuleNamespace = (
 			return compareSemver(addedInVersion, version) <= 0;
 		}),
 );
+
+export const supportsArbitraryModuleNamespace = (
+	{ build: { target } }: ResolvedConfig,
+) => Boolean(target && targetSupportsArbitraryModuleNamespace(target));

@@ -206,9 +206,7 @@ export const patchCssModules = (
 	name: 'patch-css-modules',
 	enforce: 'pre',
 	configResolved: (config) => {
-		const pluginInstance = cssModules(config, patchConfig);
 		const cssConfig = config.css;
-
 		const isCssModulesDisabled = (
 			cssConfig.transformer === 'lightningcss'
 				? cssConfig.lightningcss?.cssModules
@@ -218,6 +216,8 @@ export const patchCssModules = (
 		if (isCssModulesDisabled) {
 			return;
 		}
+
+		const pluginInstance = cssModules(config, patchConfig);
 
 		// Disable CSS Modules in Vite in favor of our plugin
 		// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192

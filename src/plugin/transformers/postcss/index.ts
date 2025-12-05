@@ -89,6 +89,8 @@ export const transform: Transformer<CSSModulesOptions> = (
 	return {
 		code: processed.css,
 		map: processed.map?.toJSON() as unknown as ExistingRawSourceMap,
+
+		// Note: postcss lazily proccesses when `.css` is accessed so this is undefined until then
 		...extracted!,
 	};
 };

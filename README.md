@@ -248,6 +248,68 @@ Specifies how class names are exported from the CSS Module:
 
 This option generates a `.d.ts` file next to each CSS module file.
 
+## CLI
+
+The package includes a CLI tool to generate TypeScript declaration files for CSS Modules without running a build.
+
+### Usage
+
+```bash
+npx vite-css-modules generate-types [directories...]
+```
+
+If no directories are specified, it uses the current working directory. Multiple directories can be provided to process them all in one command.
+
+### Requirements
+
+1. The plugin must be configured in your `vite.config.ts` with `generateSourceTypes: true`
+2. CSS Module files must use the `.module.{css,scss,sass,less,styl,stylus,pcss,postcss}` naming pattern
+
+### Example
+
+```bash
+# Generate types for all CSS Modules in current directory
+npx vite-css-modules generate-types
+
+# Generate types for specific directory
+npx vite-css-modules generate-types ./src
+
+# Generate types for multiple directories
+npx vite-css-modules generate-types ./src ./components
+```
+
+### Limitations
+
+The CLI uses **offline extraction** which processes CSS files directly without Vite's full transformation pipeline. This means:
+
+**✅ Supported:**
+- Plain CSS Modules
+- PostCSS with standard CSS syntax
+- `composes` declarations
+- All `localsConvention` options (camelCase, dashes, etc.)
+- CSS Modules `@value` references
+
+**❌ Not supported:**
+- **Sass/SCSS syntax**: Variables (`$variable`), mixins (`@mixin`), `@use`/`@forward` will cause parse errors
+- **Less syntax**: Variables (`@variable`), mixins, nested selectors
+- **LightningCSS mode**: May produce slightly different output than build
+
+**Workarounds:**
+
+If your CSS Modules use preprocessor-specific syntax:
+
+1. **Use plain CSS syntax** in CSS Modules (recommended for maximum compatibility)
+2. **Run `vite build`** to generate types during build (uses full Vite pipeline with all transformations)
+3. **Create a build script** in `package.json`:
+   ```json
+   {
+       "scripts": {
+           "types": "vite build --mode development"
+       }
+   }
+   ```
+
+The CLI is optimized for the common case of plain CSS Modules and provides fast type generation without a full build.
 
 ## FAQ
 
