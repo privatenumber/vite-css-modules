@@ -93,7 +93,7 @@
 		"lodash.camelcase": "^4.3.0",
 		"manten": "^1.9.0",
 		"outdent": "^0.8.0",
-		"pkgroll": "^2.21.4",
+		"pkgroll": "^2.23.0",
 		"playwright-chromium": "^1.57.0",
 		"postcss": "^8.5.6",
 		"postcss-selector-parser": "^7.1.1",

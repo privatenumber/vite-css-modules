@@ -82,8 +82,8 @@ importers:
         specifier: ^0.8.0
         version: 0.8.0
       pkgroll:
-        specifier: ^2.21.4
-        version: 2.21.4(typescript@5.9.3)
+        specifier: ^2.23.0
+        version: 2.23.0(typescript@5.9.3)(vite@7.3.0(@types/node@24.10.4)(lightningcss@1.30.2)(sass@1.97.0)(tsx@4.20.6)(yaml@2.8.1))
       playwright-chromium:
         specifier: ^1.57.0
         version: 1.57.0
@@ -1035,15 +1035,6 @@ packages:
 
   '@rollup/plugin-dynamic-import-vars@2.1.5':
     resolution: {integrity: sha512-Mymi24fd9hlRifdZV/jYIFj1dn99F34imiYu3KzlAcgBcRi3i9SucgW/VRo5SQ9K4NuQ7dCep6pFWgNyhRdFHQ==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-
-  '@rollup/plugin-inject@5.0.5':
-    resolution: {integrity: sha512-2+DEJbNBoPROPkgTDNe8/1YXWcqxbN5DTjASVIOx8HS+pITXushyNiBV56RB08zuptzz8gT3YfkqriTBVycepg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -2768,8 +2759,8 @@ packages:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
 
-  pkgroll@2.21.4:
-    resolution: {integrity: sha512-A86a27/WRXDSJlsIwGbR3zOQsf4TP6+CGRVdBgCUSQ6BGzrmXrH0IIJ/TEOLT4z8FNbR+ALjwNqPgSHBMK1llA==}
+  pkgroll@2.23.0:
+    resolution: {integrity: sha512-n3DACf3DZCbfTzr/LnZ+KDT272zzqzduvQxMS7j96wYA94YUA4MgoCCcmV6XZ1r5ypdBzDs44C6FwSXuDpxKVw==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -2906,6 +2897,18 @@ packages:
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
+
+  rollup-plugin-import-trace@1.0.0:
+    resolution: {integrity: sha512-byUjwhEc42qnbcTOZ7E0cDDNidkKkN4VwoW5dknA/61F0c60v2l2ktPraUH4+ehhZ/L/yS/Exry/q8gz0hEZOQ==}
+    engines: {node: '>=20.20.0'}
+    peerDependencies:
+      rollup: ^3.0.0 || ^4.0.0
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+      vite:
+        optional: true
 
   rollup-pluginutils@2.8.2:
     resolution: {integrity: sha512-EEp9NhnUkwY8aif6bxgovPHMoMoNr2FulJziTndpt5H9RdwC47GSGuII9XxpSdzVGM0GWrNPHV6ie1LTNJPaLQ==}
@@ -3982,14 +3985,6 @@ snapshots:
       astring: 1.9.0
       estree-walker: 2.0.2
       fast-glob: 3.3.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      rollup: 4.53.5
-
-  '@rollup/plugin-inject@5.0.5(rollup@4.53.5)':
-    dependencies:
-      '@rollup/pluginutils': 5.3.0(rollup@4.53.5)
-      estree-walker: 2.0.2
       magic-string: 0.30.21
     optionalDependencies:
       rollup: 4.53.5
@@ -6139,23 +6134,24 @@ snapshots:
 
   picomatch@4.0.3: {}
 
-  pkgroll@2.21.4(typescript@5.9.3):
+  pkgroll@2.23.0(typescript@5.9.3)(vite@7.3.0(@types/node@24.10.4)(lightningcss@1.30.2)(sass@1.97.0)(tsx@4.20.6)(yaml@2.8.1)):
     dependencies:
       '@rollup/plugin-alias': 6.0.0(rollup@4.53.5)
       '@rollup/plugin-commonjs': 29.0.0(rollup@4.53.5)
       '@rollup/plugin-dynamic-import-vars': 2.1.5(rollup@4.53.5)
-      '@rollup/plugin-inject': 5.0.5(rollup@4.53.5)
       '@rollup/plugin-json': 6.1.0(rollup@4.53.5)
       '@rollup/plugin-node-resolve': 16.0.3(rollup@4.53.5)
-      '@rollup/pluginutils': 5.3.0(rollup@4.53.5)
       cjs-module-lexer: 2.1.1
       esbuild: 0.26.0
       magic-string: 0.30.21
       rollup: 4.53.5
+      rollup-plugin-import-trace: 1.0.0(rollup@4.53.5)(vite@7.3.0(@types/node@24.10.4)(lightningcss@1.30.2)(sass@1.97.0)(tsx@4.20.6)(yaml@2.8.1))
       rollup-pluginutils: 2.8.2
       yaml: 2.8.1
     optionalDependencies:
       typescript: 5.9.3
+    transitivePeerDependencies:
+      - vite
 
   playwright-chromium@1.57.0:
     dependencies:
@@ -6279,6 +6275,11 @@ snapshots:
       supports-preserve-symlinks-flag: 1.0.0
 
   reusify@1.1.0: {}
+
+  rollup-plugin-import-trace@1.0.0(rollup@4.53.5)(vite@7.3.0(@types/node@24.10.4)(lightningcss@1.30.2)(sass@1.97.0)(tsx@4.20.6)(yaml@2.8.1)):
+    optionalDependencies:
+      rollup: 4.53.5
+      vite: 7.3.0(@types/node@24.10.4)(lightningcss@1.30.2)(sass@1.97.0)(tsx@4.20.6)(yaml@2.8.1)
 
   rollup-pluginutils@2.8.2:
     dependencies:
