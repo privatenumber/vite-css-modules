@@ -85,8 +85,8 @@ importers:
         specifier: ^2.23.0
         version: 2.23.0(typescript@5.9.3)(vite@7.3.0(@types/node@24.10.4)(lightningcss@1.30.2)(sass@1.97.0)(tsx@4.20.6)(yaml@2.8.1))
       playwright-chromium:
-        specifier: ^1.57.0
-        version: 1.57.0
+        specifier: ^1.58.1
+        version: 1.58.1
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -2769,13 +2769,13 @@ packages:
       typescript:
         optional: true
 
-  playwright-chromium@1.57.0:
-    resolution: {integrity: sha512-GCVVTbmIDrZuBxWYoQ70rehRXMb3Q7ccENe63a+rGTWwypeVAgh/DD5o5QQ898oer5pdIv3vGINUlEkHtOZQEw==}
+  playwright-chromium@1.58.1:
+    resolution: {integrity: sha512-IZEji6VuJWIW+oCLp+sUSH7FCDNVGQxJSBMgHXKA/S0S5Ykdek9TO//mVsiWx9GwiOrApOb1WSxUJgK6zo/cUw==}
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright-core@1.57.0:
-    resolution: {integrity: sha512-agTcKlMw/mjBWOnD6kFZttAAGHgi/Nw0CZ2o6JqWSbMlI219lAFLZZCyqByTsvVAJq5XA5H8cA6PrvBRpBWEuQ==}
+  playwright-core@1.58.1:
+    resolution: {integrity: sha512-bcWzOaTxcW+VOOGBCQgnaKToLJ65d6AqfLVKEWvexyS3AS6rbXl+xdpYRMGSRBClPvyj44njOWoxjNdL/H9UNg==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -6153,11 +6153,11 @@ snapshots:
     transitivePeerDependencies:
       - vite
 
-  playwright-chromium@1.57.0:
+  playwright-chromium@1.58.1:
     dependencies:
-      playwright-core: 1.57.0
+      playwright-core: 1.58.1
 
-  playwright-core@1.57.0: {}
+  playwright-core@1.58.1: {}
 
   pluralize@8.0.0: {}
 
