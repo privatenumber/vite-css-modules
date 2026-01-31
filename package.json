@@ -91,7 +91,7 @@
 		"lightningcss": "^1.30.2",
 		"lintroll": "^1.25.0",
 		"lodash.camelcase": "^4.3.0",
-		"manten": "^1.9.0",
+		"manten": "^1.10.0",
 		"outdent": "^0.8.0",
 		"pkgroll": "^2.23.0",
 		"playwright-chromium": "^1.58.1",
