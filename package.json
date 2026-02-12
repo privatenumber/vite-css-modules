@@ -1,0 +1,71 @@
+{
+  "name": "vite-css-modules",
+  "version": "0.0.0-semantic-release",
+  "description": "Vite plugin for correct CSS Modules behavior",
+  "keywords": [
+    "vite",
+    "plugin",
+    "css modules",
+    "patch"
+  ],
+  "license": "MIT",
+  "repository": "privatenumber/vite-css-modules",
+  "funding": "https://github.com/privatenumber/vite-css-modules?sponsor=1",
+  "author": {
+    "name": "Hiroki Osame",
+    "email": "hiroki.osame@gmail.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    },
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "imports": {
+    "vite": {
+      "vite6": "vite6",
+      "vite5": "vite5",
+      "default": "vite"
+    },
+    "#vite-css-modules": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "dependencies": {
+    "@jridgewell/remapping": "^2.3.5",
+    "@jridgewell/sourcemap-codec": "^1.5.5",
+    "@rollup/pluginutils": "^5.3.0",
+    "generic-names": "^4.0.0",
+    "get-tsconfig": "^4.13.6",
+    "icss-utils": "^5.1.0",
+    "magic-string": "^0.30.21",
+    "postcss-modules-extract-imports": "^3.1.0",
+    "postcss-modules-local-by-default": "^4.2.0",
+    "postcss-modules-scope": "^3.2.1",
+    "postcss-modules-values": "^4.0.0",
+    "postcss-selector-parser": "^7.1.1"
+  },
+  "peerDependencies": {
+    "lightningcss": "^1.23.0",
+    "postcss": "^8.4.49",
+    "vite": "^5.0.12 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "lightningcss": {
+      "optional": true
+    }
+  }
+}
