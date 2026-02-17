@@ -5,9 +5,11 @@ import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@jridgewell/remapping';
+import { getTsconfig } from 'get-tsconfig';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import { generateTypes } from './generate-types.js';
+import { findClassPositions } from './generate-dts-sourcemap.js';
 import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';
@@ -52,6 +54,15 @@ export type PatchConfig = {
 	 * next to it, containing type definitions for the exported CSS class names
 	 */
 	generateSourceTypes?: boolean;
+
+	/**
+	 * Generate inline declaration source maps in .d.ts files for CSS modules.
+	 * Enables "Go to Definition" to navigate from TypeScript to CSS source.
+	 *
+	 * When undefined, auto-detects from tsconfig.json's compilerOptions.declarationMap.
+	 * Requires generateSourceTypes to be enabled.
+	 */
+	declarationMap?: boolean;
 };
 
 // This plugin is designed to be used by Vite internally
@@ -77,6 +88,9 @@ export const cssModules = (
 	let transform: typeof PostcssTransform | typeof LightningcssTransform;
 
 	const exportMode = patchConfig?.exportMode ?? 'both';
+	const declarationMap = patchConfig?.declarationMap
+		?? getTsconfig(config.root)?.config.compilerOptions?.declarationMap
+		?? false;
 
 	let isVitest = false;
 
@@ -321,7 +335,15 @@ export const cssModules = (
 						const fileExists = await access(filePath).then(() => true, () => false);
 						if (fileExists) {
 							const dtsPath = `${filePath}.d.ts`;
-							const newContent = generateTypes(exports, exportMode, allowArbitraryNamedExports);
+							const sourceMapOptions = declarationMap
+								? {
+									sourceFileName: path.basename(filePath),
+									classPositions: findClassPositions(inputCss, filePath),
+								}
+								: undefined;
+							const newContent = generateTypes(
+								exports, exportMode, allowArbitraryNamedExports, sourceMapOptions,
+							);
 
 							// Skip write if content unchanged to avoid triggering file watchers
 							const existingContent = await readFile(dtsPath, 'utf8').catch(() => null);

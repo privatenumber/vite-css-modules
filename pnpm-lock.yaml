@@ -11,12 +11,18 @@ importers:
       '@jridgewell/remapping':
         specifier: ^2.3.5
         version: 2.3.5
+      '@jridgewell/sourcemap-codec':
+        specifier: ^1.5.5
+        version: 1.5.5
       '@rollup/pluginutils':
         specifier: ^5.3.0
         version: 5.3.0(rollup@4.53.5)
       generic-names:
         specifier: ^4.0.0
         version: 4.0.0
+      get-tsconfig:
+        specifier: ^4.13.6
+        version: 4.13.6
       icss-utils:
         specifier: ^5.1.0
         version: 5.1.0(postcss@8.5.6)
@@ -35,6 +41,9 @@ importers:
       postcss-modules-values:
         specifier: ^4.0.0
         version: 4.0.0(postcss@8.5.6)
+      postcss-selector-parser:
+        specifier: ^7.1.1
+        version: 7.1.1
     devDependencies:
       '@types/icss-utils':
         specifier: ^5.1.2
@@ -90,9 +99,6 @@ importers:
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
-      postcss-selector-parser:
-        specifier: ^7.1.1
-        version: 7.1.1
       rollup:
         specifier: ^4.53.5
         version: 4.53.5
@@ -2075,8 +2081,8 @@ packages:
     resolution: {integrity: sha512-w9UMqWwJxHNOvoNzSJ2oPF5wvYcvP7jUvYzhp67yEhTi17ZDBBC1z9pTdGuzjD+EFIqLSYRweZjqfiPzQ06Ebg==}
     engines: {node: '>= 0.4'}
 
-  get-tsconfig@4.13.0:
-    resolution: {integrity: sha512-1VKTZJCwBrvbd+Wn3AOgQP/2Av+TfTCOlE4AcRJE72W1ksZXbAx8PPBR9RzgTeSPzlPMHrbANMH3LbltH73wxQ==}
+  get-tsconfig@4.13.6:
+    resolution: {integrity: sha512-shZT/QMiSHc/YBLxxOkMtgSid5HFoauqCE3/exfsEcwg1WkeqjG+V40yBbBrsD+jW2HDXcs28xOfcbm2jI8Ddw==}
 
   github-slugger@2.0.0:
     resolution: {integrity: sha512-IaOQ9puYtjrkq7Y0Ygl9KDZnrf/aiUJYUpVf89y8kyaxbRG7Y1SrX/jaumrv81vc61+kiMempujsM3Yw7w5qcw==}
@@ -4876,7 +4882,7 @@ snapshots:
 
   eslint-import-context@0.1.9(unrs-resolver@1.11.1):
     dependencies:
-      get-tsconfig: 4.13.0
+      get-tsconfig: 4.13.6
       stable-hash-x: 0.2.0
     optionalDependencies:
       unrs-resolver: 1.11.1
@@ -4886,7 +4892,7 @@ snapshots:
       debug: 4.4.3
       eslint: 9.39.1
       eslint-import-context: 0.1.9(unrs-resolver@1.11.1)
-      get-tsconfig: 4.13.0
+      get-tsconfig: 4.13.6
       is-bun-module: 2.0.0
       stable-hash-x: 0.2.0
       tinyglobby: 0.2.15
@@ -4947,7 +4953,7 @@ snapshots:
       enhanced-resolve: 5.18.3
       eslint: 9.39.1
       eslint-plugin-es-x: 7.8.0(eslint@9.39.1)
-      get-tsconfig: 4.13.0
+      get-tsconfig: 4.13.6
       globals: 15.15.0
       globrex: 0.1.2
       ignore: 5.3.2
@@ -5257,7 +5263,7 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
 
-  get-tsconfig@4.13.0:
+  get-tsconfig@4.13.6:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
@@ -5656,7 +5662,7 @@ snapshots:
       eslint-plugin-vue: 10.6.1(@stylistic/eslint-plugin@5.6.1(eslint@9.39.1))(@typescript-eslint/parser@8.48.0(eslint@9.39.1)(typescript@5.9.3))(eslint@9.39.1)(vue-eslint-parser@10.2.0(eslint@9.39.1))
       eslint-plugin-yml: 1.19.0(eslint@9.39.1)
       get-conditions: 1.0.0
-      get-tsconfig: 4.13.0
+      get-tsconfig: 4.13.6
       globals: 16.5.0
       nano-spawn: 2.0.0
       resolve-pkg-maps: 1.0.0
@@ -6513,7 +6519,7 @@ snapshots:
   tsx@4.20.6:
     dependencies:
       esbuild: 0.25.12
-      get-tsconfig: 4.13.0
+      get-tsconfig: 4.13.6
     optionalDependencies:
       fsevents: 2.3.3
 

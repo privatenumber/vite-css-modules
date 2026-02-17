@@ -3,6 +3,7 @@ import path from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
+import { decode } from '@jridgewell/sourcemap-codec';
 import { Features } from 'lightningcss';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { base64Module } from '../../utils/base64-module.js';
@@ -360,6 +361,50 @@ export default testSuite(({ describe }) => {
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).toMatch('const _import: string');
 			expect(dts).toMatch('_import as "import"');
+		});
+
+		describe('declarationMap', ({ test }) => {
+			const extractInlineSourceMap = (dts: string) => {
+				const match = dts.match(/\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/);
+				if (!match) {
+					return null;
+				}
+				return JSON.parse(Buffer.from(match[1]!, 'base64').toString('utf8'));
+			};
+
+			test('maps class names to CSS positions', async () => {
+				await using fixture = await createFixture(fixtures.reservedKeywords);
+
+				await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							generateSourceTypes: true,
+							declarationMap: true,
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+					css: {
+						transformer: 'lightningcss',
+					},
+				});
+
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				const dtsMap = extractInlineSourceMap(dts);
+
+				expect(dtsMap.version).toBe(3);
+				expect(dtsMap.file).toBe('style.module.css.d.ts');
+				expect(dtsMap.sources).toStrictEqual(['style.module.css']);
+
+				const decoded = decode(dtsMap.mappings);
+
+				// LightningCSS sorts exports alphabetically: default, export, import
+				// declare const lines start at .d.ts line 8 (0-indexed)
+				expect(decoded[8]).toStrictEqual([[14, 0, 9, 0]]); // _default → .default at CSS line 10
+				expect(decoded[9]).toStrictEqual([[14, 0, 5, 0]]); // _export → .export at CSS line 6
+				expect(decoded[10]).toStrictEqual([[14, 0, 0, 0]]); // _import → .import at CSS line 1
+			});
 		});
 
 		describe('exportMode', ({ test }) => {

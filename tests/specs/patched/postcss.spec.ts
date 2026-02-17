@@ -3,6 +3,7 @@ import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
+import { decode } from '@jridgewell/sourcemap-codec';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
 import { base64Module } from '../../utils/base64-module.js';
@@ -976,6 +977,151 @@ export default testSuite(({ describe }) => {
 
 					`,
 				);
+			});
+		});
+
+		describe('declarationMap', ({ test }) => {
+			const extractInlineSourceMap = (dts: string) => {
+				const match = dts.match(/\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/);
+				if (!match) {
+					return null;
+				}
+				return JSON.parse(Buffer.from(match[1]!, 'base64').toString('utf8'));
+			};
+
+			test('maps class names to CSS positions', async () => {
+				await using fixture = await createFixture(fixtures.reservedKeywords);
+
+				await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							generateSourceTypes: true,
+							declarationMap: true,
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				const dtsMap = extractInlineSourceMap(dts);
+
+				expect(dtsMap.version).toBe(3);
+				expect(dtsMap.file).toBe('style.module.css.d.ts');
+				expect(dtsMap.sources).toStrictEqual(['style.module.css']);
+				expect(dtsMap.sourcesContent).toBeUndefined();
+
+				/*
+				 * reservedKeywords fixture CSS (after outdent):
+				 * Line 1  (0-based 0): .import {
+				 * Line 6  (0-based 5): .export {
+				 * Line 10 (0-based 9): .default {
+				 *
+				 * Generated .d.ts (after 8-line header):
+				 * Line 9  (0-based 8):  declare const _import: string;
+				 * Line 10 (0-based 9):  declare const _export: string;
+				 * Line 11 (0-based 10): declare const _default: string;
+				 */
+				const decoded = decode(dtsMap.mappings);
+
+				// declare const _import → .import at CSS line 1, col 1
+				expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+
+				// declare const _export → .export at CSS line 6, col 1
+				expect(decoded[9]).toStrictEqual([[14, 0, 5, 0]]);
+
+				// declare const _default → .default at CSS line 10, col 1
+				expect(decoded[10]).toStrictEqual([[14, 0, 9, 0]]);
+			});
+
+			test('empty css module has no inline source map', async () => {
+				await using fixture = await createFixture({
+					'index.js': 'export * as style from \'./style.module.css\';',
+					'style.module.css': '',
+				});
+				await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							generateSourceTypes: true,
+							declarationMap: true,
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).not.toMatch('sourceMappingURL');
+			});
+
+			test('auto-detects from tsconfig.json', async () => {
+				await using fixture = await createFixture({
+					...fixtures.reservedKeywords,
+					'tsconfig.json': JSON.stringify({
+						compilerOptions: {
+							declarationMap: true,
+						},
+					}),
+				});
+
+				await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							generateSourceTypes: true,
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('sourceMappingURL=data:application/json;charset=utf-8;base64,');
+			});
+
+			test('declarationMap: false overrides tsconfig', async () => {
+				await using fixture = await createFixture({
+					...fixtures.reservedKeywords,
+					'tsconfig.json': JSON.stringify({
+						compilerOptions: {
+							declarationMap: true,
+						},
+					}),
+				});
+
+				await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							generateSourceTypes: true,
+							declarationMap: false,
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).not.toMatch('sourceMappingURL');
+			});
+
+			test('no tsconfig produces no inline source map', async () => {
+				await using fixture = await createFixture(fixtures.reservedKeywords);
+
+				await viteBuild(fixture.path, {
+					plugins: [
+						patchCssModules({
+							generateSourceTypes: true,
+						}),
+					],
+					build: {
+						target: 'es2022',
+					},
+				});
+
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).not.toMatch('sourceMappingURL');
 			});
 		});
 
