@@ -1033,6 +1033,9 @@ export default testSuite(({ describe }) => {
 
 				// declare const _default → .default at CSS line 10, col 1
 				expect(decoded[10]).toStrictEqual([[14, 0, 9, 0]]);
+
+				// sourceMappingURL must be the last non-whitespace content (ECMA-426 / TS requirement)
+				expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);
 			});
 
 			test('empty css module has no inline source map', async () => {

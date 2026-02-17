@@ -404,6 +404,9 @@ export default testSuite(({ describe }) => {
 				expect(decoded[8]).toStrictEqual([[14, 0, 9, 0]]); // _default → .default at CSS line 10
 				expect(decoded[9]).toStrictEqual([[14, 0, 5, 0]]); // _export → .export at CSS line 6
 				expect(decoded[10]).toStrictEqual([[14, 0, 0, 0]]); // _import → .import at CSS line 1
+
+				// sourceMappingURL must be the last non-whitespace content (ECMA-426 / TS requirement)
+				expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);
 			});
 		});
 
