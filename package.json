@@ -80,7 +80,7 @@
 	"devDependencies": {
 		"@types/icss-utils": "^5.1.2",
 		"@types/lodash.camelcase": "^4.3.9",
-		"@types/node": "^24.10.4",
+		"@types/node": "^24.10.13",
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
@@ -93,17 +93,17 @@
 		"lodash.camelcase": "^4.3.0",
 		"manten": "^1.10.0",
 		"outdent": "^0.8.0",
-		"pkgroll": "^2.23.0",
-		"playwright-chromium": "^1.58.1",
+		"pkgroll": "^2.23.1",
+		"playwright-chromium": "^1.58.2",
 		"postcss": "^8.5.6",
 		"postcss-selector-parser": "^7.1.1",
 		"rollup": "^4.53.5",
-		"sass": "^1.94.3",
+		"sass": "^1.97.3",
 		"tsx": "^4.20.6",
 		"typescript": "^5.9.3",
-		"vite": "^7.2.7",
+		"vite": "^7.3.1",
 		"vite5": "npm:vite@5.4.21",
 		"vite6": "npm:vite@6.4.1",
-		"vue": "^3.5.25"
+		"vue": "^3.5.28"
 	}
 }
