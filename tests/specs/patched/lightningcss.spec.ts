@@ -396,6 +396,7 @@ export default testSuite(({ describe }) => {
 				expect(dtsMap.version).toBe(3);
 				expect(dtsMap.file).toBe('style.module.css.d.ts');
 				expect(dtsMap.sources).toStrictEqual(['style.module.css']);
+				expect(dtsMap.sourcesContent).toBeUndefined();
 
 				const decoded = decode(dtsMap.mappings);
 
@@ -404,6 +405,14 @@ export default testSuite(({ describe }) => {
 				expect(decoded[8]).toStrictEqual([[14, 0, 9, 0]]); // _default → .default at CSS line 10
 				expect(decoded[9]).toStrictEqual([[14, 0, 5, 0]]); // _export → .export at CSS line 6
 				expect(decoded[10]).toStrictEqual([[14, 0, 0, 0]]); // _import → .import at CSS line 1
+
+				// Named export block: "default" excluded in exportMode 'both'
+				// export {
+				//   _export as "export",   ← line 13
+				//   _import as "import"    ← line 14
+				// };
+				expect(decoded[13]).toStrictEqual([[1, 0, 5, 0]]); // _export → .export
+				expect(decoded[14]).toStrictEqual([[1, 0, 0, 0]]); // _import → .import
 
 				// sourceMappingURL must be the last non-whitespace content (ECMA-426 / TS requirement)
 				expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);

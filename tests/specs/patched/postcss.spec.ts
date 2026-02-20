@@ -1034,6 +1034,24 @@ export default testSuite(({ describe }) => {
 				// declare const _default → .default at CSS line 10, col 1
 				expect(decoded[10]).toStrictEqual([[14, 0, 9, 0]]);
 
+				// Named export block: "default" is excluded in exportMode 'both'
+				// export {
+				//   _import as "import",   ← line 13
+				//   _export as "export"     ← line 14
+				// };
+				expect(decoded[13]).toStrictEqual([[1, 0, 0, 0]]); // _import → .import
+				expect(decoded[14]).toStrictEqual([[1, 0, 5, 0]]); // _export → .export
+
+				// Default export block: quoted keys have no mapping
+				// declare const __default_export__: {
+				//   "import": typeof _import;    ← line 18
+				//   "export": typeof _export;    ← line 19
+				//   "default": typeof _default;  ← line 20
+				// };
+				expect(decoded[18]).toStrictEqual([]);
+				expect(decoded[19]).toStrictEqual([]);
+				expect(decoded[20]).toStrictEqual([]);
+
 				// sourceMappingURL must be the last non-whitespace content (ECMA-426 / TS requirement)
 				expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);
 			});
