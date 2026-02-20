@@ -1,8 +1,10 @@
 import { makeLegalIdentifier } from '@rollup/pluginutils';
 import type { Exports } from './generate-esm.js';
 import type { ExportMode } from './types.js';
+import { buildDtsSourceMap, type MappedLine, type SourceMapOptions } from './generate-dts-sourcemap.js';
 
-const dtsTemplate = (code?: string) => `/* eslint-disable */
+const dtsTemplate = (code?: string, sourceMappingURL?: string) => {
+	let result = `/* eslint-disable */
 /* prettier-ignore */
 // @ts-nocheck
 /**
@@ -11,86 +13,147 @@ const dtsTemplate = (code?: string) => `/* eslint-disable */
  */
 ${code ? `\n${code}\n` : ''}`;
 
+	if (sourceMappingURL) {
+		result += `//# sourceMappingURL=${sourceMappingURL}\n`;
+	}
+
+	return result;
+};
+
+const declareConstPrefixLength = 'declare const '.length;
+
 type ExportedVariable = [variableName: string, exportedAs: string];
 
-const genereateNamedExports = (
+const generateNamedExportLines = (
 	exportedVariables: ExportedVariable[],
 	exportMode: ExportMode,
 	allowArbitraryNamedExports: boolean,
-) => {
-	const prepareNamedExports = exportedVariables.map(
-		([jsVariable, exportName]) => {
-			if (exportMode === 'both' && exportName === '"default"') {
-				return;
-			}
+): MappedLine[] => {
+	const entries: MappedLine[] = [];
 
-			if (jsVariable === exportName) {
-				return `\t${jsVariable}`;
-			}
+	for (const [jsVariable, exportName] of exportedVariables) {
+		if (exportMode === 'both' && exportName === '"default"') {
+			continue;
+		}
 
-			if (exportName[0] !== '"' || allowArbitraryNamedExports) {
-				return `\t${jsVariable} as ${exportName}`;
-			}
-
-			return '';
-		},
-	).filter(Boolean);
-
-	if (prepareNamedExports.length === 0) {
-		return '';
+		if (jsVariable === exportName) {
+			entries.push({
+				text: `\t${jsVariable}`,
+				mapping: {
+					variableName: jsVariable,
+					column: 1,
+				},
+			});
+		} else if (exportName[0] !== '"' || allowArbitraryNamedExports) {
+			entries.push({
+				text: `\t${jsVariable} as ${exportName}`,
+				mapping: {
+					variableName: jsVariable,
+					column: 1,
+				},
+			});
+		}
 	}
 
-	return `export {\n${prepareNamedExports.join(',\n')}\n};`;
+	if (entries.length === 0) {
+		return [];
+	}
+
+	return [
+		{ text: 'export {' },
+		...entries.map((entry, index) => ({
+			...entry,
+			text: index < entries.length - 1 ? `${entry.text},` : entry.text,
+		})),
+		{ text: '};' },
+	];
 };
 
-const generateDefaultExport = (
+const generateDefaultExportLines = (
 	exportedVariables: ExportedVariable[],
-) => {
-	// Generate type-safe default export compatible with rollup-plugin-dts
-	const properties = exportedVariables.map(
-		([jsVariable, exportName]) => {
-			const key = jsVariable === exportName
-				? jsVariable
-				: exportName;
-			return `\t${key}: typeof ${jsVariable};`;
-		},
-	).join('\n');
+): MappedLine[] => {
+	const lines: MappedLine[] = [
+		{ text: 'declare const __default_export__: {' },
+	];
 
-	return `declare const __default_export__: {\n${properties}\n};\nexport default __default_export__;`;
+	for (const [jsVariable, exportName] of exportedVariables) {
+		const key = jsVariable === exportName ? jsVariable : exportName;
+		lines.push({
+			text: `\t${key}: typeof ${jsVariable};`,
+			...(jsVariable === exportName && {
+				mapping: {
+					variableName: jsVariable,
+					column: 1,
+				},
+			}),
+		});
+	}
+
+	lines.push(
+		{ text: '};' },
+		{ text: 'export default __default_export__;' },
+	);
+
+	return lines;
 };
 
 export const generateTypes = (
 	exports: Exports,
 	exportMode: ExportMode,
 	allowArbitraryNamedExports = false,
+	sourceMapOptions?: SourceMapOptions,
 ) => {
-	const variables = new Set<string>();
-	const exportedVariables = Object.entries(exports).flatMap(
-		([exportName, { exportAs }]) => {
-			const jsVariable = makeLegalIdentifier(exportName);
-			variables.add(`declare const ${jsVariable}: string;`);
+	const variableToClass = new Map<string, string>();
+	const seenVariables = new Set<string>();
+	const codeLines: MappedLine[] = [];
+	const exportedVariables: ExportedVariable[] = [];
 
-			return Array.from(exportAs).map((exportAsName) => {
-				const exportNameSafe = makeLegalIdentifier(exportAsName);
-				if (exportAsName !== exportNameSafe) {
-					exportAsName = JSON.stringify(exportAsName);
-				}
-				return [jsVariable, exportAsName] as ExportedVariable;
+	for (const [exportName, { exportAs }] of Object.entries(exports)) {
+		const jsVariable = makeLegalIdentifier(exportName);
+
+		if (!seenVariables.has(jsVariable)) {
+			seenVariables.add(jsVariable);
+			codeLines.push({
+				text: `declare const ${jsVariable}: string;`,
+				mapping: {
+					variableName: jsVariable,
+					column: declareConstPrefixLength,
+				},
 			});
-		},
-	);
+		}
+
+		variableToClass.set(jsVariable, exportName);
+
+		for (let exportAsName of exportAs) {
+			const exportNameSafe = makeLegalIdentifier(exportAsName);
+			if (exportAsName !== exportNameSafe) {
+				exportAsName = JSON.stringify(exportAsName);
+			}
+			exportedVariables.push([jsVariable, exportAsName]);
+		}
+	}
 
 	if (exportedVariables.length === 0) {
 		return dtsTemplate();
 	}
 
-	return dtsTemplate([
-		Array.from(variables).join('\n'),
-		(exportMode === 'both' || exportMode === 'named')
-			? genereateNamedExports(exportedVariables, exportMode, allowArbitraryNamedExports)
-			: '',
-		(exportMode === 'both' || exportMode === 'default')
-			? generateDefaultExport(exportedVariables)
-			: '',
-	].filter(Boolean).join('\n\n'));
+	if (exportMode === 'both' || exportMode === 'named') {
+		const namedLines = generateNamedExportLines(
+			exportedVariables, exportMode, allowArbitraryNamedExports,
+		);
+		if (namedLines.length > 0) {
+			codeLines.push({ text: '' }, ...namedLines);
+		}
+	}
+
+	if (exportMode === 'both' || exportMode === 'default') {
+		codeLines.push({ text: '' }, ...generateDefaultExportLines(exportedVariables));
+	}
+
+	const code = codeLines.map(line => line.text).join('\n');
+	const sourceMappingURL = sourceMapOptions
+		? buildDtsSourceMap(codeLines, variableToClass, sourceMapOptions)
+		: undefined;
+
+	return dtsTemplate(code, sourceMappingURL);
 };
