@@ -631,7 +631,7 @@ type PatchConfig = {
      */
     generateSourceTypes?: boolean;
     /**
-     * Generate declaration source maps (.d.ts.map) for CSS modules.
+     * Generate inline declaration source maps in .d.ts files for CSS modules.
      * Enables "Go to Definition" to navigate from TypeScript to CSS source.
      *
      * When undefined, auto-detects from tsconfig.json's compilerOptions.declarationMap.

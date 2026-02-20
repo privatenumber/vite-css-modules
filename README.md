@@ -222,9 +222,12 @@ As a bonus feature, this plugin can generate type definitions (`.d.ts` files) fo
 
 ```ts
 patchCssModules({
-    generateSourceTypes: true
+    generateSourceTypes: true,
+    declarationMap: true
 })
 ```
+
+With `declarationMap` enabled, the generated `.d.ts` files include inline source maps. This enables "Go to Definition" in your editor to jump directly from a TypeScript class name reference to the CSS source. When not explicitly set, it auto-detects from `tsconfig.json`'s `compilerOptions.declarationMap`.
 
 ## API
 
@@ -248,6 +251,14 @@ Specifies how class names are exported from the CSS Module:
 
 This option generates a `.d.ts` file next to each CSS module file.
 
+#### `declarationMap`
+
+- **Type**: `boolean`
+- **Default**: Auto-detected from `tsconfig.json`'s `compilerOptions.declarationMap`
+
+Generates inline declaration source maps in `.d.ts` files, enabling "Go to Definition" to navigate from TypeScript to CSS source.
+
+Requires `generateSourceTypes` to be enabled.
 
 ## FAQ
 

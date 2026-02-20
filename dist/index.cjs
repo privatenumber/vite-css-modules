@@ -503,13 +503,14 @@ const buildDtsSourceMap = (codeLines, variableToClass, { sourceFileName, classPo
     }
     mappings.push(segments);
   }
-  return JSON.stringify({
+  const json = JSON.stringify({
     version: 3,
     file: `${sourceFileName}.d.ts`,
     sources: [sourceFileName],
     names: [],
     mappings: sourcemapCodec.encode(mappings)
   });
+  return `data:application/json;charset=utf-8;base64,${Buffer.from(json).toString("base64")}`;
 };
 
 const dtsTemplate = (code, sourceMappingURL) => {
@@ -615,10 +616,7 @@ const generateTypes = (exports$1, exportMode, allowArbitraryNamedExports = false
     }
   }
   if (exportedVariables.length === 0) {
-    return {
-      dts: dtsTemplate(),
-      dtsMap: void 0
-    };
+    return dtsTemplate();
   }
   if (exportMode === "both" || exportMode === "named") {
     const namedLines = generateNamedExportLines(
@@ -634,13 +632,8 @@ const generateTypes = (exports$1, exportMode, allowArbitraryNamedExports = false
     codeLines.push({ text: "" }, ...generateDefaultExportLines(exportedVariables));
   }
   const code = codeLines.map((line) => line.text).join("\n");
-  const sourceMappingURL = sourceMapOptions ? `${sourceMapOptions.sourceFileName}.d.ts.map` : void 0;
-  const dts = dtsTemplate(code, sourceMappingURL);
-  const dtsMap = sourceMapOptions ? buildDtsSourceMap(codeLines, variableToClass, sourceMapOptions) : void 0;
-  return {
-    dts,
-    dtsMap
-  };
+  const sourceMappingURL = sourceMapOptions ? buildDtsSourceMap(codeLines, variableToClass, sourceMapOptions) : void 0;
+  return dtsTemplate(code, sourceMappingURL);
 };
 
 const arbitraryModuleNamespaceNames = {
@@ -900,27 +893,19 @@ const cssModules = (config, patchConfig) => {
             const fileExists = await promises.access(filePath).then(() => true, () => false);
             if (fileExists) {
               const dtsPath = `${filePath}.d.ts`;
-              const dtsMapPath = `${dtsPath}.map`;
-              const sourceFileName = path.basename(filePath);
               const sourceMapOptions = declarationMap ? {
-                sourceFileName,
+                sourceFileName: path.basename(filePath),
                 classPositions: findClassPositions(inputCss, filePath)
               } : void 0;
-              const { dts, dtsMap } = generateTypes(
+              const newContent = generateTypes(
                 exports$1,
                 exportMode,
                 allowArbitraryNamedExports,
                 sourceMapOptions
               );
-              const existingDts = await promises.readFile(dtsPath, "utf8").catch(() => null);
-              if (existingDts !== dts) {
-                await promises.writeFile(dtsPath, dts);
-              }
-              if (dtsMap) {
-                const existingMap = await promises.readFile(dtsMapPath, "utf8").catch(() => null);
-                if (existingMap !== dtsMap) {
-                  await promises.writeFile(dtsMapPath, dtsMap);
-                }
+              const existingContent = await promises.readFile(dtsPath, "utf8").catch(() => null);
+              if (existingContent !== newContent) {
+                await promises.writeFile(dtsPath, newContent);
               }
             }
           }
