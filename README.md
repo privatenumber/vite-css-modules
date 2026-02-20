@@ -4,7 +4,8 @@ Vite plugin to fix broken CSS Modules handling.
 
 [→ Play with a demo on StackBlitz](https://stackblitz.com/edit/vitejs-vite-v9jcwo?file=src%2Fstyle.module.css)
 
-Note: We're working to integrate this fix directly into Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)). Until then, use this plugin to benefit from these improvements now.
+> [!NOTE]
+> We're working to integrate this fix directly into Vite ([PR #16018](https://github.com/vitejs/vite/pull/16018)). Until then, use this plugin to benefit from these improvements now.
 
 <br>
 
@@ -215,16 +216,30 @@ Configuring the CSS Modules behavior remains the same as before.
 
 Read the [Vite docs](https://vite.dev/guide/features.html#css-modules) to learn more.
 
+### Type checking & navigation for CSS Modules
 
-### Strongly typed CSS Modules (Optional)
-
-As a bonus feature, this plugin can generate type definitions (`.d.ts` files) for CSS Modules. For example, if `style.module.css` is imported, it will create a `style.module.css.d.ts` file next to it with the type definitions for the exported class names:
+This plugin can generate type definition (`.d.ts`) files for CSS Modules, providing autocomplete and type checking for class names. For example, importing `style.module.css` will create a `style.module.css.d.ts` next to it:
 
 ```ts
 patchCssModules({
     generateSourceTypes: true
 })
 ```
+
+#### Go to CSS Definition
+
+Add `declarationMap` to include inline source maps in the generated `.d.ts` files:
+
+```ts
+patchCssModules({
+    generateSourceTypes: true,
+    declarationMap: true
+})
+```
+
+This enables **"Go to Definition"** (<kbd>F12</kbd> / <kbd>Cmd</kbd>+Click in VS Code) to jump from a CSS class name in TypeScript directly to where it's defined in the CSS file. Without declaration maps, "Go to Definition" lands on the generated `.d.ts` — a machine-generated file with no useful context.
+
+When not explicitly set, `declarationMap` auto-detects from `tsconfig.json`'s `compilerOptions.declarationMap`.
 
 ## API
 
@@ -246,8 +261,17 @@ Specifies how class names are exported from the CSS Module:
 - **Type**: `boolean`
 - **Default**: `false`
 
-This option generates a `.d.ts` file next to each CSS module file.
+Generates a `.d.ts` file next to each CSS Module with type definitions for the exported class names.
 
+#### `declarationMap`
+
+- **Type**: `boolean`
+- **Default**: Auto-detected from `tsconfig.json`'s `compilerOptions.declarationMap`
+
+Generates inline declaration source maps in `.d.ts` files, enabling "Go to Definition" to navigate from TypeScript to CSS source. Requires `generateSourceTypes` to be enabled.
+
+> [!TIP]
+> Source maps are always inlined rather than emitted as separate `.d.ts.map` files. Since `.d.ts` files are generated in-place next to your CSS source, external map files would pollute the source directory. The size overhead of inlining is negligible for typical CSS modules.
 
 ## FAQ
 
