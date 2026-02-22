@@ -239,6 +239,8 @@ patchCssModules({
 
 This enables **"Go to Definition"** (<kbd>F12</kbd> / <kbd>Cmd</kbd>+Click in VS Code) to jump from a CSS class name in TypeScript directly to where it's defined in the CSS file. Without declaration maps, "Go to Definition" lands on the generated `.d.ts` — a machine-generated file with no useful context.
 
+<video src="https://github.com/user-attachments/assets/968f5f57-e7ef-4268-9a0e-f14734e01940"></video>
+
 When not explicitly set, `declarationMap` auto-detects from `tsconfig.json`'s `compilerOptions.declarationMap`.
 
 ## API
