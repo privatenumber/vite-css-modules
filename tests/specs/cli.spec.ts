@@ -4,10 +4,11 @@ import { testSuite, expect } from 'manten';
 import { execa } from 'execa';
 
 const cliPath = path.resolve('src/cli/index.ts');
+const tsxPath = path.resolve('node_modules/.bin/tsx');
 const runCli = (
 	args: string[],
 	cwd: string,
-) => execa('npx', ['tsx', cliPath, ...args], {
+) => execa(tsxPath, [cliPath, ...args], {
 	cwd,
 	reject: false,
 });
