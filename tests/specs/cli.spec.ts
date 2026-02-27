@@ -3,12 +3,11 @@ import { createFixture } from 'fs-fixture';
 import { testSuite, expect } from 'manten';
 import { execa } from 'execa';
 
-const cliPath = path.resolve('src/cli/index.ts');
-const tsxPath = path.resolve('node_modules/.bin/tsx');
+const cliPath = path.resolve('dist/cli/index.mjs');
 const runCli = (
 	args: string[],
 	cwd: string,
-) => execa(tsxPath, [cliPath, ...args], {
+) => execa('node', [cliPath, ...args], {
 	cwd,
 	reject: false,
 });
