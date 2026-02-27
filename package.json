@@ -83,12 +83,12 @@
 	"devDependencies": {
 		"@types/icss-utils": "^5.1.2",
 		"@types/lodash.camelcase": "^4.3.9",
-		"@types/node": "^24.10.13",
+		"@types/node": "^24.10.15",
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
 		"@vitejs/plugin-vue": "^5.2.4",
-		"alias-imports": "^1.1.0",
+		"alias-imports": "^1.1.1",
 		"clean-pkg-json": "^1.3.0",
 		"fs-fixture": "^2.11.0",
 		"lightningcss": "^1.30.2",
@@ -106,6 +106,6 @@
 		"vite": "^7.3.1",
 		"vite5": "npm:vite@5.4.21",
 		"vite6": "npm:vite@6.4.1",
-		"vue": "^3.5.28"
+		"vue": "^3.5.29"
 	}
 }
