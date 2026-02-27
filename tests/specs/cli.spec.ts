@@ -18,6 +18,7 @@ export default testSuite(({ describe }) => {
 			await using fixture = await createFixture({});
 			const result = await runCli([], fixture.path);
 			expect(result.exitCode).not.toBe(0);
+			expect(result.stderr).toMatch('Missing required parameter "globs"');
 		});
 
 		test('generates .d.ts for single CSS module', async () => {
@@ -64,6 +65,8 @@ export default testSuite(({ describe }) => {
 
 			const result = await runCli(['broken.module.css'], fixture.path);
 			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toMatch('broken.module.css');
+			expect(result.stderr).toMatch('Unclosed block');
 		});
 
 		test('--export-mode named', async () => {
@@ -184,6 +187,8 @@ export default testSuite(({ describe }) => {
 
 			const result = await runCli(['good.module.css', 'broken.module.css'], fixture.path);
 			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toMatch('broken.module.css');
+			expect(result.stderr).toMatch('Unclosed block');
 
 			const dts = await fixture.readFile('good.module.css.d.ts', 'utf8');
 			expect(dts).toMatch('declare const button: string');
