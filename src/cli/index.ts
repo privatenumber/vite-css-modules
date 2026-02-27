@@ -26,7 +26,7 @@ const LocalsConventionType = (value: string) => {
 	return value as LocalsConvention;
 };
 
-;(async () => {
+(async () => {
 	const argv = cli({
 		name: 'vite-css-modules',
 
