@@ -11,7 +11,21 @@ import type { ExportMode } from '../plugin/types.js';
 import type { CSSModuleExports } from '../plugin/transformers/postcss/types.js';
 
 const exportModes = ['both', 'named', 'default'] as const;
+const ExportModeType = (value: string) => {
+	if (!exportModes.includes(value as ExportMode)) {
+		throw new Error(`Invalid export mode: ${value}. Must be one of: ${exportModes.join(', ')}`);
+	}
+	return value as ExportMode;
+};
+
 const localsConventions = ['camelCase', 'camelCaseOnly', 'dashes', 'dashesOnly'] as const;
+type LocalsConvention = typeof localsConventions[number];
+const LocalsConventionType = (value: string) => {
+	if (!localsConventions.includes(value as LocalsConvention)) {
+		throw new Error(`Invalid locals convention: ${value}. Must be one of: ${localsConventions.join(', ')}`);
+	}
+	return value as LocalsConvention;
+};
 
 const cssModuleExportsToExports = (
 	cssModuleExports: CSSModuleExports,
@@ -58,7 +72,7 @@ const cssModuleExportsToExports = (
 	return exports;
 };
 
-(async () => {
+;(async () => {
 	const argv = cli({
 		name: 'vite-css-modules',
 
@@ -68,13 +82,13 @@ const cssModuleExportsToExports = (
 
 		flags: {
 			exportMode: {
-				type: String,
+				type: ExportModeType,
 				alias: 'e',
 				description: `Export mode: ${exportModes.join(', ')}`,
-				default: 'both',
+				default: ExportModeType('both'),
 			},
 			localsConvention: {
-				type: String,
+				type: LocalsConventionType,
 				alias: 'l',
 				description: `Locals convention: ${localsConventions.join(', ')}`,
 			},
@@ -86,27 +100,10 @@ const cssModuleExportsToExports = (
 		},
 	});
 
-	const exportMode = argv.flags.exportMode as ExportMode;
-	if (!exportModes.includes(exportMode)) {
-		console.error(`Invalid export mode: ${exportMode}. Must be one of: ${exportModes.join(', ')}`);
-		process.exitCode = 1;
-		return;
-	}
-
-	const { localsConvention } = argv.flags;
-	if (
-		localsConvention
-		&& !localsConventions.includes(localsConvention as typeof localsConventions[number])
-	) {
-		console.error(
-			`Invalid locals convention: ${localsConvention}. Must be one of: ${localsConventions.join(', ')}`,
-		);
-		process.exitCode = 1;
-		return;
-	}
+	const { exportMode, localsConvention } = argv.flags;
 
 	const cssModulesConfig = localsConvention
-		? { localsConvention: localsConvention as typeof localsConventions[number] }
+		? { localsConvention }
 		: {};
 
 	const keepOriginalExport = shouldKeepOriginalExport(cssModulesConfig);
@@ -145,5 +142,8 @@ const cssModuleExportsToExports = (
 			}
 		}),
 	);
-})();
+})().catch((error: Error) => {
+	console.error(error.message);
+	process.exitCode = 1;
+});
 /* eslint-enable no-console */
