@@ -5,7 +5,7 @@ import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
 import { transform } from '../plugin/transformers/postcss/index.js';
 import { generateTypes } from '../plugin/generate-types.js';
-import { shouldKeepOriginalExport, getLocalesConventionFunction } from '../plugin/locals-convention.js';
+import { shouldKeepOriginalExport, getLocalesConventionFunction, type LocalsConventionFunction } from '../plugin/locals-convention.js';
 import type { Exports } from '../plugin/generate-esm.js';
 import type { ExportMode } from '../plugin/types.js';
 import type { CSSModuleExports } from '../plugin/transformers/postcss/types.js';
@@ -31,11 +31,7 @@ const cssModuleExportsToExports = (
 	cssModuleExports: CSSModuleExports,
 	filePath: string,
 	keepOriginalExport: boolean,
-	localsConventionFunction?: (
-		originalClassName: string,
-		generatedClassName: string,
-		inputFile: string,
-	) => string,
+	localsConventionFunction?: LocalsConventionFunction,
 ): Exports => {
 	const exports: Exports = {};
 
@@ -109,9 +105,7 @@ const cssModuleExportsToExports = (
 	const keepOriginalExport = shouldKeepOriginalExport(cssModulesConfig);
 	const localsConventionFunction = getLocalesConventionFunction(cssModulesConfig);
 
-	const files = await glob(argv._.globs, {
-		cwd: process.cwd(),
-	});
+	const files = await glob(argv._.globs);
 
 	if (files.length === 0) {
 		console.error('No files matched the provided glob patterns');
