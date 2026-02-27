@@ -1,8 +1,6 @@
-import { testSuite } from 'manten';
+import { describe } from 'manten';
 
-export default testSuite(({ describe }) => {
-	describe('Patched', ({ runTestSuite }) => {
-		runTestSuite(import('./postcss.spec.js'));
-		runTestSuite(import('./lightningcss.spec.js'));
-	});
+describe('Patched', () => {
+	import('./postcss.spec.ts');
+	import('./lightningcss.spec.ts');
 });
