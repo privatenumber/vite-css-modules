@@ -4,10 +4,10 @@ import { createFixture } from 'fs-fixture';
 import { describe, test, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
 import vitePluginVue from '@vitejs/plugin-vue';
-import { base64Module } from '../utils/base64-module.js';
-import * as fixtures from '../fixtures.js';
-import { viteBuild, getViteDevCode, viteDevBrowser } from '../utils/vite.js';
-import { getCssSourceMaps } from '../utils/get-css-source-maps.js';
+import { base64Module } from '../utils/base64-module.ts';
+import * as fixtures from '../fixtures.ts';
+import { viteBuild, getViteDevCode, viteDevBrowser } from '../utils/vite.ts';
+import { getCssSourceMaps } from '../utils/get-css-source-maps.ts';
 
 describe('reproductions', () => {
 	describe('postcss (no config)', () => {

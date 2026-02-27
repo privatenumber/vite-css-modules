@@ -1,4 +1,4 @@
-import outdent from 'outdent';
+import { outdent } from 'outdent';
 
 const random255 = () => Math.floor(Math.random() * 256);
 

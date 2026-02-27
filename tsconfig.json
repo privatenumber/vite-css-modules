@@ -1,15 +1,12 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"lib": [
-			"ESNext",
-		],
-		"moduleDetection": "force",
-		"module": "Preserve",
+		"module": "NodeNext",
+		"allowImportingTsExtensions": true,
+		"erasableSyntaxOnly": true,
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"noEmit": true,
-		"esModuleInterop": true,
 		"verbatimModuleSyntax": true,
 		"skipLibCheck": true,
 	},
