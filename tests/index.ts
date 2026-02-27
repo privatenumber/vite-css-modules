@@ -6,6 +6,4 @@ describe(`vite ${version}`, () => {
 	import('./specs/patched/index.ts');
 });
 
-describe('CLI', ({ runTestSuite }) => {
-	runTestSuite(import('./specs/cli.spec.js'));
-});
+import('./specs/cli.spec.ts');
