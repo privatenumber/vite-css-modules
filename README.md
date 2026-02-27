@@ -275,6 +275,35 @@ Generates inline declaration source maps in `.d.ts` files, enabling "Go to Defin
 > [!TIP]
 > Source maps are always inlined rather than emitted as separate `.d.ts.map` files. Since `.d.ts` files are generated in-place next to your CSS source, external map files would pollute the source directory. The size overhead of inlining is negligible for typical CSS modules.
 
+## CLI
+
+Generate TypeScript declarations for CSS Modules without running a build.
+
+```bash
+npx vite-css-modules <globs...> [flags]
+```
+
+### Flags
+
+| Flag | Alias | Description |
+| :--- | :--- | :--- |
+| `--export-mode` | `-e` | Export style: `both`, `named`, `default` (default: `both`) |
+| `--locals-convention` | `-l` | Class name transformation: `camelCase`, `camelCaseOnly`, `dashes`, `dashesOnly` |
+| `--arbitrary-exports` | | Enable ES2022+ arbitrary exports for dashed class names |
+
+### Examples
+
+```bash
+# Generate types for all CSS Modules
+npx vite-css-modules '**/*.module.css'
+
+# With named exports only
+npx vite-css-modules 'src/**/*.module.css' --export-mode named
+
+# With camelCase class names
+npx vite-css-modules '**/*.module.css' --locals-convention camelCase
+```
+
 ## FAQ
 
 ### What issues does this plugin address?
