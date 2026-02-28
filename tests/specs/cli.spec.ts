@@ -1,16 +1,14 @@
 import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { describe, test, expect } from 'manten';
-import { execa } from 'execa';
+import spawn, { type Result, type SubprocessError } from 'nano-spawn';
 
 const cliPath = path.resolve('dist/cli/index.mjs');
 const runCli = (
 	args: string[],
 	cwd: string,
-) => execa('node', [cliPath, ...args], {
-	cwd,
-	reject: false,
-});
+): Promise<Result & { exitCode?: number }> => spawn(process.execPath, [cliPath, ...args], { cwd })
+	.catch((error: SubprocessError) => error);
 
 describe('CLI', () => {
 	test('no arguments shows error', async () => {
@@ -26,7 +24,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('declare const button: string');
@@ -41,7 +39,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['**/*.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dtsA = await fixture.readFile('src/a.module.css.d.ts', 'utf8');
 		expect(dtsA).toMatch('declare const alpha: string');
@@ -53,7 +51,7 @@ describe('CLI', () => {
 	test('no files matched shows warning on stderr', async () => {
 		await using fixture = await createFixture({});
 		const result = await runCli(['**/*.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 		expect(result.stderr).toMatch('No files matched');
 	});
 
@@ -74,7 +72,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['--export-mode', 'named', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('export {');
@@ -87,7 +85,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['--export-mode', 'default', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).not.toMatch('export {');
@@ -100,7 +98,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['--locals-convention', 'camelCase', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('myButton');
@@ -113,7 +111,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['--locals-convention', 'camelCaseOnly', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('myButton');
@@ -126,7 +124,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['--locals-convention', 'dashes', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('myButton');
@@ -139,7 +137,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['--locals-convention', 'dashesOnly', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('myButton');
@@ -152,7 +150,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['--arbitrary-exports', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('"my-button"');
@@ -200,7 +198,7 @@ describe('CLI', () => {
 		});
 
 		const result = await runCli(['style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBeUndefined();
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('declare const base: string');
