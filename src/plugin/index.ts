@@ -338,7 +338,7 @@ export const cssModules = (
 							const sourceMapOptions = declarationMap
 								? {
 									sourceFileName: path.basename(filePath),
-									classPositions: findClassPositions(inputCss, filePath),
+									classPositions: await findClassPositions(filePath),
 								}
 								: undefined;
 							const newContent = generateTypes(

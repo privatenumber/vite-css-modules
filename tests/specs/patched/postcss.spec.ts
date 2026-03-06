@@ -1055,6 +1055,60 @@ describe('PostCSS', () => {
 			expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);
 		});
 
+		test('maps nested CSS to original positions when postcss-nested is used', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'export * as style from \'./style.module.css\';',
+
+				'style.module.css': outdent`
+				.parent {
+					color: red;
+
+					&.nested {
+						color: blue;
+					}
+				}
+
+				.sibling {
+					color: green;
+				}
+				`,
+
+				'postcss.config.js': outdent`
+				import nested from 'postcss-nested';
+				export default { plugins: [nested] };
+				`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+						declarationMap: true,
+					}),
+				],
+				css: {
+					postcss: fixture.path,
+				},
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			const dtsMap = extractInlineSourceMap(dts);
+			const decoded = decode(dtsMap.mappings);
+
+			// .parent at CSS line 1, col 1 (0-based: 0, 0)
+			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+
+			// .nested at CSS line 4, col 3 (0-based: 3, 2) — must be the ORIGINAL
+			// nested position (&.nested), not the flattened position (.parent.nested)
+			expect(decoded[9]).toStrictEqual([[14, 0, 3, 2]]);
+
+			// .sibling at CSS line 9, col 1 (0-based: 8, 0)
+			expect(decoded[10]).toStrictEqual([[14, 0, 8, 0]]);
+		});
+
 		test('empty css module has no inline source map', async () => {
 			await using fixture = await createFixture({
 				'index.js': 'export * as style from \'./style.module.css\';',

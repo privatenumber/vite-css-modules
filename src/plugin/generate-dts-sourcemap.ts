@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import postcss from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 import { encode, type SourceMapSegment, type SourceMapMappings } from '@jridgewell/sourcemap-codec';
@@ -60,12 +61,16 @@ const parser = selectorParser();
  * Returns a map of className → position of the '.' in the selector.
  * Uses PostCSS for rule-level parsing and postcss-selector-parser
  * for robust class extraction (handles escapes, unicode, etc.).
+ *
+ * Reads the original CSS from disk rather than using the potentially
+ * PostCSS-transformed input, so that positions always correspond to
+ * the original source file.
  */
-export const findClassPositions = (
-	css: string,
+export const findClassPositions = async (
 	filePath: string,
-): Map<string, Position> => {
+): Promise<Map<string, Position>> => {
 	const positions = new Map<string, Position>();
+	const css = await fs.readFile(filePath, 'utf8');
 	const root = postcss.parse(css, { from: filePath });
 
 	root.walkRules((rule) => {
