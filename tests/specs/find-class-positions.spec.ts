@@ -291,6 +291,54 @@ $padding: 16px;
 		expect(result.size).toBe(0);
 	});
 
+	test('does not match prefix of longer class name', () => {
+		const css = '.btn-primary { color: red; }\n.btn { color: blue; }';
+		const result = findClassPositions(css, ['btn', 'btn-primary']);
+		expect(result.get('btn-primary')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('btn')).toStrictEqual({
+			line: 2,
+			column: 1,
+		});
+	});
+
+	test('non-ASCII identifier boundary', () => {
+		const css = String.raw`.café { color: brown; }
+.caf { color: black; }`;
+		const result = findClassPositions(css, ['café', 'caf']);
+		expect(result.get('café')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('caf')).toStrictEqual({
+			line: 2,
+			column: 1,
+		});
+	});
+
+	test(':global() wrapper', () => {
+		const css = ':global(.button) { color: red; }';
+		const result = findClassPositions(css, ['button']);
+		expect(result.get('button')).toStrictEqual({
+			line: 1,
+			column: 9,
+		});
+	});
+
+	test('unterminated block comment does not crash', () => {
+		const css = '/* .button';
+		const result = findClassPositions(css, ['button']);
+		expect(result.size).toBe(0);
+	});
+
+	test('unterminated string does not crash', () => {
+		const css = '".button';
+		const result = findClassPositions(css, ['button']);
+		expect(result.size).toBe(0);
+	});
+
 	test('multiline block comment with class name on each line', () => {
 		const css = `/*
 .button

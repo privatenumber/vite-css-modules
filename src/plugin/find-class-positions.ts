@@ -15,6 +15,8 @@ const isIdentifierChar = (charCode: number | undefined): charCode is number => (
 		// _ -
 		|| charCode === 95
 		|| charCode === 45
+		// Non-ASCII (valid in CSS identifiers)
+		|| charCode >= 128
 	)
 );
 
