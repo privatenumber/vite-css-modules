@@ -988,6 +988,17 @@ describe('PostCSS', () => {
 			return JSON.parse(Buffer.from(match[1]!, 'base64').toString('utf8'));
 		};
 
+		const expectDeclarationMapping = (
+			dts: string,
+			decoded: ReturnType<typeof decode>,
+			declaration: string,
+			expected: number[],
+		) => {
+			const lineIndex = dts.split('\n').findIndex(line => line.includes(declaration));
+			expect(lineIndex).toBeGreaterThanOrEqual(0);
+			expect(decoded[lineIndex]).toStrictEqual([expected]);
+		};
+
 		test('maps class names to CSS positions', async () => {
 			await using fixture = await createFixture(fixtures.reservedKeywords);
 
@@ -1098,6 +1109,123 @@ describe('PostCSS', () => {
 			// If findClassPositions used the PostCSS-transformed input,
 			// it would be off by 1 line due to the prepended :root rule
 			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+		});
+
+		test('maps hex-escaped class names to CSS positions', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'export * as style from \'./style.module.css\';',
+				'style.module.css': String.raw`.\31 23 { color: red; }`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+						declarationMap: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			const dtsMap = extractInlineSourceMap(dts);
+			const decoded = decode(dtsMap.mappings);
+
+			expect(dts).toMatch('_123 as "123"');
+			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+		});
+
+		test('maps class names after quoted URL() content to CSS positions', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'export * as style from \'./style.module.css\';',
+				'style.module.css': outdent`
+				.icon {
+					background: URL("https://example.com/a)b.png");
+				}
+				.button {
+					color: red;
+				}
+				`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+						declarationMap: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			const dtsMap = extractInlineSourceMap(dts);
+			const decoded = decode(dtsMap.mappings);
+
+			expectDeclarationMapping(dts, decoded, 'declare const icon: string;', [14, 0, 0, 0]);
+			expectDeclarationMapping(dts, decoded, 'declare const button: string;', [14, 0, 3, 0]);
+		});
+
+		test('maps SCSS class names after @extend tab whitespace to selector positions', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'export * as style from \'./style.module.scss\';',
+				'style.module.scss': `.primary {
+\t@extend\t.button;
+}
+
+.button {
+\tcolor: red;
+}`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+						declarationMap: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+			const dtsMap = extractInlineSourceMap(dts);
+			const decoded = decode(dtsMap.mappings);
+
+			expectDeclarationMapping(dts, decoded, 'declare const primary: string;', [14, 0, 0, 0]);
+			expectDeclarationMapping(dts, decoded, 'declare const button: string;', [14, 0, 4, 0]);
+		});
+
+		test('malformed escaped selectors do not break declaration maps', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'export * as style from \'./style.module.css\';',
+				'style.module.css': String.raw`.\110000bad { color: red; }
+.button { color: blue; }`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+						declarationMap: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			const dtsMap = extractInlineSourceMap(dts);
+			const decoded = decode(dtsMap.mappings);
+
+			expectDeclarationMapping(dts, decoded, 'declare const button: string;', [14, 0, 1, 0]);
 		});
 
 		test('empty css module has no inline source map', async () => {

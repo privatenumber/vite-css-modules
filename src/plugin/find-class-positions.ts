@@ -1,3 +1,17 @@
+/*
+ * Custom scanner instead of PostCSS + postcss-selector-parser because:
+ *
+ * 1. PostCSS fails on Sass indented syntax and Stylus — this scanner
+ *    works across all CSS-like syntaxes (CSS, SCSS, Less, Sass, Stylus)
+ * 2. We only need class selector positions for "Go to Definition" source
+ *    maps, not a full AST — a targeted scan is simpler and faster
+ * 3. Zero dependencies — avoids pulling PostCSS into the source map path
+ *
+ * The scanner reads CSS identifiers including escape sequences per the
+ * CSS spec (https://drafts.csswg.org/css-syntax-3/#consume-escaped-code-point)
+ * and compares decoded names against known CSS Modules exports.
+ */
+
 export type Position = {
 	line: number;
 	column: number;
@@ -57,6 +71,18 @@ const startsWithIgnoreAsciiCase = (
 	return true;
 };
 
+const decodeCssCodePoint = (codePoint: number) => {
+	if (
+		codePoint === 0
+		|| codePoint > 0x10_FF_FF
+		|| (codePoint >= 0xD8_00 && codePoint <= 0xDF_FF)
+	) {
+		return '\uFFFD';
+	}
+
+	return String.fromCodePoint(codePoint);
+};
+
 type EscapeResult = {
 	value: string;
 	next: number;
@@ -90,13 +116,13 @@ const readCssEscape = (
 		}
 
 		return {
-			value: String.fromCodePoint(Number.parseInt(hex, 16)),
+			value: decodeCssCodePoint(Number.parseInt(hex, 16)),
 			next: i,
 		};
 	}
 
 	return {
-		value: String.fromCodePoint(escapedCodePoint),
+		value: decodeCssCodePoint(escapedCodePoint),
 		next: i + (escapedCodePoint > 0xFF_FF ? 2 : 1),
 	};
 };
@@ -133,6 +159,106 @@ const readCssIdentifier = (
 	return {
 		name,
 		end: i,
+	};
+};
+
+type SkipResult = {
+	next: number;
+	line: number;
+	column: number;
+};
+
+const skipQuotedString = (
+	css: string,
+	start: number,
+	line: number,
+	column: number,
+): SkipResult => {
+	const quote = css[start];
+	let i = start + 1;
+	let currentLine = line;
+	let currentColumn = column + 1;
+
+	while (i < css.length) {
+		if (css[i] === quote) {
+			i += 1;
+			currentColumn += 1;
+			break;
+		}
+
+		if (css[i] === '\\') {
+			i += 1;
+			currentColumn += 1;
+			if (i >= css.length) {
+				break;
+			}
+		}
+
+		if (css[i] === '\n') {
+			currentLine += 1;
+			currentColumn = 1;
+		} else {
+			currentColumn += 1;
+		}
+		i += 1;
+	}
+
+	return {
+		next: i,
+		line: currentLine,
+		column: currentColumn,
+	};
+};
+
+const skipUrlFunction = (
+	css: string,
+	start: number,
+	line: number,
+	column: number,
+): SkipResult => {
+	let i = start + 4;
+	let currentLine = line;
+	let currentColumn = column + 4;
+
+	while (i < css.length) {
+		if (css[i] === '"' || css[i] === '\'') {
+			const skippedString = skipQuotedString(
+				css,
+				i,
+				currentLine,
+				currentColumn,
+			);
+			i = skippedString.next;
+			currentLine = skippedString.line;
+			currentColumn = skippedString.column;
+			continue;
+		}
+
+		if (css[i] === '\\') {
+			i += 1;
+			currentColumn += 1;
+			if (i >= css.length) {
+				break;
+			}
+		} else if (css[i] === ')') {
+			i += 1;
+			currentColumn += 1;
+			break;
+		}
+
+		if (css[i] === '\n') {
+			currentLine += 1;
+			currentColumn = 1;
+		} else {
+			currentColumn += 1;
+		}
+		i += 1;
+	}
+
+	return {
+		next: i,
+		line: currentLine,
+		column: currentColumn,
 	};
 };
 
@@ -176,19 +302,10 @@ export const findClassPositions = (
 		if (
 			startsWithIgnoreAsciiCase(css, i, 'url(')
 		) {
-			i += 4;
-			column += 4;
-			while (i < css.length && css[i] !== ')') {
-				if (css[i] === '\n') {
-					line += 1;
-					column = 1;
-				} else {
-					column += 1;
-				}
-				i += 1;
-			}
-			i += 1;
-			column += 1;
+			const skippedUrl = skipUrlFunction(css, i, line, column);
+			i = skippedUrl.next;
+			line = skippedUrl.line;
+			column = skippedUrl.column;
 			continue;
 		}
 
@@ -203,41 +320,27 @@ export const findClassPositions = (
 
 		// Skip strings: "..." and '...'
 		if (css[i] === '"' || css[i] === "'") {
-			const quote = css[i];
-			i += 1;
-			column += 1;
-			while (i < css.length && css[i] !== quote) {
-				if (css[i] === '\\') {
-					i += 1;
-					column += 1;
-				}
-				if (css[i] === '\n') {
-					line += 1;
-					column = 1;
-				} else {
-					column += 1;
-				}
-				i += 1;
-			}
-			i += 1;
-			column += 1;
+			const skippedString = skipQuotedString(css, i, line, column);
+			i = skippedString.next;
+			line = skippedString.line;
+			column = skippedString.column;
 			continue;
 		}
 
 		// Skip @extend and @apply references: these use .className in
 		// a non-selector context (SCSS @extend, Tailwind @apply)
-		if (
-			css[i] === '@'
-			&& (
-				css.startsWith('extend ', i + 1)
-				|| css.startsWith('apply ', i + 1)
-			)
-		) {
-			while (i < css.length && css[i] !== '\n' && css[i] !== ';') {
-				i += 1;
-				column += 1;
+		if (css[i] === '@') {
+			const atRule = readCssIdentifier(css, i + 1);
+			if (
+				(atRule.name === 'extend' || atRule.name === 'apply')
+				&& isCssWhitespace(css.codePointAt(atRule.end))
+			) {
+				while (i < css.length && css[i] !== '\n' && css[i] !== ';') {
+					i += 1;
+					column += 1;
+				}
+				continue;
 			}
-			continue;
 		}
 
 		// Check for class selector: . followed by a target class name

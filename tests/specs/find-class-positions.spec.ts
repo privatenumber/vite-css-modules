@@ -250,6 +250,20 @@ describe('findClassPositions', () => {
 		});
 	});
 
+	test('hex-escaped class names', () => {
+		const css = String.raw`.\31 23 { color: red; }
+.normal { color: blue; }`;
+		const result = findClassPositions(css, ['123', 'normal']);
+		expect(result.get('123')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('normal')).toStrictEqual({
+			line: 2,
+			column: 1,
+		});
+	});
+
 	test('SCSS with variables and comments before selector', () => {
 		const scss = `@use 'colors';
 $padding: 16px;
@@ -359,9 +373,48 @@ $padding: 16px;
 		});
 	});
 
+	test('skips @extend references with tab whitespace', () => {
+		const scss = `.primary {
+	@extend\t.button;
+	color: red;
+}
+
+.button {
+	padding: 8px;
+}`;
+		const result = findClassPositions(scss, ['button', 'primary']);
+		expect(result.get('primary')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('button')).toStrictEqual({
+			line: 6,
+			column: 1,
+		});
+	});
+
 	test('skips @apply references', () => {
 		const css = `.card {
 	@apply .flex .items-center;
+}
+
+.flex {
+	display: flex;
+}`;
+		const result = findClassPositions(css, ['flex', 'card']);
+		expect(result.get('card')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('flex')).toStrictEqual({
+			line: 5,
+			column: 1,
+		});
+	});
+
+	test('skips @apply references with tab whitespace', () => {
+		const css = `.card {
+	@apply\t.flex .items-center;
 }
 
 .flex {
@@ -403,9 +456,45 @@ $padding: 16px;
 	});
 
 	test('skips case-insensitive URL() content', () => {
-		const css = '.icon{background:URL(https://example.com/img.png)}.button{color:red}';
+		const css = `.icon {
+	background: URL(https://example.com/img.png);
+}
+.button { color: red; }`;
+		const result = findClassPositions(css, ['icon', 'button']);
+		expect(result.get('icon')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('button')).toStrictEqual({
+			line: 4,
+			column: 1,
+		});
+	});
+
+	test('skips quoted URL() content containing )', () => {
+		const css = `.icon {
+	background: URL("https://example.com/a)b.png");
+}
+.button { color: red; }`;
+		const result = findClassPositions(css, ['icon', 'button']);
+		expect(result.get('icon')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('button')).toStrictEqual({
+			line: 4,
+			column: 1,
+		});
+	});
+
+	test('invalid hex escapes do not crash', () => {
+		const css = String.raw`.\110000bad { color: red; }
+.button { color: blue; }`;
 		const result = findClassPositions(css, ['button']);
-		expect(result.get('button')).toBeDefined();
+		expect(result.get('button')).toStrictEqual({
+			line: 2,
+			column: 1,
+		});
 	});
 
 	test('multiline block comment with class name on each line', () => {
