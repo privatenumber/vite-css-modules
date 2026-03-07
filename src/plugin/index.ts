@@ -9,7 +9,7 @@ import { getTsconfig } from 'get-tsconfig';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import { generateTypes } from './generate-types.js';
-import { findClassPositions } from './generate-dts-sourcemap.js';
+import { findClassPositions } from './find-class-positions.js';
 import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';

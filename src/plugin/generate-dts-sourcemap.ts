@@ -1,11 +1,5 @@
 import { encode, type SourceMapSegment, type SourceMapMappings } from '@jridgewell/sourcemap-codec';
-
-export { findClassPositions } from './find-class-positions.js';
-
-type Position = {
-	line: number;
-	column: number;
-};
+import type { Position } from './find-class-positions.js';
 
 export type MappedLine = {
 	text: string;

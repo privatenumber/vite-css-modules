@@ -4,7 +4,7 @@ import type {
 	SourceMap, ObjectHook, TransformPluginContext, TransformResult,
 } from 'rollup';
 import { cssModules, type PatchConfig } from './plugin/index.js';
-import { cssModuleRE, cleanUrl } from './plugin/url-utils.js';
+import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
@@ -218,7 +218,7 @@ export const patchCssModules = (
 
 		transform(code, id) {
 			if (cssModuleRE.test(id)) {
-				originalCssCache.set(cleanUrl(id), code);
+				originalCssCache.set(id.split('?', 2)[0]!, code);
 			}
 		},
 
@@ -240,18 +240,18 @@ export const patchCssModules = (
 			// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192
 			if (cssConfig.transformer === 'lightningcss') {
 				if (cssConfig.lightningcss) {
-				// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
+					// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
 					cssConfig.lightningcss.cssModules = false;
 				}
 
-				/**
-			 * When in Lightning mode, Lightning build API is used
-			 * which will trip up on the dashedIdents feature when
-			 * CSS Modules is disabled
-			 *
-			 * So instead we have to revert back to PostCSS, and then
-			 * disable CSS Modules on PostCSS
-			 */
+				/*
+				 * When in Lightning mode, Lightning build API is used
+				 * which will trip up on the dashedIdents feature when
+				 * CSS Modules is disabled
+				 *
+				 * So instead we have to revert back to PostCSS, and then
+				 * disable CSS Modules on PostCSS
+				 */
 				cssConfig.transformer = 'postcss';
 			}
 
