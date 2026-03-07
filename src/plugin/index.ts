@@ -69,6 +69,7 @@ export type PatchConfig = {
 export const cssModules = (
 	config: ResolvedConfig,
 	patchConfig?: PatchConfig,
+	originalCssCache?: Map<string, string>,
 ): Plugin => {
 	const filter = createFilter(cssModuleRE);
 	const allowArbitraryNamedExports = supportsArbitraryModuleNamespace(config);
@@ -335,10 +336,11 @@ export const cssModules = (
 						const fileExists = await access(filePath).then(() => true, () => false);
 						if (fileExists) {
 							const dtsPath = `${filePath}.d.ts`;
-							const sourceMapOptions = declarationMap
+							const originalCss = originalCssCache?.get(filePath);
+							const sourceMapOptions = declarationMap && originalCss
 								? {
 									sourceFileName: path.basename(filePath),
-									classPositions: await findClassPositions(filePath),
+									classPositions: findClassPositions(originalCss, filePath),
 								}
 								: undefined;
 							const newContent = generateTypes(

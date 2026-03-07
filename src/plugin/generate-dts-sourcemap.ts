@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import postcss from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 import { encode, type SourceMapSegment, type SourceMapMappings } from '@jridgewell/sourcemap-codec';
@@ -62,16 +61,25 @@ const parser = selectorParser();
  * Uses PostCSS for rule-level parsing and postcss-selector-parser
  * for robust class extraction (handles escapes, unicode, etc.).
  *
- * Reads the original CSS from disk rather than using the potentially
- * PostCSS-transformed input, so that positions always correspond to
- * the original source file.
+ * Accepts the original source CSS (before any PostCSS transforms) so that
+ * positions always correspond to the original source file.
+ *
+ * For preprocessor syntax that PostCSS can't parse (e.g. .sass indented
+ * syntax, .styl), returns an empty map — the .d.ts is still generated
+ * but without source map positions.
  */
-export const findClassPositions = async (
+export const findClassPositions = (
+	css: string,
 	filePath: string,
-): Promise<Map<string, Position>> => {
+): Map<string, Position> => {
 	const positions = new Map<string, Position>();
-	const css = await fs.readFile(filePath, 'utf8');
-	const root = postcss.parse(css, { from: filePath });
+
+	let root;
+	try {
+		root = postcss.parse(css, { from: filePath });
+	} catch {
+		return positions;
+	}
 
 	root.walkRules((rule) => {
 		if (!rule.source?.start) {

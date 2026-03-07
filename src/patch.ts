@@ -4,7 +4,7 @@ import type {
 	SourceMap, ObjectHook, TransformPluginContext, TransformResult,
 } from 'rollup';
 import { cssModules, type PatchConfig } from './plugin/index.js';
-import { cssModuleRE } from './plugin/url-utils.js';
+import { cssModuleRE, cleanUrl } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
 
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
@@ -202,11 +202,28 @@ const supportCssModulesHMR = (
 
 export const patchCssModules = (
 	patchConfig?: PatchConfig,
-): Plugin => ({
-	name: 'patch-css-modules',
-	enforce: 'pre',
-	configResolved: (config) => {
-		const pluginInstance = cssModules(config, patchConfig);
+): Plugin => {
+	/*
+	 * Cache of original CSS source before vite:css transforms it.
+	 *
+	 * The enforce: 'pre' transform hook captures CSS before Vite's
+	 * PostCSS processing, so positions match the original source file.
+	 * Used by findClassPositions for declaration source maps.
+	 */
+	const originalCssCache = new Map<string, string>();
+
+	return {
+		name: 'patch-css-modules',
+		enforce: 'pre',
+
+		transform(code, id) {
+			if (cssModuleRE.test(id)) {
+				originalCssCache.set(cleanUrl(id), code);
+			}
+		},
+
+		configResolved: (config) => {
+			const pluginInstance = cssModules(config, patchConfig, originalCssCache);
 		const cssConfig = config.css;
 
 		const isCssModulesDisabled = (
@@ -263,4 +280,5 @@ export const patchCssModules = (
 		// Enable HMR by making CSS Modules not self accept
 		supportCssModulesHMR(config.plugins);
 	},
-});
+};
+};
