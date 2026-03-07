@@ -224,27 +224,27 @@ export const patchCssModules = (
 
 		configResolved: (config) => {
 			const pluginInstance = cssModules(config, patchConfig, originalCssCache);
-		const cssConfig = config.css;
+			const cssConfig = config.css;
 
-		const isCssModulesDisabled = (
-			cssConfig.transformer === 'lightningcss'
-				? cssConfig.lightningcss?.cssModules
-				: cssConfig.modules
-		) === false;
+			const isCssModulesDisabled = (
+				cssConfig.transformer === 'lightningcss'
+					? cssConfig.lightningcss?.cssModules
+					: cssConfig.modules
+			) === false;
 
-		if (isCssModulesDisabled) {
-			return;
-		}
-
-		// Disable CSS Modules in Vite in favor of our plugin
-		// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192
-		if (cssConfig.transformer === 'lightningcss') {
-			if (cssConfig.lightningcss) {
-				// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
-				cssConfig.lightningcss.cssModules = false;
+			if (isCssModulesDisabled) {
+				return;
 			}
 
-			/**
+			// Disable CSS Modules in Vite in favor of our plugin
+			// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192
+			if (cssConfig.transformer === 'lightningcss') {
+				if (cssConfig.lightningcss) {
+				// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
+					cssConfig.lightningcss.cssModules = false;
+				}
+
+				/**
 			 * When in Lightning mode, Lightning build API is used
 			 * which will trip up on the dashedIdents feature when
 			 * CSS Modules is disabled
@@ -252,33 +252,33 @@ export const patchCssModules = (
 			 * So instead we have to revert back to PostCSS, and then
 			 * disable CSS Modules on PostCSS
 			 */
-			cssConfig.transformer = 'postcss';
-		}
+				cssConfig.transformer = 'postcss';
+			}
 
-		cssConfig.modules = false;
+			cssConfig.modules = false;
 
-		const viteCssPostPluginIndex = config.plugins.findIndex(plugin => plugin.name === 'vite:css-post');
-		if (viteCssPostPluginIndex === -1) {
-			throw new Error('vite:css-post plugin not found');
-		}
+			const viteCssPostPluginIndex = config.plugins.findIndex(plugin => plugin.name === 'vite:css-post');
+			if (viteCssPostPluginIndex === -1) {
+				throw new Error('vite:css-post plugin not found');
+			}
 
-		const viteCssPostPlugin = config.plugins[viteCssPostPluginIndex]!;
+			const viteCssPostPlugin = config.plugins[viteCssPostPluginIndex]!;
 
-		// Insert before
-		(config.plugins as Plugin[]).splice(
-			viteCssPostPluginIndex,
-			0,
-			pluginInstance,
-		);
+			// Insert before
+			(config.plugins as Plugin[]).splice(
+				viteCssPostPluginIndex,
+				0,
+				pluginInstance,
+			);
 
-		supportNewCssModules(
-			viteCssPostPlugin,
-			config,
-			pluginInstance,
-		);
+			supportNewCssModules(
+				viteCssPostPlugin,
+				config,
+				pluginInstance,
+			);
 
-		// Enable HMR by making CSS Modules not self accept
-		supportCssModulesHMR(config.plugins);
-	},
-};
+			// Enable HMR by making CSS Modules not self accept
+			supportCssModulesHMR(config.plugins);
+		},
+	};
 };
