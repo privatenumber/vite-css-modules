@@ -216,10 +216,14 @@ export const patchCssModules = (
 		name: 'patch-css-modules',
 		enforce: 'pre',
 
-		transform(code, id) {
-			if (cssModuleRE.test(id)) {
-				originalCssCache.set(id.split('?', 2)[0]!, code);
-			}
+		transform: {
+			filter: {
+				id: cssModuleRE,
+			},
+			handler(code, id) {
+				const queryIndex = id.indexOf('?');
+				originalCssCache.set(queryIndex === -1 ? id : id.slice(0, queryIndex), code);
+			},
 		},
 
 		configResolved: (config) => {

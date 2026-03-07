@@ -134,7 +134,7 @@ export const findClassPositions = (
 
 				const end = i + 1 + target.pattern.length;
 				if (
-					css.slice(i + 1, end) === target.pattern
+					css.startsWith(target.pattern, i + 1)
 					&& (
 						end >= css.length
 						|| (
