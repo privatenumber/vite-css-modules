@@ -1055,7 +1055,7 @@ describe('PostCSS', () => {
 			expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);
 		});
 
-		test('maps nested CSS to original positions when postcss-nested is used', async () => {
+		test('maps nested CSS to original positions when PostCSS transforms selectors', async () => {
 			await using fixture = await createFixture({
 				'index.js': 'export * as style from \'./style.module.css\';',
 
@@ -1073,9 +1073,18 @@ describe('PostCSS', () => {
 				}
 				`,
 
+				// Minimal PostCSS plugin that flattens &.xxx nesting
 				'postcss.config.js': outdent`
-				import nested from 'postcss-nested';
-				export default { plugins: [nested] };
+				const flattenNesting = () => ({
+					postcssPlugin: 'flatten-nesting',
+					Rule(rule) {
+						if (!rule.selector.startsWith('&') || rule.parent?.type !== 'rule') return;
+						rule.selector = rule.parent.selector + rule.selector.slice(1);
+						rule.parent.parent.insertAfter(rule.parent, rule);
+					},
+				});
+				flattenNesting.postcss = true;
+				export default { plugins: [flattenNesting] };
 				`,
 			});
 

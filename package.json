@@ -100,7 +100,6 @@
 		"pkgroll": "^2.27.0",
 		"playwright-chromium": "^1.58.2",
 		"postcss": "^8.5.6",
-		"postcss-nested": "^7.0.2",
 		"rollup": "^4.53.5",
 		"sass": "^1.97.3",
 		"skills-npm": "^1.0.0",
