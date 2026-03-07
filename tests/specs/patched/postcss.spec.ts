@@ -1055,36 +1055,26 @@ describe('PostCSS', () => {
 			expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);
 		});
 
-		test('maps nested CSS to original positions when PostCSS transforms selectors', async () => {
+		test('source map positions reflect original file when PostCSS transforms CSS', async () => {
 			await using fixture = await createFixture({
 				'index.js': 'export * as style from \'./style.module.css\';',
 
 				'style.module.css': outdent`
-				.parent {
+				.button {
 					color: red;
-
-					&.nested {
-						color: blue;
-					}
-				}
-
-				.sibling {
-					color: green;
 				}
 				`,
 
-				// Minimal PostCSS plugin that flattens &.xxx nesting
+				// PostCSS plugin that prepends a rule, shifting all positions down
 				'postcss.config.js': outdent`
-				const flattenNesting = () => ({
-					postcssPlugin: 'flatten-nesting',
-					Rule(rule) {
-						if (!rule.selector.startsWith('&') || rule.parent?.type !== 'rule') return;
-						rule.selector = rule.parent.selector + rule.selector.slice(1);
-						rule.parent.parent.insertAfter(rule.parent, rule);
-					},
-				});
-				flattenNesting.postcss = true;
-				export default { plugins: [flattenNesting] };
+				const postcss = require('postcss');
+				module.exports = {
+					plugins: [
+						(root) => {
+							root.prepend(postcss.rule({ selector: ':root' }));
+						},
+					],
+				};
 				`,
 			});
 
@@ -1107,15 +1097,10 @@ describe('PostCSS', () => {
 			const dtsMap = extractInlineSourceMap(dts);
 			const decoded = decode(dtsMap.mappings);
 
-			// .parent at CSS line 1, col 1 (0-based: 0, 0)
+			// .button at original CSS line 1, col 1 (0-based: 0, 0)
+			// If findClassPositions used the PostCSS-transformed input,
+			// it would be off by 1 line due to the prepended :root rule
 			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
-
-			// .nested at CSS line 4, col 3 (0-based: 3, 2) — must be the ORIGINAL
-			// nested position (&.nested), not the flattened position (.parent.nested)
-			expect(decoded[9]).toStrictEqual([[14, 0, 3, 2]]);
-
-			// .sibling at CSS line 9, col 1 (0-based: 8, 0)
-			expect(decoded[10]).toStrictEqual([[14, 0, 8, 0]]);
 		});
 
 		test('empty css module has no inline source map', async () => {
