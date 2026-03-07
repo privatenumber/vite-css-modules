@@ -93,6 +93,29 @@ export const findClassPositions = (
 			continue;
 		}
 
+		// Skip url(...) content which may contain // (e.g. https://)
+		if (
+			css[i] === 'u'
+			&& css[i + 1] === 'r'
+			&& css[i + 2] === 'l'
+			&& css[i + 3] === '('
+		) {
+			i += 4;
+			column += 4;
+			while (i < css.length && css[i] !== ')') {
+				if (css[i] === '\n') {
+					line += 1;
+					column = 1;
+				} else {
+					column += 1;
+				}
+				i += 1;
+			}
+			i += 1;
+			column += 1;
+			continue;
+		}
+
 		// Skip line comments: // ...
 		if (css[i] === '/' && css[i + 1] === '/') {
 			i += 2;
@@ -125,6 +148,22 @@ export const findClassPositions = (
 			continue;
 		}
 
+		// Skip @extend and @apply references: these use .className in
+		// a non-selector context (SCSS @extend, Tailwind @apply)
+		if (
+			css[i] === '@'
+			&& (
+				css.startsWith('extend ', i + 1)
+				|| css.startsWith('apply ', i + 1)
+			)
+		) {
+			while (i < css.length && css[i] !== '\n' && css[i] !== ';') {
+				i += 1;
+				column += 1;
+			}
+			continue;
+		}
+
 		// Check for class selector: . followed by a target class name
 		if (css[i] === '.') {
 			for (const target of targets) {
@@ -139,6 +178,8 @@ export const findClassPositions = (
 						end >= css.length
 						|| (
 							!isIdentifierChar(css.codePointAt(end))
+							// Backslash starts a CSS escape sequence (part of identifier)
+							&& css[end] !== '\\'
 							// Skip Less mixin calls: .name()
 							&& css[end] !== '('
 						)

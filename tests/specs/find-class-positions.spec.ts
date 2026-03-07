@@ -339,6 +339,69 @@ $padding: 16px;
 		expect(result.size).toBe(0);
 	});
 
+	test('skips @extend references', () => {
+		const scss = `.primary {
+	@extend .button;
+	color: red;
+}
+
+.button {
+	padding: 8px;
+}`;
+		const result = findClassPositions(scss, ['button', 'primary']);
+		expect(result.get('primary')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('button')).toStrictEqual({
+			line: 6,
+			column: 1,
+		});
+	});
+
+	test('skips @apply references', () => {
+		const css = `.card {
+	@apply .flex .items-center;
+}
+
+.flex {
+	display: flex;
+}`;
+		const result = findClassPositions(css, ['flex', 'card']);
+		expect(result.get('card')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('flex')).toStrictEqual({
+			line: 5,
+			column: 1,
+		});
+	});
+
+	test('backslash escape does not create false word boundary', () => {
+		const css = String.raw`.foo\:bar { color: red; }
+.foo { color: blue; }`;
+		const result = findClassPositions(css, ['foo', 'foo:bar']);
+		expect(result.get('foo:bar')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('foo')).toStrictEqual({
+			line: 2,
+			column: 1,
+		});
+	});
+
+	test('skips url() content containing //', () => {
+		const css = '.icon{background:url(https://example.com/img.png)}.button{color:red}';
+		const result = findClassPositions(css, ['icon', 'button']);
+		expect(result.get('icon')).toStrictEqual({
+			line: 1,
+			column: 1,
+		});
+		expect(result.get('button')).toBeDefined();
+	});
+
 	test('multiline block comment with class name on each line', () => {
 		const css = `/*
 .button
