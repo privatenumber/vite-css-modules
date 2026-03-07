@@ -1085,9 +1085,6 @@ describe('PostCSS', () => {
 						declarationMap: true,
 					}),
 				],
-				css: {
-					postcss: fixture.path,
-				},
 				build: {
 					target: 'es2022',
 				},
