@@ -6,6 +6,7 @@ import { describe, test, expect } from 'manten';
 import { decode } from '@jridgewell/sourcemap-codec';
 import { Features } from 'lightningcss';
 import vitePluginVue from '@vitejs/plugin-vue';
+import { outdent } from 'outdent';
 import { base64Module } from '../../utils/base64-module.ts';
 import * as fixtures from '../../fixtures.ts';
 import { viteBuild, getViteDevCode, viteDevBrowser } from '../../utils/vite.ts';
@@ -415,6 +416,52 @@ describe('LightningCSS', () => {
 
 			// sourceMappingURL must be the last non-whitespace content (ECMA-426 / TS requirement)
 			expect(dts.trimEnd()).toMatch(/\/\/# sourceMappingURL=.+$/);
+		});
+
+		test('source map positions reflect original file when PostCSS transforms CSS', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'export * as style from \'./style.module.css\';',
+
+				'style.module.css': outdent`
+				.button {
+					color: red;
+				}
+				`,
+
+				// PostCSS plugin that prepends a rule, shifting all positions down
+				'postcss.config.js': outdent`
+				const postcss = require('postcss');
+				module.exports = {
+					plugins: [
+						(root) => {
+							root.prepend(postcss.rule({ selector: ':root' }));
+						},
+					],
+				};
+				`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+						declarationMap: true,
+					}),
+				],
+				css: {
+					transformer: 'lightningcss',
+				},
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			const dtsMap = extractInlineSourceMap(dts);
+			const decoded = decode(dtsMap.mappings);
+
+			// .button at original CSS line 1, col 1 (0-based: 0, 0)
+			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
 		});
 	});
 

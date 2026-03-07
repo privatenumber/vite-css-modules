@@ -202,65 +202,87 @@ const supportCssModulesHMR = (
 
 export const patchCssModules = (
 	patchConfig?: PatchConfig,
-): Plugin => ({
-	name: 'patch-css-modules',
-	enforce: 'pre',
-	configResolved: (config) => {
-		const pluginInstance = cssModules(config, patchConfig);
-		const cssConfig = config.css;
+): Plugin => {
+	/*
+	 * Cache of original CSS source before vite:css transforms it.
+	 *
+	 * The enforce: 'pre' transform hook captures CSS before Vite's
+	 * PostCSS processing, so positions match the original source file.
+	 * Used by findClassPositions for declaration source maps.
+	 */
+	const originalCssCache = new Map<string, string>();
 
-		const isCssModulesDisabled = (
-			cssConfig.transformer === 'lightningcss'
-				? cssConfig.lightningcss?.cssModules
-				: cssConfig.modules
-		) === false;
+	return {
+		name: 'patch-css-modules',
+		enforce: 'pre',
 
-		if (isCssModulesDisabled) {
-			return;
-		}
+		transform: {
+			filter: {
+				id: cssModuleRE,
+			},
+			handler(code, id) {
+				const queryIndex = id.indexOf('?');
+				originalCssCache.set(queryIndex === -1 ? id : id.slice(0, queryIndex), code);
+			},
+		},
 
-		// Disable CSS Modules in Vite in favor of our plugin
-		// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192
-		if (cssConfig.transformer === 'lightningcss') {
-			if (cssConfig.lightningcss) {
-				// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
-				cssConfig.lightningcss.cssModules = false;
+		configResolved: (config) => {
+			const pluginInstance = cssModules(config, patchConfig, originalCssCache);
+			const cssConfig = config.css;
+
+			const isCssModulesDisabled = (
+				cssConfig.transformer === 'lightningcss'
+					? cssConfig.lightningcss?.cssModules
+					: cssConfig.modules
+			) === false;
+
+			if (isCssModulesDisabled) {
+				return;
 			}
 
-			/**
-			 * When in Lightning mode, Lightning build API is used
-			 * which will trip up on the dashedIdents feature when
-			 * CSS Modules is disabled
-			 *
-			 * So instead we have to revert back to PostCSS, and then
-			 * disable CSS Modules on PostCSS
-			 */
-			cssConfig.transformer = 'postcss';
-		}
+			// Disable CSS Modules in Vite in favor of our plugin
+			// https://github.com/vitejs/vite/blob/6c4bf266a0bcae8512f6daf99dff57a73ae7bcf6/packages/vite/src/node/plugins/css.ts#L1192
+			if (cssConfig.transformer === 'lightningcss') {
+				if (cssConfig.lightningcss) {
+					// https://github.com/vitejs/vite/blob/997a6951450640fed8cf19e58dce0d7a01b92392/packages/vite/src/node/plugins/css.ts#L2746
+					cssConfig.lightningcss.cssModules = false;
+				}
 
-		cssConfig.modules = false;
+				/*
+				 * When in Lightning mode, Lightning build API is used
+				 * which will trip up on the dashedIdents feature when
+				 * CSS Modules is disabled
+				 *
+				 * So instead we have to revert back to PostCSS, and then
+				 * disable CSS Modules on PostCSS
+				 */
+				cssConfig.transformer = 'postcss';
+			}
 
-		const viteCssPostPluginIndex = config.plugins.findIndex(plugin => plugin.name === 'vite:css-post');
-		if (viteCssPostPluginIndex === -1) {
-			throw new Error('vite:css-post plugin not found');
-		}
+			cssConfig.modules = false;
 
-		const viteCssPostPlugin = config.plugins[viteCssPostPluginIndex]!;
+			const viteCssPostPluginIndex = config.plugins.findIndex(plugin => plugin.name === 'vite:css-post');
+			if (viteCssPostPluginIndex === -1) {
+				throw new Error('vite:css-post plugin not found');
+			}
 
-		// Insert before
-		(config.plugins as Plugin[]).splice(
-			viteCssPostPluginIndex,
-			0,
-			pluginInstance,
-		);
+			const viteCssPostPlugin = config.plugins[viteCssPostPluginIndex]!;
 
-		supportNewCssModules(
-			viteCssPostPlugin,
-			config,
-			pluginInstance,
-		);
+			// Insert before
+			(config.plugins as Plugin[]).splice(
+				viteCssPostPluginIndex,
+				0,
+				pluginInstance,
+			);
 
-		// Enable HMR by making CSS Modules not self accept
-		supportCssModulesHMR(config.plugins);
-	},
-});
+			supportNewCssModules(
+				viteCssPostPlugin,
+				config,
+				pluginInstance,
+			);
+
+			// Enable HMR by making CSS Modules not self accept
+			supportCssModulesHMR(config.plugins);
+		},
+	};
+};
