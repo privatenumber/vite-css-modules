@@ -402,6 +402,12 @@ $padding: 16px;
 		expect(result.get('button')).toBeDefined();
 	});
 
+	test('skips case-insensitive URL() content', () => {
+		const css = '.icon{background:URL(https://example.com/img.png)}.button{color:red}';
+		const result = findClassPositions(css, ['button']);
+		expect(result.get('button')).toBeDefined();
+	});
+
 	test('multiline block comment with class name on each line', () => {
 		const css = `/*
 .button

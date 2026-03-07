@@ -94,10 +94,11 @@ export const findClassPositions = (
 		}
 
 		// Skip url(...) content which may contain // (e.g. https://)
+		// CSS is case-insensitive for function names: url(), URL(), Url()
 		if (
-			css[i] === 'u'
-			&& css[i + 1] === 'r'
-			&& css[i + 2] === 'l'
+			(css[i] === 'u' || css[i] === 'U')
+			&& (css[i + 1] === 'r' || css[i + 1] === 'R')
+			&& (css[i + 2] === 'l' || css[i + 2] === 'L')
 			&& css[i + 3] === '('
 		) {
 			i += 4;
