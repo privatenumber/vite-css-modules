@@ -208,7 +208,7 @@ export const patchCssModules = (
 	 *
 	 * The enforce: 'pre' transform hook captures CSS before Vite's
 	 * PostCSS processing, so positions match the original source file.
-	 * Used by findClassPositions for declaration source maps.
+	 * Used by cssClassPositions for declaration source maps.
 	 */
 	const originalCssCache = new Map<string, string>();
 
