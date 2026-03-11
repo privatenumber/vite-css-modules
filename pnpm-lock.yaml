@@ -17,6 +17,9 @@ importers:
       '@rollup/pluginutils':
         specifier: ^5.3.0
         version: 5.3.0(rollup@4.59.0)
+      css-class-positions:
+        specifier: github:privatenumber/css-class-positions#npm/develop
+        version: git+https://git@github.com:privatenumber/css-class-positions.git#e6fda7c43dd3ddf32de8f9d16abd2ea5981fef9f
       generic-names:
         specifier: ^4.0.0
         version: 4.0.0
@@ -1674,6 +1677,10 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  css-class-positions@git+https://git@github.com:privatenumber/css-class-positions.git#e6fda7c43dd3ddf32de8f9d16abd2ea5981fef9f:
+    resolution: {commit: e6fda7c43dd3ddf32de8f9d16abd2ea5981fef9f, repo: git@github.com:privatenumber/css-class-positions.git, type: git}
+    version: 0.0.0-semantic-release
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -4736,6 +4743,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  css-class-positions@git+https://git@github.com:privatenumber/css-class-positions.git#e6fda7c43dd3ddf32de8f9d16abd2ea5981fef9f: {}
 
   cssesc@3.0.0: {}
 

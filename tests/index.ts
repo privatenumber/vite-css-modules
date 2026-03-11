@@ -6,4 +6,3 @@ describe(`vite ${version}`, () => {
 	import('./specs/patched/index.ts');
 });
 
-import('./specs/find-class-positions.spec.ts');

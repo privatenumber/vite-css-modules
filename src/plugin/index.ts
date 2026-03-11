@@ -9,7 +9,7 @@ import { getTsconfig } from 'get-tsconfig';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import { generateTypes } from './generate-types.js';
-import { findClassPositions } from './find-class-positions.js';
+import { cssClassPositions } from 'css-class-positions';
 import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';
@@ -340,7 +340,7 @@ export const cssModules = (
 							const sourceMapOptions = declarationMap && originalCss
 								? {
 									sourceFileName: path.basename(filePath),
-									classPositions: findClassPositions(originalCss, Object.keys(exports)),
+									classPositions: cssClassPositions(originalCss, { fileName: filePath }),
 								}
 								: undefined;
 							const newContent = generateTypes(
