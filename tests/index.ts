@@ -5,4 +5,3 @@ describe(`vite ${version}`, () => {
 	import('./specs/reproductions.spec.ts');
 	import('./specs/patched/index.ts');
 });
-
