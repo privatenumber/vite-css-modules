@@ -1,6 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createLogger, loadConfigFromFile, resolveConfig, searchForWorkspaceRoot, type InlineConfig, type Plugin, type PluginOption, type ResolvedConfig, type UserConfig } from 'vite';
+import {
+	createLogger,
+	loadConfigFromFile,
+	resolveConfig,
+	searchForWorkspaceRoot,
+	type InlineConfig,
+	type Plugin,
+	type PluginOption,
+	type ResolvedConfig,
+	type UserConfig,
+} from 'vite';
 
 const viteConfigNames = [
 	'vite.config.ts',
@@ -143,7 +153,10 @@ export const loadUserConfig = async (
 	try {
 		const logger = createLogger('silent');
 		const loaded = await loadConfigFromFile(
-			{ command: 'serve', mode },
+			{
+				command: 'serve',
+				mode,
+			},
 			configPath,
 			path.dirname(configPath),
 			'silent',

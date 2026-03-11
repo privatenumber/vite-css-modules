@@ -263,7 +263,9 @@ export const patchCssModules = (
 
 			cssConfig.modules = false;
 
-			const viteCssPostPluginIndex = config.plugins.findIndex(plugin => plugin.name === 'vite:css-post');
+			const viteCssPostPluginIndex = config.plugins.findIndex(
+				configuredPlugin => configuredPlugin.name === 'vite:css-post',
+			);
 			if (viteCssPostPluginIndex === -1) {
 				throw new Error('vite:css-post plugin not found');
 			}

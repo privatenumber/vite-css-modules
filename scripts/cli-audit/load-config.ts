@@ -1,6 +1,17 @@
+/* eslint no-console: "off" */
+
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { fileExists, findNearestViteConfig, formatJson, getAuditCwd, loadResolvedConfig, loadUserConfig, summarizeResolvedConfig, type ConfigLoaderName } from './shared.ts';
+import {
+	fileExists,
+	findNearestViteConfig,
+	formatJson,
+	getAuditCwd,
+	loadResolvedConfig,
+	loadUserConfig,
+	summarizeResolvedConfig,
+	type ConfigLoaderName,
+} from './shared.ts';
 
 const loaders = ['bundle', 'runner', 'native'] as const;
 
@@ -37,28 +48,30 @@ if (positionals.length === 0) {
 	printUsageAndExit('Expected at least one config, directory, or CSS Module file path.');
 }
 
-const selectedLoaders = (
-	values.loader === 'all'
-		? loaders
-		: loaders.includes(values.loader as ConfigLoaderName)
-			? [values.loader as ConfigLoaderName]
-			: printUsageAndExit(`Invalid loader: ${values.loader}`)
-);
+let selectedLoaders: readonly ConfigLoaderName[] = loaders;
+if (values.loader !== 'all') {
+	if (!loaders.includes(values.loader as ConfigLoaderName)) {
+		printUsageAndExit(`Invalid loader: ${values.loader}`);
+	}
+
+	selectedLoaders = [values.loader as ConfigLoaderName];
+}
 
 for (const target of positionals) {
 	const absoluteTarget = path.resolve(target);
-	const configPath = (
-		await fileExists(absoluteTarget)
-			? absoluteTarget.endsWith('vite.config.ts')
-				|| absoluteTarget.endsWith('vite.config.mts')
-				|| absoluteTarget.endsWith('vite.config.cts')
-				|| absoluteTarget.endsWith('vite.config.js')
-				|| absoluteTarget.endsWith('vite.config.mjs')
-				|| absoluteTarget.endsWith('vite.config.cjs')
-				? absoluteTarget
-				: await findNearestViteConfig(absoluteTarget)
-			: null
-	);
+	let configPath: string | null = null;
+	if (await fileExists(absoluteTarget)) {
+		configPath = (
+			absoluteTarget.endsWith('vite.config.ts')
+			|| absoluteTarget.endsWith('vite.config.mts')
+			|| absoluteTarget.endsWith('vite.config.cts')
+			|| absoluteTarget.endsWith('vite.config.js')
+			|| absoluteTarget.endsWith('vite.config.mjs')
+			|| absoluteTarget.endsWith('vite.config.cjs')
+		)
+			? absoluteTarget
+			: await findNearestViteConfig(absoluteTarget);
+	}
 
 	console.log(`\n# ${absoluteTarget}`);
 
@@ -72,7 +85,12 @@ for (const target of positionals) {
 
 	for (const loader of selectedLoaders) {
 		try {
-			const loaded = await loadUserConfig(configPath, values.mode, loader, getAuditCwd(configPath, values.cwd));
+			const loaded = await loadUserConfig(
+				configPath,
+				values.mode,
+				loader,
+				getAuditCwd(configPath, values.cwd),
+			);
 			const { pluginInfo, resolvedConfig, dependencies } = await loadResolvedConfig(
 				configPath,
 				values.mode,

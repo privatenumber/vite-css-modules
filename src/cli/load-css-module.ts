@@ -2,9 +2,6 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cssClassPositions } from 'css-class-positions';
 import { preprocessCSS } from 'vite';
-import { cssModuleExportsToExports } from './css-module-exports-to-exports.js';
-import type { ProjectContext } from './project-context.js';
-import { withProcessCwd } from './project-context.js';
 import type { SourceMapOptions } from '../plugin/generate-dts-sourcemap.js';
 import { getLocalesConventionFunction, shouldKeepOriginalExport } from '../plugin/locals-convention.js';
 import type { Exports } from '../plugin/generate-esm.js';
@@ -12,6 +9,8 @@ import type { CSSModuleReferences } from '../plugin/transformers/postcss/types.j
 import { transform as postcssTransform } from '../plugin/transformers/postcss/index.js';
 import { transform as lightningcssTransform } from '../plugin/transformers/lightningcss.js';
 import { cleanUrl, getCssModuleUrl } from '../plugin/url-utils.js';
+import { withProcessCwd, type ProjectContext } from './project-context.js';
+import { cssModuleExportsToExports } from './css-module-exports-to-exports.js';
 
 type LoadedCssModule = {
 	exports: Exports;

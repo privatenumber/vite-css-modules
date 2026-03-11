@@ -110,11 +110,11 @@ const writeFileIfChanged = async (
 		],
 
 		flags: {
-				exportMode: {
-					type: ExportModeType,
-					alias: 'e',
-					description: `Export mode: ${exportModes.join(', ')}`,
-				},
+			exportMode: {
+				type: ExportModeType,
+				alias: 'e',
+				description: `Export mode: ${exportModes.join(', ')}`,
+			},
 			localsConvention: {
 				type: LocalsConventionType,
 				alias: 'l',
@@ -191,7 +191,7 @@ const writeFileIfChanged = async (
 		if (!projectContext) {
 			projectContext = {
 				projectContextPromise: loadProjectContext({
-				configPath,
+					configPath,
 					configLoader: argv.flags.configLoader,
 					invocationCwd,
 					localsConvention: argv.flags.localsConvention,

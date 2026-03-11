@@ -1,9 +1,17 @@
+/* eslint no-console: "off" */
+
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { makeLegalIdentifier } from '@rollup/pluginutils';
 import { preprocessCSS } from 'vite';
-import { findNearestViteConfig, formatJson, getAuditCwd, loadResolvedConfig, type ConfigLoaderName } from './shared.ts';
+import {
+	findNearestViteConfig,
+	formatJson,
+	getAuditCwd,
+	loadResolvedConfig,
+	type ConfigLoaderName,
+} from './shared.ts';
 
 const loaders = ['bundle', 'runner', 'native'] as const;
 const exportModes = ['both', 'named', 'default'] as const;

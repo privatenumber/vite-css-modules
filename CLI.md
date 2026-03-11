@@ -233,7 +233,7 @@ Why:
 Before loading config, set:
 
 ```ts
-process.env.VITE_CSS_MODULES_CLI = '1';
+process.env.VITE_CSS_MODULES_CLI = '1'
 ```
 
 This gives users an escape hatch for unusual config behavior inside `vite.config.*`.
@@ -242,8 +242,8 @@ This gives users an escape hatch for unusual config behavior inside `vite.config
 
 After loading config, discard everything except the CSS-relevant subset:
 
-```ts
-{
+```text
+const safeConfig = {
 	configFile: false,
 	root,
 	mode,
@@ -312,16 +312,17 @@ For each matched file:
 Pseudo-shape:
 
 ```ts
-const preprocessed = await preprocessCSS(code, filePath, resolvedConfig);
+const preprocessed = await preprocessCSS(code, filePath, resolvedConfig)
 const cssModule = transform(
-	preprocessed.code,
-	cleanUrl(path.relative(resolvedConfig.root, filePath)),
-	resolvedConfig.css.modules ?? {},
-	false,
-);
-const exports = await resolveCssModuleExports(cssModule.exports, filePath, context);
-const sourceMapOptions = resolveDeclarationMapOptions(filePath, source, context);
-const dts = generateTypes(exports, exportMode, arbitraryExports, sourceMapOptions);
+    preprocessed.code,
+    cleanUrl(path.relative(resolvedConfig.root, filePath)),
+    resolvedConfig.css.modules ?? {},
+    false
+)
+const exports = await resolveCssModuleExports(cssModule.exports, filePath, context)
+const sourceMapOptions = resolveDeclarationMapOptions(filePath, source, context)
+
+return generateTypes(exports, exportMode, arbitraryExports, sourceMapOptions)
 ```
 
 ## Dependency Resolution

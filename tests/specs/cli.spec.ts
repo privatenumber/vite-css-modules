@@ -2,7 +2,9 @@ import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { decode } from '@jridgewell/sourcemap-codec';
 import { createFixture } from 'fs-fixture';
-import { describe, test, expect, onFinish } from 'manten';
+import {
+	describe, test, expect, onFinish,
+} from 'manten';
 import spawn, { type Result, type SubprocessError } from 'nano-spawn';
 
 const cliPath = path.resolve('dist/cli/index.mjs');
@@ -351,10 +353,10 @@ export default {
 			await using fixture = await createFixture({
 				'global.module.css': `.page { color: red; }
 :local(.title) { color: blue; }`,
-				'vite.config.mjs': `export default {
+				'vite.config.mjs': String.raw`export default {
 	css: {
 		modules: {
-			globalModulePaths: [/global\\.module\\.css/],
+			globalModulePaths: [/global\.module\.css/],
 		},
 	},
 };`,

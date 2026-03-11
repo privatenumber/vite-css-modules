@@ -1,7 +1,17 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getTsconfig } from 'get-tsconfig';
-import { createLogger, loadConfigFromFile, resolveConfig, type CSSModulesOptions, type InlineConfig, type Plugin, type PluginOption, type ResolvedConfig, type UserConfig } from 'vite';
+import {
+	createLogger,
+	loadConfigFromFile,
+	resolveConfig,
+	type CSSModulesOptions,
+	type InlineConfig,
+	type Plugin,
+	type PluginOption,
+	type ResolvedConfig,
+	type UserConfig,
+} from 'vite';
 import type { PatchConfig } from '../plugin/index.js';
 import type { ExportMode } from '../plugin/types.js';
 import { patchCssModulesConfigSymbol } from '../patch.js';
@@ -131,16 +141,12 @@ export const withProcessCwd = async <Value>(
 const mergeModulesConfig = (
 	modulesConfig: CSSModulesOptions | false | undefined,
 	localsConvention?: CSSModulesOptions['localsConvention'],
-) => {
-	return {
-		...(modulesConfig
-			? modulesConfig
-			: {}),
-		...(localsConvention
-			? { localsConvention }
-			: {}),
-	};
-};
+) => ({
+	...modulesConfig,
+	...(localsConvention
+		? { localsConvention }
+		: {}),
+});
 
 const sanitizeUserConfig = (
 	configPath: string,
@@ -163,22 +169,22 @@ const sanitizeUserConfig = (
 				alias: userConfig.resolve.alias,
 			}
 			: undefined,
-			css: (
-				userConfig.css
+		css: (
+			userConfig.css
 				|| options.localsConvention
-			)
-				? {
-					transformer: userConfig.css?.transformer,
-					modules: false,
-					preprocessorOptions: userConfig.css?.preprocessorOptions,
-					postcss: userConfig.css?.postcss,
-					lightningcss: userConfig.css?.lightningcss
-						? {
-							...userConfig.css.lightningcss,
-							cssModules: false,
-						}
-						: undefined,
-				}
+		)
+			? {
+				transformer: userConfig.css?.transformer,
+				modules: false,
+				preprocessorOptions: userConfig.css?.preprocessorOptions,
+				postcss: userConfig.css?.postcss,
+				lightningcss: userConfig.css?.lightningcss
+					? {
+						...userConfig.css.lightningcss,
+						cssModules: false,
+					}
+					: undefined,
+			}
 			: undefined,
 	};
 };
@@ -202,7 +208,10 @@ const loadConfigProjectContext = async (
 		process.env.VITE_CSS_MODULES_CLI = '1';
 
 		const loadedConfig = await loadConfigFromFile(
-			{ command: 'serve', mode: options.mode },
+			{
+				command: 'serve',
+				mode: options.mode,
+			},
 			options.configPath,
 			path.dirname(options.configPath),
 			'silent',
@@ -244,27 +253,27 @@ const loadNoConfigProjectContext = async (
 	options.invocationCwd,
 	async () => {
 		const resolvedConfig = await resolveConfig(
-				{
-					configFile: false,
-					root: options.invocationCwd,
-					mode: options.mode,
-					plugins: [],
-					css: {
-						modules: false,
-					},
+			{
+				configFile: false,
+				root: options.invocationCwd,
+				mode: options.mode,
+				plugins: [],
+				css: {
+					modules: false,
 				},
+			},
 			'serve',
 			options.mode,
 			undefined,
 			false,
 		);
 
-			return {
-				cssModulesConfig: mergeModulesConfig(undefined, options.localsConvention),
-				declarationMap: resolveDeclarationMap(resolvedConfig.root),
-				invocationCwd: options.invocationCwd,
-				resolvedConfig,
-			};
+		return {
+			cssModulesConfig: mergeModulesConfig(undefined, options.localsConvention),
+			declarationMap: resolveDeclarationMap(resolvedConfig.root),
+			invocationCwd: options.invocationCwd,
+			resolvedConfig,
+		};
 	},
 );
 
