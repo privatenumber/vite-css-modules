@@ -4,12 +4,12 @@
  * https://github.com/parcel-bundler/lightningcss/blob/0c05ba8620f427e4a68bff05cfebe77bd35eef6f/node/index.d.ts#L310
  */
 
-type GlobalReference = {
+export type GlobalReference = {
 	type: 'global';
 	name: string;
 };
 
-type LocalReference = {
+export type LocalReference = {
 	type: 'local';
 	name: string;
 };
@@ -26,8 +26,10 @@ export type CSSModuleReferences = {
 
 type ClassExport = {
 	name: string;
-	composes: (LocalReference | GlobalReference | DependencyReference)[];
+	composes: ClassComposition[];
 };
+
+export type ClassComposition = LocalReference | GlobalReference | DependencyReference;
 
 export type CSSModuleExports = Record<string, string | ClassExport>;
 

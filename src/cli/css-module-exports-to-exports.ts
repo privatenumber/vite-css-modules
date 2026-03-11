@@ -1,16 +1,40 @@
 import type { LocalsConventionFunction } from '../plugin/locals-convention.js';
 import type { Exports } from '../plugin/generate-esm.js';
-import type { CSSModuleExports } from '../plugin/transformers/postcss/types.js';
+import type { ClassComposition, CSSModuleExports } from '../plugin/transformers/postcss/types.js';
+
+type ResolveComposition = (
+	composition: ClassComposition,
+) => string | undefined;
 
 export const cssModuleExportsToExports = (
 	cssModuleExports: CSSModuleExports,
 	filePath: string,
 	keepOriginalExport: boolean,
 	localsConventionFunction?: LocalsConventionFunction,
+	resolveComposition?: ResolveComposition,
 ): Exports => {
 	const exports: Exports = {};
+	const resolving = new Set<string>();
 
-	for (const [exportName, exported] of Object.entries(cssModuleExports)) {
+	const resolveExport = (
+		exportName: string,
+	) => {
+		const existing = exports[exportName];
+		if (existing) {
+			return existing;
+		}
+
+		const exported = cssModuleExports[exportName];
+		if (!exported) {
+			return;
+		}
+
+		if (resolving.has(exportName)) {
+			return;
+		}
+
+		resolving.add(exportName);
+
 		const exportAs = new Set<string>();
 		if (keepOriginalExport) {
 			exportAs.add(exportName);
@@ -29,7 +53,13 @@ export const cssModuleExportsToExports = (
 				exportAs.add(transformedExport);
 			}
 
-			const composedNames = exported.composes.map(dep => dep.name);
+			const composedNames = exported.composes.map((composition) => {
+				if (composition.type === 'local') {
+					return resolveExport(composition.name)?.resolved ?? composition.name;
+				}
+
+				return resolveComposition?.(composition) ?? composition.name;
+			});
 			resolved = [exported.name, ...composedNames].join(' ');
 		}
 
@@ -38,6 +68,13 @@ export const cssModuleExportsToExports = (
 			resolved,
 			exportAs,
 		};
+		resolving.delete(exportName);
+
+		return exports[exportName];
+	};
+
+	for (const exportName of Object.keys(cssModuleExports)) {
+		resolveExport(exportName);
 	}
 
 	return exports;
