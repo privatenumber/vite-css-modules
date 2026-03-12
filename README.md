@@ -273,19 +273,33 @@ Generates a `.d.ts` file next to each CSS Module with type definitions for the e
 Generates inline declaration source maps in `.d.ts` files, enabling "Go to Definition" to navigate from TypeScript to CSS source. Requires `generateSourceTypes` to be enabled.
 
 > [!TIP]
-> Source maps are always inlined rather than emitted as separate `.d.ts.map` files. Since `.d.ts` files are generated in-place next to your CSS source, external map files would pollute the source directory. The size overhead of inlining is negligible for typical CSS modules.
+> Declaration maps are emitted as adjacent `.d.ts.map` files so editors can consume them without embedding large data URLs in generated `.d.ts` files.
 
 ## CLI
 
 Generate TypeScript declarations for CSS Modules without running a build.
 
 ```bash
-npx vite-css-modules <globs...> [--config path] [--mode mode]
+npx vite-css-modules [globs...] [--config path] [--mode mode]
 ```
 
-The CLI automatically discovers the nearest `vite.config.*` for each file and uses its CSS Modules configuration.
+The CLI expects a `vite.config.*` file in the current working directory and uses that one config for every matched file.
 
-Use `--config` when auto-discovery picks the wrong project config, and `--mode` when your Vite config depends on the active mode.
+With no globs, the CLI defaults to:
+
+```bash
+**/*.module.css
+**/*.module.scss
+**/*.module.sass
+```
+
+and searches under the resolved Vite `root`.
+
+When you pass globs explicitly, they are resolved from the current working directory instead.
+
+Run it from the same cwd you would use for `vite`, or pass `--config` to point at a specific config file. Use `--mode` when your Vite config depends on the active mode.
+
+Set `DEBUG=vite-css-modules:*` to trace what the CLI is doing. Available namespaces are `vite-css-modules:cli`, `vite-css-modules:config`, `vite-css-modules:transform`, and `vite-css-modules:resolve`. The logs include the selected config path, timing breakdowns, and a signal when a matched file is outside the selected Vite config root.
 
 ### Flags
 
@@ -297,14 +311,20 @@ Use `--config` when auto-discovery picks the wrong project config, and `--mode` 
 ### Examples
 
 ```bash
-# Generate types for all CSS Modules
-npx vite-css-modules '**/*.module.css'
+# Generate types for CSS Modules under the Vite root
+npx vite-css-modules
+
+# Use explicit globs from the current working directory
+npx vite-css-modules 'src/**/*.module.css'
 
 # Use a specific Vite config
 npx vite-css-modules 'src/**/*.module.css' --config apps/web/vite.config.ts
 
 # Load config with production mode
 npx vite-css-modules 'src/**/*.module.css' --mode production
+
+# Trace config loading, preprocessing, and dependency resolution
+DEBUG=vite-css-modules:* npx vite-css-modules 'src/**/*.module.css'
 ```
 
 ## FAQ

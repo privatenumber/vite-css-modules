@@ -15,6 +15,13 @@ import {
 import type { PatchConfig } from '../plugin/index.js';
 import type { ExportMode } from '../plugin/types.js';
 import { patchCssModulesConfigSymbol } from '../patch.js';
+import {
+	createDebug,
+	formatDebugPath,
+	formatDurationMs,
+} from './debug.js';
+
+const debugConfig = createDebug('vite-css-modules:config');
 
 const viteConfigNames = [
 	'vite.config.ts',
@@ -27,14 +34,14 @@ const viteConfigNames = [
 
 export type ProjectContext = {
 	cssModulesConfig: CSSModulesOptions;
-	configPath?: string;
+	configPath: string;
 	declarationMap: boolean;
 	exportMode?: ExportMode;
 	resolvedConfig: ResolvedConfig;
 };
 
 type ProjectContextOptions = {
-	configPath?: string;
+	configPath: string;
 	mode: string;
 };
 
@@ -95,25 +102,23 @@ const fileExists = async (filePath: string) => {
 	}
 };
 
-export const findNearestViteConfig = async (
-	filePath: string,
+export const findViteConfigInDirectory = async (
+	directoryPath: string,
 ) => {
-	let currentDirectory = path.dirname(filePath);
+	const searchStart = performance.now();
+	debugConfig('searching for vite config in cwd', {
+		directoryPath: formatDebugPath(directoryPath),
+	});
 
-	while (true) {
-		for (const configName of viteConfigNames) {
-			const configPath = path.join(currentDirectory, configName);
-			if (await fileExists(configPath)) {
-				return configPath;
-			}
+	for (const configName of viteConfigNames) {
+		const configPath = path.join(directoryPath, configName);
+		if (await fileExists(configPath)) {
+			debugConfig('found vite config in cwd', {
+				configPath: formatDebugPath(configPath),
+				durationMs: formatDurationMs(performance.now() - searchStart),
+			});
+			return configPath;
 		}
-
-		const parentDirectory = path.dirname(currentDirectory);
-		if (parentDirectory === currentDirectory) {
-			return;
-		}
-
-		currentDirectory = parentDirectory;
 	}
 };
 
@@ -176,6 +181,10 @@ const loadConfigProjectContext = async (
 	},
 ): Promise<ProjectContext> => {
 	process.env.VITE_CSS_MODULES_CLI = '1';
+	const loadStart = performance.now();
+	debugConfig('loading vite config', {
+		configPath: formatDebugPath(options.configPath),
+	});
 
 	const loadedConfig = await loadConfigFromFile(
 		{
@@ -192,11 +201,17 @@ const loadConfigProjectContext = async (
 	if (!loadedConfig) {
 		throw new Error(`Could not load Vite config: ${options.configPath}`);
 	}
+	debugConfig('loaded vite config', {
+		configPath: formatDebugPath(loadedConfig.path),
+		durationMs: formatDurationMs(performance.now() - loadStart),
+	});
 
+	const patchConfigStart = performance.now();
 	const patchCssModulesConfig = await extractPatchCssModulesConfig(loadedConfig.config.plugins);
 	const cssModulesConfig = mergeModulesConfig(
 		loadedConfig.config.css?.modules,
 	);
+	const resolveStart = performance.now();
 	const resolvedConfig = await resolveConfig(
 		sanitizeUserConfig(options.configPath, loadedConfig.config, options),
 		'serve',
@@ -204,6 +219,15 @@ const loadConfigProjectContext = async (
 		undefined,
 		false,
 	);
+	debugConfig('resolved project context', {
+		configPath: formatDebugPath(loadedConfig.path),
+		declarationMap: resolveDeclarationMap(resolvedConfig.root, patchCssModulesConfig),
+		extractPatchCssModulesConfigMs: formatDurationMs(resolveStart - patchConfigStart),
+		exportMode: patchCssModulesConfig?.exportMode,
+		resolveConfigMs: formatDurationMs(performance.now() - resolveStart),
+		root: formatDebugPath(resolvedConfig.root),
+		transformer: resolvedConfig.css.transformer,
+	});
 
 	return {
 		cssModulesConfig,
@@ -214,40 +238,6 @@ const loadConfigProjectContext = async (
 	};
 };
 
-const loadNoConfigProjectContext = async (
-	options: ProjectContextOptions,
-): Promise<ProjectContext> => {
-	const resolvedConfig = await resolveConfig(
-		{
-			configFile: false,
-			root: process.cwd(),
-			mode: options.mode,
-			plugins: [],
-			css: {
-				modules: false,
-			},
-		},
-		'serve',
-		options.mode,
-		undefined,
-		false,
-	);
-
-	return {
-		cssModulesConfig: mergeModulesConfig(undefined),
-		declarationMap: resolveDeclarationMap(resolvedConfig.root),
-		resolvedConfig,
-	};
-};
-
 export const loadProjectContext = async (
 	options: ProjectContextOptions,
-) => {
-	if (!options.configPath) {
-		return loadNoConfigProjectContext(options);
-	}
-
-	return loadConfigProjectContext(options as ProjectContextOptions & {
-		configPath: string;
-	});
-};
+) => loadConfigProjectContext(options);

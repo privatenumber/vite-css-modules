@@ -6,25 +6,68 @@ import { glob } from 'tinyglobby';
 import { generateTypes } from '../plugin/generate-types.js';
 import { createCssModuleLoader } from './load-css-module.js';
 import {
-	findNearestViteConfig,
+	createDebug,
+	formatDebugPath,
+	formatDurationMs,
+} from './debug.js';
+import {
+	findViteConfigInDirectory,
 	loadProjectContext,
 } from './project-context.js';
+
+const debugCli = createDebug('vite-css-modules:cli');
+const defaultGlobs = [
+	'**/*.module.css',
+	'**/*.module.scss',
+	'**/*.module.sass',
+];
+
+const isPathOutsideRoot = (
+	root: string,
+	filePath: string,
+) => {
+	const relativePath = path.relative(root, filePath);
+	return relativePath === '..'
+		|| relativePath.startsWith(`..${path.sep}`)
+		|| path.isAbsolute(relativePath);
+};
 
 const resolveInputFiles = async (
 	inputs: string[],
 	cwd: string,
 ) => {
 	const files = new Set<string>();
+	const globStart = performance.now();
 
 	for (const input of inputs) {
+		const inputStart = performance.now();
+		debugCli('expanding glob', {
+			cwd: formatDebugPath(cwd, cwd),
+			pattern: input,
+		});
 		const matches = await glob(input, {
 			absolute: true,
 			cwd,
+			ignore: ['**/node_modules/**'],
 		});
 		for (const match of matches) {
 			files.add(match);
 		}
+
+		debugCli('expanded glob', {
+			cwd: formatDebugPath(cwd, cwd),
+			durationMs: formatDurationMs(performance.now() - inputStart),
+			matches: matches.length,
+			pattern: input,
+		});
 	}
+
+	debugCli('matched files', {
+		count: files.size,
+		cwd: formatDebugPath(cwd, cwd),
+		durationMs: formatDurationMs(performance.now() - globStart),
+		inputs,
+	});
 
 	return [...files];
 };
@@ -39,12 +82,55 @@ const writeFileIfChanged = async (
 	}
 };
 
+const deleteFileIfExists = async (
+	filePath: string,
+) => {
+	try {
+		await fs.unlink(filePath);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+			throw error;
+		}
+	}
+};
+
+const inlineSourceMapPattern = /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,([A-Za-z0-9+/=]+)\n?$/;
+
+const writeDtsFiles = async (
+	filePath: string,
+	dts: string,
+) => {
+	const dtsPath = `${filePath}.d.ts`;
+	const dtsMapPath = `${dtsPath}.map`;
+	const inlineSourceMapMatch = dts.match(inlineSourceMapPattern);
+
+	if (!inlineSourceMapMatch) {
+		await writeFileIfChanged(dtsPath, dts);
+		await deleteFileIfExists(dtsMapPath);
+		return [dtsPath];
+	}
+
+	const dtsMap = Buffer.from(inlineSourceMapMatch[1]!, 'base64').toString('utf8');
+	const dtsWithExternalSourceMap = dts.replace(
+		inlineSourceMapPattern,
+		`//# sourceMappingURL=${path.basename(dtsMapPath)}\n`,
+	);
+
+	await writeFileIfChanged(dtsPath, dtsWithExternalSourceMap);
+	await writeFileIfChanged(dtsMapPath, dtsMap);
+
+	return [
+		dtsPath,
+		dtsMapPath,
+	];
+};
+
 (async () => {
 	const argv = cli({
 		name: 'vite-css-modules',
 
 		parameters: [
-			'<globs...>',
+			'[globs...]',
 		],
 
 		flags: {
@@ -61,71 +147,130 @@ const writeFileIfChanged = async (
 	});
 
 	const cwd = process.cwd();
-	const files = await resolveInputFiles(argv._.globs, cwd);
+	const inputGlobs = argv._.globs ?? [];
+	const explicitConfigPath = argv.flags.config
+		? path.resolve(argv.flags.config)
+		: undefined;
+	let projectContextPromise: ReturnType<typeof loadProjectContext> | undefined;
+	let projectContext: Awaited<ReturnType<typeof loadProjectContext>> | undefined;
+	let files: string[] = [];
+
+	if (inputGlobs.length === 0) {
+		const configPath = explicitConfigPath
+			?? await findViteConfigInDirectory(cwd);
+
+		if (!configPath) {
+			console.error(`No vite.config.* found in the current working directory: ${cwd}`);
+			console.error('Run this command from the same cwd as Vite, or pass --config.');
+			process.exitCode = 1;
+			return;
+		}
+
+		debugCli('using project config', {
+			configPath: formatDebugPath(configPath, cwd),
+			cwd: formatDebugPath(cwd, cwd),
+		});
+
+		projectContextPromise = loadProjectContext({
+			configPath,
+			mode: argv.flags.mode,
+		});
+		projectContext = await projectContextPromise;
+
+		if (isPathOutsideRoot(cwd, projectContext.resolvedConfig.root)) {
+			console.error(`Resolved Vite root is outside the current working directory: ${projectContext.resolvedConfig.root}`);
+			console.error('Pass explicit globs to control the search scope.');
+			process.exitCode = 1;
+			return;
+		}
+
+		debugCli('using default globs', {
+			configPath: formatDebugPath(projectContext.configPath, cwd),
+			globBase: formatDebugPath(projectContext.resolvedConfig.root, cwd),
+			globs: defaultGlobs,
+		});
+
+		files = await resolveInputFiles(defaultGlobs, projectContext.resolvedConfig.root);
+	} else {
+		files = await resolveInputFiles(inputGlobs, cwd);
+	}
 
 	if (files.length === 0) {
 		console.error('No files matched the provided glob patterns');
 		return;
 	}
 
-	const explicitConfigPath = argv.flags.config
-		? path.resolve(argv.flags.config)
-		: undefined;
-	const contextCache = new Map<string, {
-		loadCssModule?: ReturnType<typeof createCssModuleLoader>;
-		projectContextPromise: ReturnType<typeof loadProjectContext>;
-	}>();
+	if (!projectContextPromise) {
+		const configPath = explicitConfigPath
+			?? await findViteConfigInDirectory(cwd);
 
-	const getProjectContext = async (
-		filePath: string,
-	) => {
-		const configPath = (
-			explicitConfigPath
-				?? await findNearestViteConfig(filePath)
-		);
-		const cacheKey = JSON.stringify({
-			configPath,
-			cwd,
-			mode: argv.flags.mode,
-		});
-
-		let projectContext = contextCache.get(cacheKey);
-		if (!projectContext) {
-			projectContext = {
-				projectContextPromise: loadProjectContext({
-					configPath,
-					mode: argv.flags.mode,
-				}),
-			};
-			contextCache.set(cacheKey, projectContext);
+		if (!configPath) {
+			console.error(`No vite.config.* found in the current working directory: ${cwd}`);
+			console.error('Run this command from the same cwd as Vite, or pass --config.');
+			process.exitCode = 1;
+			return;
 		}
 
-		return projectContext;
-	};
+		debugCli('using project config', {
+			configPath: formatDebugPath(configPath, cwd),
+			cwd: formatDebugPath(cwd, cwd),
+		});
+
+		projectContextPromise = loadProjectContext({
+			configPath,
+			mode: argv.flags.mode,
+		});
+	}
+
+	let loadCssModule: ReturnType<typeof createCssModuleLoader> | undefined;
 
 	for (const file of files) {
 		const filePath = file;
 		try {
-			const projectContextEntry = await getProjectContext(filePath);
-			const projectContext = await projectContextEntry.projectContextPromise;
-			if (!projectContextEntry.loadCssModule) {
-				projectContextEntry.loadCssModule = createCssModuleLoader(projectContext);
+			const fileStart = performance.now();
+			debugCli('processing', formatDebugPath(filePath, cwd));
+			const fileProjectContext = projectContext ?? await projectContextPromise!;
+			if (isPathOutsideRoot(fileProjectContext.resolvedConfig.root, filePath)) {
+				debugCli('matched file is outside config root', {
+					configPath: formatDebugPath(fileProjectContext.configPath, cwd),
+					filePath: formatDebugPath(filePath, cwd),
+					root: formatDebugPath(fileProjectContext.resolvedConfig.root, cwd),
+				});
 			}
-			const { exports, sourceMapOptions } = await projectContextEntry.loadCssModule(
+			if (!loadCssModule) {
+				debugCli('creating css module loader', {
+					configPath: formatDebugPath(fileProjectContext.configPath, cwd),
+					root: formatDebugPath(fileProjectContext.resolvedConfig.root, cwd),
+				});
+				loadCssModule = createCssModuleLoader(fileProjectContext);
+			}
+			const loadStart = performance.now();
+			const { exports, sourceMapOptions } = await loadCssModule(
 				filePath,
 				{ includeSourceMap: true },
 			);
+			const generateStart = performance.now();
 			const dts = generateTypes(
 				exports,
-				projectContext.exportMode ?? 'both',
+				fileProjectContext.exportMode ?? 'both',
 				false,
 				sourceMapOptions,
 			);
+			const writeStart = performance.now();
 
-			await writeFileIfChanged(`${filePath}.d.ts`, dts);
-			console.log(`\u2713 ${file}`);
+			const outputPaths = await writeDtsFiles(filePath, dts);
+			debugCli('processed file', {
+				filePath: formatDebugPath(filePath, cwd),
+				loadMs: formatDurationMs(generateStart - loadStart),
+				outputs: outputPaths.map(outputPath => formatDebugPath(outputPath, cwd)),
+				totalMs: formatDurationMs(performance.now() - fileStart),
+				writeMs: formatDurationMs(performance.now() - writeStart),
+			});
+			for (const outputPath of outputPaths) {
+				console.log(`\u2713 ${formatDebugPath(outputPath, cwd)}`);
+			}
 		} catch (error) {
-			console.error(`\u2717 ${file}`);
+			console.error(`\u2717 ${formatDebugPath(filePath, cwd)}`);
 			console.error(`  ${(error as Error).message}`);
 			process.exitCode = 1;
 		}

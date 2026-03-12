@@ -11,24 +11,24 @@ const cliPath = path.resolve('dist/cli/index.mjs');
 const runCli = (
 	args: string[],
 	cwd: string,
-): Promise<Result & { exitCode?: number }> => spawn(process.execPath, [cliPath, ...args], { cwd })
+	options?: {
+		env?: NodeJS.ProcessEnv;
+	},
+): Promise<Result & { exitCode?: number }> => spawn(process.execPath, [cliPath, ...args], {
+	cwd,
+	env: {
+		...process.env,
+		...options?.env,
+	},
+})
 	.catch((error: SubprocessError) => error);
 
-const extractInlineSourceMap = (
-	dts: string,
-) => {
-	const match = dts.match(/\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/);
-	if (!match) {
-		return null;
-	}
-
-	return JSON.parse(Buffer.from(match[1]!, 'base64').toString('utf8')) as {
-		file: string;
-		mappings: string;
-		sources: string[];
-		version: number;
-	};
-};
+const createProjectFixture = (
+	files: Record<string, string>,
+) => createFixture({
+	'vite.config.mjs': 'export default {};',
+	...files,
+});
 
 describe('CLI', () => {
 	const previousMaxListeners = EventEmitter.defaultMaxListeners;
@@ -37,20 +37,61 @@ describe('CLI', () => {
 		EventEmitter.defaultMaxListeners = previousMaxListeners;
 	});
 
-	test('no arguments shows error', async () => {
-		await using fixture = await createFixture({});
+	test('no arguments default to CSS Module globs under the resolved config root', async () => {
+		await using fixture = await createFixture({
+			'vite.config.mjs': `export default {
+	root: 'client',
+};`,
+			'client/src/inside.module.css': '.inside { color: red; }',
+			'outside.module.css': '.outside { color: blue; }',
+		});
+
 		const result = await runCli([], fixture.path);
-		expect(result.exitCode).not.toBe(0);
-		expect(result.stderr).toMatch('Missing required parameter "globs"');
+		expect(result.exitCode).toBeUndefined();
+		expect(result.stdout).toMatch('client/src/inside.module.css.d.ts');
+		expect(result.stdout).not.toMatch('outside.module.css.d.ts');
+		expect(
+			await fixture.readFile('client/src/inside.module.css.d.ts', 'utf8').catch(() => null),
+		).not.toBe(null);
+		expect(
+			await fixture.readFile('outside.module.css.d.ts', 'utf8').catch(() => null),
+		).toBe(null);
+	});
+
+	test('no arguments include .module.scss and .module.sass but not .module.less', async () => {
+		await using fixture = await createProjectFixture({
+			'src/style.module.scss': `.button {
+	color: red;
+}`,
+			'src/style.module.sass': `.active
+  color: blue`,
+			'src/style.module.less': '.ignored { color: black; }',
+		});
+
+		const result = await runCli([], fixture.path);
+		expect(result.exitCode).toBeUndefined();
+		expect(result.stdout).toMatch('src/style.module.scss.d.ts');
+		expect(result.stdout).toMatch('src/style.module.sass.d.ts');
+		expect(result.stdout).not.toMatch('src/style.module.less.d.ts');
+		expect(
+			await fixture.readFile('src/style.module.scss.d.ts', 'utf8').catch(() => null),
+		).not.toBe(null);
+		expect(
+			await fixture.readFile('src/style.module.sass.d.ts', 'utf8').catch(() => null),
+		).not.toBe(null);
+		expect(
+			await fixture.readFile('src/style.module.less.d.ts', 'utf8').catch(() => null),
+		).toBe(null);
 	});
 
 	test('generates .d.ts for single CSS module', async () => {
-		await using fixture = await createFixture({
+		await using fixture = await createProjectFixture({
 			'style.module.css': '.button { color: red; }',
 		});
 
 		const result = await runCli(['style.module.css'], fixture.path);
 		expect(result.exitCode).toBeUndefined();
+		expect(result.stdout).toMatch('style.module.css.d.ts');
 
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('declare const button: string');
@@ -59,19 +100,108 @@ describe('CLI', () => {
 	});
 
 	test('generates .d.ts for glob pattern', async () => {
-		await using fixture = await createFixture({
+		await using fixture = await createProjectFixture({
 			'src/a.module.css': '.alpha { color: red; }',
 			'src/nested/b.module.css': '.beta { color: blue; }',
 		});
 
 		const result = await runCli(['**/*.module.css'], fixture.path);
 		expect(result.exitCode).toBeUndefined();
+		expect(result.stdout).toMatch('src/a.module.css.d.ts');
+		expect(result.stdout).toMatch('src/nested/b.module.css.d.ts');
 
 		const dtsA = await fixture.readFile('src/a.module.css.d.ts', 'utf8');
 		expect(dtsA).toMatch('declare const alpha: string');
 
 		const dtsB = await fixture.readFile('src/nested/b.module.css.d.ts', 'utf8');
 		expect(dtsB).toMatch('declare const beta: string');
+	});
+
+	test('explicit globs are resolved from cwd instead of config root', async () => {
+		await using fixture = await createFixture({
+			'vite.config.mjs': `export default {
+	root: 'client',
+};`,
+			'client/src/inside.module.css': '.inside { color: red; }',
+			'outside.module.css': '.outside { color: blue; }',
+		});
+
+		const result = await runCli(['*.module.css'], fixture.path);
+		expect(result.exitCode).toBeUndefined();
+		expect(result.stdout).toMatch('outside.module.css.d.ts');
+		expect(result.stdout).not.toMatch('client/src/inside.module.css.d.ts');
+		expect(
+			await fixture.readFile('outside.module.css.d.ts', 'utf8').catch(() => null),
+		).not.toBe(null);
+		expect(
+			await fixture.readFile('client/src/inside.module.css.d.ts', 'utf8').catch(() => null),
+		).toBe(null);
+	});
+
+	test('ignores node_modules when expanding glob patterns', async () => {
+		await using fixture = await createProjectFixture({
+			'src/a.module.css': '.alpha { color: red; }',
+			'src/nested/b.module.css': '.beta { color: blue; }',
+			'node_modules/pkg/ignored.module.css': '.ignored { color: black; }',
+		});
+
+		const result = await runCli(['**/*.module.css'], fixture.path);
+		expect(result.exitCode).toBeUndefined();
+		expect(result.stdout).toMatch('src/a.module.css.d.ts');
+		expect(result.stdout).toMatch('src/nested/b.module.css.d.ts');
+		expect(result.stdout).not.toMatch('node_modules/pkg/ignored.module.css.d.ts');
+		expect(
+			await fixture.readFile('node_modules/pkg/ignored.module.css.d.ts', 'utf8').catch(() => null),
+		).toBe(null);
+		expect(
+			await fixture.readFile('src/a.module.css.d.ts', 'utf8').catch(() => null),
+		).not.toBe(null);
+	});
+
+	test('DEBUG=vite-css-modules:* emits progress logs to stderr', async () => {
+		await using fixture = await createProjectFixture({
+			'style.module.css': '.button { color: red; }',
+		});
+
+		const result = await runCli(
+			['style.module.css'],
+			fixture.path,
+			{
+				env: {
+					DEBUG: 'vite-css-modules:*',
+				},
+			},
+		);
+		expect(result.exitCode).toBeUndefined();
+		expect(result.stderr).toMatch('vite-css-modules:cli matched files');
+		expect(result.stderr).toMatch(/durationMs: \d+/);
+		expect(result.stderr).toMatch('vite-css-modules:transform preprocessed css module');
+		expect(result.stderr).toMatch('vite-css-modules:cli processed file');
+	});
+
+	test('DEBUG=vite-css-modules:* logs files outside the selected config root', async () => {
+		await using fixture = await createFixture({
+			'vite.config.mjs': `export default {
+	root: 'client',
+};`,
+			'client/inside.module.css': '.inside { color: red; }',
+			'outside.module.css': '.outside { color: blue; }',
+		});
+
+		const result = await runCli(
+			['*.module.css', 'client/*.module.css'],
+			fixture.path,
+			{
+				env: {
+					DEBUG: 'vite-css-modules:*',
+				},
+			},
+		);
+
+		expect(result.exitCode).toBeUndefined();
+		expect(result.stderr).toMatch('vite-css-modules:cli matched file is outside config root');
+		expect(result.stderr).toMatch("filePath: 'outside.module.css'");
+		expect(result.stderr).toMatch("root: 'client'");
 	});
 
 	test('no files matched shows warning on stderr', async () => {
@@ -82,7 +212,7 @@ describe('CLI', () => {
 	});
 
 	test('CSS parse error sets exit code 1', async () => {
-		await using fixture = await createFixture({
+		await using fixture = await createProjectFixture({
 			'broken.module.css': '.button { color: ',
 		});
 
@@ -93,7 +223,7 @@ describe('CLI', () => {
 	});
 
 	test('multiple files with one parse error continues others', async () => {
-		await using fixture = await createFixture({
+		await using fixture = await createProjectFixture({
 			'good.module.css': '.button { color: red; }',
 			'broken.module.css': '.button { color: ',
 		});
@@ -108,7 +238,7 @@ describe('CLI', () => {
 	});
 
 	test('composes from local classes', async () => {
-		await using fixture = await createFixture({
+		await using fixture = await createProjectFixture({
 			'style.module.css': `.base { color: red; }
 .button { composes: base; background: blue; }`,
 		});
@@ -119,6 +249,31 @@ describe('CLI', () => {
 		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 		expect(dts).toMatch('declare const base: string');
 		expect(dts).toMatch('declare const button: string');
+	});
+
+	test('matched files without vite config in cwd errors', async () => {
+		await using fixture = await createFixture({
+			'style.module.css': '.button { color: red; }',
+		});
+
+		const result = await runCli(['style.module.css'], fixture.path);
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('No vite.config.* found in the current working directory');
+		expect(result.stderr).toMatch('Run this command from the same cwd as Vite, or pass --config.');
+	});
+
+	test('no arguments error when the resolved config root is outside cwd', async () => {
+		await using fixture = await createFixture({
+			'project/vite.config.mjs': `export default {
+	root: '../shared',
+};`,
+			'shared/src/style.module.css': '.button { color: red; }',
+		});
+
+		const result = await runCli([], path.join(fixture.path, 'project'));
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('Resolved Vite root is outside the current working directory');
+		expect(result.stderr).toMatch('Pass explicit globs to control the search scope.');
 	});
 
 	describe('project mode expectations', () => {
@@ -169,6 +324,35 @@ export default {
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).toMatch('declare const myButton: string');
 			expect(dts).not.toMatch('"my-button"');
+		});
+
+		test('no arguments use explicit --config path and its resolved root', async () => {
+			await using fixture = await createFixture({
+				'config/vite.config.mjs': `export default {
+	root: '../client',
+	css: {
+		modules: {
+			localsConvention: 'camelCaseOnly',
+		},
+	},
+};`,
+				'client/src/style.module.css': '.my-button { color: red; }',
+				'style.module.css': '.outside { color: blue; }',
+			});
+
+			const result = await runCli(
+				['--config', 'config/vite.config.mjs'],
+				fixture.path,
+			);
+			expect(result.exitCode).toBeUndefined();
+			expect(result.stdout).toMatch('client/src/style.module.css.d.ts');
+
+			const dts = await fixture.readFile('client/src/style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const myButton: string');
+			expect(dts).not.toMatch('"my-button"');
+			expect(
+				await fixture.readFile('style.module.css.d.ts', 'utf8').catch(() => null),
+			).toBe(null);
 		});
 
 		test('uses --mode for Vite config loading', async () => {
@@ -293,6 +477,7 @@ export default {
 
 			const result = await runCli(['style.module.css'], fixture.path);
 			expect(result.exitCode).toBeUndefined();
+			expect(result.stdout).toMatch('style.module.css.d.ts');
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).not.toMatch('export {');
@@ -300,7 +485,7 @@ export default {
 		});
 
 		test('auto-detects declarationMap from tsconfig.json', async () => {
-			await using fixture = await createFixture({
+			await using fixture = await createProjectFixture({
 				'style.module.css': '.button { color: red; }',
 				'tsconfig.json': JSON.stringify({
 					compilerOptions: {
@@ -311,10 +496,18 @@ export default {
 
 			const result = await runCli(['style.module.css'], fixture.path);
 			expect(result.exitCode).toBeUndefined();
+			expect(result.stdout).toMatch('style.module.css.d.ts');
+			expect(result.stdout).toMatch('style.module.css.d.ts.map');
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			const dtsMap = extractInlineSourceMap(dts);
+			const dtsMap = JSON.parse(await fixture.readFile('style.module.css.d.ts.map', 'utf8')) as {
+				file: string;
+				mappings: string;
+				sources: string[];
+				version: number;
+			};
 
+			expect(dts).toMatch('sourceMappingURL=style.module.css.d.ts.map');
 			expect(dtsMap?.version).toBe(3);
 			expect(dtsMap?.file).toBe('style.module.css.d.ts');
 			expect(dtsMap?.sources).toStrictEqual(['style.module.css']);
@@ -338,9 +531,12 @@ export default {
 
 			const result = await runCli(['style.module.css'], fixture.path);
 			expect(result.exitCode).toBeUndefined();
+			expect(result.stdout).toMatch('style.module.css.d.ts');
+			expect(result.stdout).toMatch('style.module.css.d.ts.map');
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toMatch('sourceMappingURL=data:application/json;charset=utf-8;base64,');
+			expect(dts).toMatch('sourceMappingURL=style.module.css.d.ts.map');
+			expect(await fixture.readFile('style.module.css.d.ts.map', 'utf8')).toMatch('"version":3');
 		});
 
 		test('patchCssModules declarationMap: false overrides tsconfig', async () => {
@@ -368,10 +564,34 @@ export default {
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).not.toMatch('sourceMappingURL');
+			expect(
+				await fixture.readFile('style.module.css.d.ts.map', 'utf8').catch(() => null),
+			).toBe(null);
+		});
+
+		test('removes stale .d.ts.map when declaration maps are not emitted', async () => {
+			await using fixture = await createProjectFixture({
+				'style.module.css': '.button { color: red; }',
+				'style.module.css.d.ts': `declare const button: string;
+//# sourceMappingURL=style.module.css.d.ts.map
+`,
+				'style.module.css.d.ts.map': '{"version":3}',
+			});
+
+			const result = await runCli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBeUndefined();
+			expect(result.stdout).toMatch('style.module.css.d.ts');
+			expect(result.stdout).not.toMatch('style.module.css.d.ts.map');
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).not.toMatch('sourceMappingURL');
+			expect(
+				await fixture.readFile('style.module.css.d.ts.map', 'utf8').catch(() => null),
+			).toBe(null);
 		});
 
 		test('supports SCSS line comments', async () => {
-			await using fixture = await createFixture({
+			await using fixture = await createProjectFixture({
 				'style.module.scss': `// comment
 .button {
 	color: red;
@@ -386,7 +606,7 @@ export default {
 		});
 
 		test('supports Sass indented syntax', async () => {
-			await using fixture = await createFixture({
+			await using fixture = await createProjectFixture({
 				'style.module.sass': `.button
   color: red
 
@@ -457,7 +677,7 @@ export default {
 		});
 
 		test('errors on unresolved composes dependency files', async () => {
-			await using fixture = await createFixture({
+			await using fixture = await createProjectFixture({
 				'style.module.css': '.button { composes: base from "./missing.module.css"; }',
 			});
 
@@ -467,7 +687,7 @@ export default {
 		});
 
 		test('errors on unresolved composes exports', async () => {
-			await using fixture = await createFixture({
+			await using fixture = await createProjectFixture({
 				'dep.module.css': '.base { color: red; }',
 				'style.module.css': '.button { composes: missing from "./dep.module.css"; }',
 			});
@@ -479,7 +699,7 @@ export default {
 		});
 
 		test('errors on unresolved @value dependencies', async () => {
-			await using fixture = await createFixture({
+			await using fixture = await createProjectFixture({
 				'style.module.css': `@value color from "./missing.css";
 .button {
 	color: color;
