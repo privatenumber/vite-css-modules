@@ -770,6 +770,8 @@ describe('PostCSS', () => {
 	});
 
 	describe('.d.ts', () => {
+		const stripFingerprintLine = (dts: string) => dts.replace(/^ \* Hash: [a-f0-9]{16}\n/m, '');
+
 		test('exportMode: both', async () => {
 			await using fixture = await createFixture(fixtures.reservedKeywords);
 
@@ -798,7 +800,7 @@ describe('PostCSS', () => {
 				'utils.css',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toBe(
+			expect(stripFingerprintLine(dts)).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -857,7 +859,7 @@ describe('PostCSS', () => {
 				'utils.css',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toBe(
+			expect(stripFingerprintLine(dts)).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -910,7 +912,7 @@ describe('PostCSS', () => {
 				'utils.css',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toBe(
+			expect(stripFingerprintLine(dts)).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -964,7 +966,7 @@ describe('PostCSS', () => {
 				'style.module.css.d.ts',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toBe(
+			expect(stripFingerprintLine(dts)).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -1108,7 +1110,7 @@ describe('PostCSS', () => {
 			// .button at original CSS line 1, col 1 (0-based: 0, 0)
 			// If findClassPositions used the PostCSS-transformed input,
 			// it would be off by 1 line due to the prepended :root rule
-			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+			expectDeclarationMapping(dts, decoded, 'declare const button: string;', [14, 0, 0, 0]);
 		});
 
 		test('maps hex-escaped class names to CSS positions', async () => {
@@ -1134,7 +1136,7 @@ describe('PostCSS', () => {
 			const decoded = decode(dtsMap.mappings);
 
 			expect(dts).toMatch('_123 as "123"');
-			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+			expectDeclarationMapping(dts, decoded, 'declare const _123: string;', [14, 0, 0, 0]);
 		});
 
 		test('maps class names after quoted URL() content to CSS positions', async () => {

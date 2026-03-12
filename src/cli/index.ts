@@ -4,6 +4,12 @@ import path from 'node:path';
 import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
 import { generateTypes } from '../plugin/generate-types.js';
+import {
+	createTypeFileFingerprint,
+	formatTypeFileFingerprintLine,
+	readTypeFileCache,
+	writeTypeFiles,
+} from '../type-files.js';
 import { createCssModuleLoader } from './load-css-module.js';
 import {
 	createDebug,
@@ -51,51 +57,6 @@ const resolveInputFiles = async (
 	});
 
 	return files;
-};
-
-const writeFileIfChanged = async (
-	filePath: string,
-	content: string,
-) => {
-	const existingContent = await fs.readFile(filePath, 'utf8').catch(() => null);
-	if (existingContent !== content) {
-		await fs.writeFile(filePath, content);
-	}
-};
-
-const inlineSourceMapPattern = /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,([A-Za-z0-9+/=]+)\n?$/;
-
-const writeDtsFiles = async (
-	filePath: string,
-	dts: string,
-) => {
-	const dtsPath = `${filePath}.d.ts`;
-	const dtsMapPath = `${dtsPath}.map`;
-	const inlineSourceMapMatch = dts.match(inlineSourceMapPattern);
-
-	if (!inlineSourceMapMatch) {
-		await writeFileIfChanged(dtsPath, dts);
-		await fs.unlink(dtsMapPath).catch((error: NodeJS.ErrnoException) => {
-			if (error.code !== 'ENOENT') {
-				throw error;
-			}
-		});
-		return [dtsPath];
-	}
-
-	const dtsMap = Buffer.from(inlineSourceMapMatch[1]!, 'base64').toString('utf8');
-	const dtsWithExternalSourceMap = dts.replace(
-		inlineSourceMapPattern,
-		`//# sourceMappingURL=${path.basename(dtsMapPath)}\n`,
-	);
-
-	await writeFileIfChanged(dtsPath, dtsWithExternalSourceMap);
-	await writeFileIfChanged(dtsMapPath, dtsMap);
-
-	return [
-		dtsPath,
-		dtsMapPath,
-	];
 };
 
 (async () => {
@@ -206,18 +167,46 @@ const writeDtsFiles = async (
 					root: formatDebugPath(projectContext.resolvedConfig.root, cwd),
 				});
 			}
+			const sourceCode = await fs.readFile(filePath, 'utf8');
+			const dtsPath = `${filePath}.d.ts`;
+			const fingerprint = createTypeFileFingerprint(
+				sourceCode,
+				projectContext.configFingerprint,
+				projectContext.declarationMap,
+			);
+			const cacheEntry = await readTypeFileCache(dtsPath, 'external');
+			if (cacheEntry?.fingerprint === fingerprint) {
+				const outputPaths = [
+					dtsPath,
+					...(cacheEntry.hasSourceMap ? [`${filePath}.d.ts.map`] : []),
+				];
+				debug('cache hit', {
+					filePath: formatDebugPath(filePath, cwd),
+					outputs: outputPaths.map(outputPath => formatDebugPath(outputPath, cwd)),
+					totalMs: Math.round(performance.now() - fileStart),
+				});
+				for (const outputPath of outputPaths) {
+					console.log(`\u2713 ${formatDebugPath(outputPath, cwd)}`);
+				}
+				continue;
+			}
 			const loadStart = performance.now();
-			const { exports, sourceMapOptions } = await loadCssModule(filePath, true);
+			const {
+				cacheSafe,
+				exports,
+				sourceMapOptions,
+			} = await loadCssModule(filePath, true, sourceCode);
 			const generateStart = performance.now();
-			const dts = generateTypes(
+			const generatedDts = generateTypes(
 				exports,
 				'both',
 				false,
 				sourceMapOptions,
+				cacheSafe ? formatTypeFileFingerprintLine(fingerprint) : undefined,
 			);
 			const writeStart = performance.now();
 
-			const outputPaths = await writeDtsFiles(filePath, dts);
+			const outputPaths = await writeTypeFiles(dtsPath, generatedDts, 'external');
 			debug('processed file', {
 				filePath: formatDebugPath(filePath, cwd),
 				loadMs: Math.round(generateStart - loadStart),

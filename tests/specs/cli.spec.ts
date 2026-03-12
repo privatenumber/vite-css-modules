@@ -487,7 +487,9 @@ export default {
 			expect(dtsMap?.version).toBe(3);
 			expect(dtsMap?.file).toBe('style.module.css.d.ts');
 			expect(dtsMap?.sources).toStrictEqual(['style.module.css']);
-			expect(decode(dtsMap!.mappings)[8]).toStrictEqual([[14, 0, 0, 0]]);
+			const declarationLine = dts.split('\n').findIndex(line => line.includes('declare const button: string;'));
+			expect(declarationLine).toBeGreaterThanOrEqual(0);
+			expect(decode(dtsMap!.mappings)[declarationLine]).toStrictEqual([[14, 0, 0, 0]]);
 		});
 
 		test('removes stale .d.ts.map when declaration maps are not emitted', async () => {
@@ -509,6 +511,60 @@ export default {
 			expect(
 				await fixture.readFile('style.module.css.d.ts.map', 'utf8').catch(() => null),
 			).toBe(null);
+		});
+
+		test('reuses cached outputs for unchanged standalone modules', async () => {
+			await using fixture = await createProjectFixture({
+				'style.module.css': '.button { color: red; }',
+			});
+
+			const firstRun = await runCli(['style.module.css'], fixture.path);
+			expect(firstRun.exitCode).toBeUndefined();
+
+			const secondRun = await runCli(
+				['style.module.css'],
+				fixture.path,
+				{
+					env: {
+						DEBUG: 'vite-css-modules:*',
+					},
+				},
+			);
+			expect(secondRun.exitCode).toBeUndefined();
+			expect(secondRun.stderr).toMatch('vite-css-modules:cli cache hit');
+			expect(secondRun.stderr).not.toMatch('vite-css-modules:transform preprocessing css module');
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('vite-css-modules');
+			expect(dts).toMatch(/\* Hash: [a-f0-9]{16}/);
+		});
+
+		test('does not reuse cached outputs when dependency validation can change', async () => {
+			await using fixture = await createProjectFixture({
+				'dep.module.css': '.base { color: red; }',
+				'style.module.css': '.button { composes: base from "./dep.module.css"; }',
+			});
+
+			const firstRun = await runCli(['style.module.css'], fixture.path);
+			expect(firstRun.exitCode).toBeUndefined();
+			expect(await fixture.readFile('style.module.css.d.ts', 'utf8')).not.toMatch(/\* Hash: [a-f0-9]{16}/);
+
+			await fixture.writeFile('dep.module.css', '.other { color: blue; }');
+
+			const secondRun = await runCli(
+				['style.module.css'],
+				fixture.path,
+				{
+					env: {
+						DEBUG: 'vite-css-modules:*',
+					},
+				},
+			);
+
+			expect(secondRun.exitCode).toBe(1);
+			expect(secondRun.stderr).not.toMatch('vite-css-modules:cli cache hit');
+			expect(secondRun.stderr).toMatch('base');
+			expect(secondRun.stderr).toMatch('dep.module.css');
 		});
 
 		test('supports SCSS line comments', async () => {

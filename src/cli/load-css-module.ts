@@ -22,6 +22,7 @@ export const createCssModuleLoader = (
 	context: ProjectContext,
 ) => {
 	const cache = new Map<string, Promise<{
+		cacheSafe: boolean;
 		exports: Exports;
 		originalCode: string;
 	}>>();
@@ -56,7 +57,9 @@ export const createCssModuleLoader = (
 	const loadCssModule = async (
 		filePath: string,
 		includeSourceMap = false,
+		sourceCode?: string,
 	): Promise<{
+		cacheSafe: boolean;
 		exports: Exports;
 		sourceMapOptions?: SourceMapOptions;
 	}> => {
@@ -65,12 +68,21 @@ export const createCssModuleLoader = (
 			cached = (async () => {
 				const fileStart = performance.now();
 				const readStart = performance.now();
-				debugTransform('reading css module', formatDebugPath(filePath));
-				const code = await fs.readFile(filePath, 'utf8');
-				debugTransform('read css module', {
-					durationMs: Math.round(performance.now() - readStart),
-					filePath: formatDebugPath(filePath),
-				});
+				const code = sourceCode === undefined
+					? await fs.readFile(filePath, 'utf8')
+					: sourceCode;
+				if (sourceCode === undefined) {
+					debugTransform('reading css module', formatDebugPath(filePath));
+					debugTransform('read css module', {
+						durationMs: Math.round(performance.now() - readStart),
+						filePath: formatDebugPath(filePath),
+					});
+				} else {
+					debugTransform('using provided css module source', {
+						durationMs: Math.round(performance.now() - readStart),
+						filePath: formatDebugPath(filePath),
+					});
+				}
 				const preprocessStart = performance.now();
 				debugTransform('preprocessing css module', formatDebugPath(filePath));
 				const processed = await preprocessCSS(
@@ -180,6 +192,10 @@ export const createCssModuleLoader = (
 				});
 
 				return {
+					cacheSafe: (
+						resolvedDependencies.size === 0
+						&& Object.keys(cssModule.references).length === 0
+					),
 					exports: cssModuleExportsToExports(
 						cssModule.exports,
 						filePath,
@@ -197,7 +213,7 @@ export const createCssModuleLoader = (
 			cache.set(filePath, cached);
 		}
 
-		const cssModule = await cached;
+		const cssModule = await cached!;
 		const sourceMapStart = performance.now();
 		const sourceMapOptions = includeSourceMap && context.declarationMap
 			? {
@@ -212,6 +228,7 @@ export const createCssModuleLoader = (
 			});
 		}
 		return {
+			cacheSafe: cssModule.cacheSafe,
 			exports: cssModule.exports,
 			sourceMapOptions,
 		};

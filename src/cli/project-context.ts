@@ -10,6 +10,7 @@ import {
 	type ResolvedConfig,
 	type UserConfig,
 } from 'vite';
+import { createTypeFileConfigFingerprint } from '../type-files.js';
 import {
 	createDebug,
 	formatDebugPath,
@@ -27,6 +28,7 @@ const viteConfigNames = [
 ];
 
 export type ProjectContext = {
+	configFingerprint: string;
 	cssModulesConfig: CSSModulesOptions;
 	configPath: string;
 	declarationMap: boolean;
@@ -137,8 +139,14 @@ export const loadProjectContext = async (
 	const declarationMap = Boolean(
 		getTsconfig(resolvedConfig.root)?.config.compilerOptions?.declarationMap,
 	);
+	const configFingerprint = await createTypeFileConfigFingerprint(
+		options.mode,
+		loadedConfig.path,
+		loadedConfig.dependencies,
+	);
 	debugConfig('resolved project context', {
 		configPath: formatDebugPath(loadedConfig.path),
+		configFingerprint,
 		declarationMap,
 		resolveConfigMs: Math.round(performance.now() - resolveStart),
 		root: formatDebugPath(resolvedConfig.root),
@@ -146,6 +154,7 @@ export const loadProjectContext = async (
 	});
 
 	return {
+		configFingerprint,
 		cssModulesConfig: {
 			...loadedConfig.config.css?.modules,
 		},
