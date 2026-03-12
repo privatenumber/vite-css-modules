@@ -30,13 +30,11 @@ export type ProjectContext = {
 	configPath?: string;
 	declarationMap: boolean;
 	exportMode?: ExportMode;
-	invocationCwd: string;
 	resolvedConfig: ResolvedConfig;
 };
 
 type ProjectContextOptions = {
 	configPath?: string;
-	invocationCwd: string;
 	mode: string;
 };
 
@@ -119,20 +117,6 @@ export const findNearestViteConfig = async (
 	}
 };
 
-export const withProcessCwd = async <Value>(
-	cwd: string,
-	load: () => Promise<Value>,
-) => {
-	const previousCwd = process.cwd();
-	process.chdir(cwd);
-
-	try {
-		return await load();
-	} finally {
-		process.chdir(previousCwd);
-	}
-};
-
 const mergeModulesConfig = (
 	modulesConfig: CSSModulesOptions | false | undefined,
 ) => ({
@@ -151,7 +135,7 @@ const sanitizeUserConfig = (
 		root: (
 			typeof userConfig.root === 'string'
 				? path.resolve(configDirectory, userConfig.root)
-				: options.invocationCwd
+				: process.cwd()
 		),
 		mode: options.mode,
 		plugins: [],
@@ -190,79 +174,71 @@ const loadConfigProjectContext = async (
 	options: ProjectContextOptions & {
 		configPath: string;
 	},
-): Promise<ProjectContext> => withProcessCwd(
-	options.invocationCwd,
-	async () => {
-		process.env.VITE_CSS_MODULES_CLI = '1';
+): Promise<ProjectContext> => {
+	process.env.VITE_CSS_MODULES_CLI = '1';
 
-		const loadedConfig = await loadConfigFromFile(
-			{
-				command: 'serve',
-				mode: options.mode,
-			},
-			options.configPath,
-			path.dirname(options.configPath),
-			'silent',
-			createLogger('silent'),
-			'bundle',
-		);
+	const loadedConfig = await loadConfigFromFile(
+		{
+			command: 'serve',
+			mode: options.mode,
+		},
+		options.configPath,
+		path.dirname(options.configPath),
+		'silent',
+		createLogger('silent'),
+		'bundle',
+	);
 
-		if (!loadedConfig) {
-			throw new Error(`Could not load Vite config: ${options.configPath}`);
-		}
+	if (!loadedConfig) {
+		throw new Error(`Could not load Vite config: ${options.configPath}`);
+	}
 
-		const patchCssModulesConfig = await extractPatchCssModulesConfig(loadedConfig.config.plugins);
-		const cssModulesConfig = mergeModulesConfig(
-			loadedConfig.config.css?.modules,
-		);
-		const resolvedConfig = await resolveConfig(
-			sanitizeUserConfig(options.configPath, loadedConfig.config, options),
-			'serve',
-			options.mode,
-			undefined,
-			false,
-		);
+	const patchCssModulesConfig = await extractPatchCssModulesConfig(loadedConfig.config.plugins);
+	const cssModulesConfig = mergeModulesConfig(
+		loadedConfig.config.css?.modules,
+	);
+	const resolvedConfig = await resolveConfig(
+		sanitizeUserConfig(options.configPath, loadedConfig.config, options),
+		'serve',
+		options.mode,
+		undefined,
+		false,
+	);
 
-		return {
-			cssModulesConfig,
-			configPath: loadedConfig.path,
-			declarationMap: resolveDeclarationMap(resolvedConfig.root, patchCssModulesConfig),
-			exportMode: patchCssModulesConfig?.exportMode,
-			invocationCwd: options.invocationCwd,
-			resolvedConfig,
-		};
-	},
-);
+	return {
+		cssModulesConfig,
+		configPath: loadedConfig.path,
+		declarationMap: resolveDeclarationMap(resolvedConfig.root, patchCssModulesConfig),
+		exportMode: patchCssModulesConfig?.exportMode,
+		resolvedConfig,
+	};
+};
 
 const loadNoConfigProjectContext = async (
 	options: ProjectContextOptions,
-): Promise<ProjectContext> => withProcessCwd(
-	options.invocationCwd,
-	async () => {
-		const resolvedConfig = await resolveConfig(
-			{
-				configFile: false,
-				root: options.invocationCwd,
-				mode: options.mode,
-				plugins: [],
-				css: {
-					modules: false,
-				},
+): Promise<ProjectContext> => {
+	const resolvedConfig = await resolveConfig(
+		{
+			configFile: false,
+			root: process.cwd(),
+			mode: options.mode,
+			plugins: [],
+			css: {
+				modules: false,
 			},
-			'serve',
-			options.mode,
-			undefined,
-			false,
-		);
+		},
+		'serve',
+		options.mode,
+		undefined,
+		false,
+	);
 
-		return {
-			cssModulesConfig: mergeModulesConfig(undefined),
-			declarationMap: resolveDeclarationMap(resolvedConfig.root),
-			invocationCwd: options.invocationCwd,
-			resolvedConfig,
-		};
-	},
-);
+	return {
+		cssModulesConfig: mergeModulesConfig(undefined),
+		declarationMap: resolveDeclarationMap(resolvedConfig.root),
+		resolvedConfig,
+	};
+};
 
 export const loadProjectContext = async (
 	options: ProjectContextOptions,

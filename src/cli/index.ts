@@ -94,7 +94,6 @@ const writeFileIfChanged = async (
 			projectContext = {
 				projectContextPromise: loadProjectContext({
 					configPath,
-					invocationCwd: cwd,
 					mode: argv.flags.mode,
 				}),
 			};

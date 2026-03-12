@@ -9,7 +9,7 @@ import type { CSSModuleReferences } from '../plugin/transformers/postcss/types.j
 import { transform as postcssTransform } from '../plugin/transformers/postcss/index.js';
 import { transform as lightningcssTransform } from '../plugin/transformers/lightningcss.js';
 import { cleanUrl, getCssModuleUrl } from '../plugin/url-utils.js';
-import { withProcessCwd, type ProjectContext } from './project-context.js';
+import type { ProjectContext } from './project-context.js';
 import { cssModuleExportsToExports } from './css-module-exports-to-exports.js';
 
 type LoadedCssModule = {
@@ -61,10 +61,7 @@ const resolveDependency = async (
 	context: ProjectContext,
 ) => {
 	const resolver = context.resolvedConfig.createResolver();
-	const resolved = await withProcessCwd(
-		context.invocationCwd,
-		async () => resolver(getCssModuleUrl(specifier), fromFile),
-	);
+	const resolved = await resolver(getCssModuleUrl(specifier), fromFile);
 
 	if (!resolved) {
 		throw new Error(`Cannot resolve ${JSON.stringify(specifier)} from ${JSON.stringify(fromFile)}`);
@@ -90,13 +87,10 @@ export const createCssModuleLoader = (
 		if (!cached) {
 			cached = (async () => {
 				const code = await fs.readFile(filePath, 'utf8');
-				const processed = await withProcessCwd(
-					context.invocationCwd,
-					async () => preprocessCSS(
-						code,
-						stripModuleSuffix(filePath),
-						context.resolvedConfig,
-					),
+				const processed = await preprocessCSS(
+					code,
+					stripModuleSuffix(filePath),
+					context.resolvedConfig,
 				);
 				const cssModule = transformCssModule(processed.code, filePath, context);
 				const resolvedDependencies = new Map<string, string>();
