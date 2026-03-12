@@ -38,15 +38,6 @@ type ProjectContextOptions = {
 	mode: string;
 };
 
-const fileExists = async (filePath: string) => {
-	try {
-		await fs.access(filePath);
-		return true;
-	} catch {
-		return false;
-	}
-};
-
 export const findViteConfigInDirectory = async (
 	directoryPath: string,
 ) => {
@@ -57,7 +48,8 @@ export const findViteConfigInDirectory = async (
 
 	for (const configName of viteConfigNames) {
 		const configPath = path.join(directoryPath, configName);
-		if (await fileExists(configPath)) {
+		const configExists = await fs.access(configPath).then(() => true, () => false);
+		if (configExists) {
 			debugConfig('found vite config in cwd', {
 				configPath: formatDebugPath(configPath),
 				durationMs: Math.round(performance.now() - searchStart),
@@ -106,9 +98,7 @@ const sanitizeUserConfig = (
 };
 
 export const loadProjectContext = async (
-	options: ProjectContextOptions & {
-		configPath: string;
-	},
+	options: ProjectContextOptions,
 ): Promise<ProjectContext> => {
 	process.env.VITE_CSS_MODULES_CLI = '1';
 	const loadStart = performance.now();

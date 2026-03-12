@@ -5,7 +5,6 @@ import { preprocessCSS } from 'vite';
 import type { SourceMapOptions } from '../plugin/generate-dts-sourcemap.js';
 import { getLocalesConventionFunction, shouldKeepOriginalExport } from '../plugin/locals-convention.js';
 import type { Exports } from '../plugin/generate-esm.js';
-import type { CSSModuleReferences } from '../plugin/transformers/postcss/types.js';
 import { transform as postcssTransform } from '../plugin/transformers/postcss/index.js';
 import { transform as lightningcssTransform } from '../plugin/transformers/lightningcss.js';
 import { cleanUrl, getCssModuleUrl } from '../plugin/url-utils.js';
@@ -16,85 +15,51 @@ import {
 	formatDebugPath,
 } from './debug.js';
 
-type LoadedCssModule = {
-	exports: Exports;
-	references: CSSModuleReferences;
-	sourceMapOptions?: SourceMapOptions;
-};
-
-type CachedCssModule = {
-	exports: Exports;
-	originalCode: string;
-	references: CSSModuleReferences;
-};
-
-const stripQuery = (id: string) => id.split('?', 2)[0]!;
-const stripModuleSuffix = (filePath: string) => filePath.replace(/\.module(?=\.)/, '');
 const debugTransform = createDebug('vite-css-modules:transform');
 const debugResolve = createDebug('vite-css-modules:resolve');
-
-const transformCssModule = (
-	inputCss: string,
-	filePath: string,
-	context: ProjectContext,
-) => {
-	const id = cleanUrl(path.relative(context.resolvedConfig.root, filePath));
-	if (context.resolvedConfig.css.transformer === 'lightningcss') {
-		return lightningcssTransform(
-			inputCss,
-			id,
-			context.resolvedConfig.css.lightningcss ?? {},
-			false,
-		);
-	}
-
-	return postcssTransform(
-		inputCss,
-		id,
-		context.cssModulesConfig,
-		false,
-	);
-};
-
-const resolveDependency = async (
-	specifier: string,
-	fromFile: string,
-	context: ProjectContext,
-) => {
-	const resolver = context.resolvedConfig.createResolver();
-	const resolveStart = performance.now();
-	debugResolve('resolving dependency', {
-		fromFile: formatDebugPath(fromFile),
-		specifier,
-	});
-	const resolved = await resolver(getCssModuleUrl(specifier), fromFile);
-
-	if (!resolved) {
-		throw new Error(`Cannot resolve ${JSON.stringify(specifier)} from ${JSON.stringify(fromFile)}`);
-	}
-
-	debugResolve('resolved dependency', {
-		durationMs: Math.round(performance.now() - resolveStart),
-		fromFile: formatDebugPath(fromFile),
-		resolved: formatDebugPath(resolved),
-		specifier,
-	});
-	return stripQuery(cleanUrl(resolved));
-};
 
 export const createCssModuleLoader = (
 	context: ProjectContext,
 ) => {
-	const cache = new Map<string, Promise<CachedCssModule>>();
+	const cache = new Map<string, Promise<{
+		exports: Exports;
+		originalCode: string;
+	}>>();
 	const keepOriginalExport = shouldKeepOriginalExport(context.cssModulesConfig);
 	const localsConventionFunction = getLocalesConventionFunction(context.cssModulesConfig);
+	const resolve = context.resolvedConfig.createResolver();
+
+	const resolveDependency = async (
+		specifier: string,
+		fromFile: string,
+	) => {
+		const resolveStart = performance.now();
+		debugResolve('resolving dependency', {
+			fromFile: formatDebugPath(fromFile),
+			specifier,
+		});
+		const resolved = await resolve(getCssModuleUrl(specifier), fromFile);
+
+		if (!resolved) {
+			throw new Error(`Cannot resolve ${JSON.stringify(specifier)} from ${JSON.stringify(fromFile)}`);
+		}
+
+		debugResolve('resolved dependency', {
+			durationMs: Math.round(performance.now() - resolveStart),
+			fromFile: formatDebugPath(fromFile),
+			resolved: formatDebugPath(resolved),
+			specifier,
+		});
+		return cleanUrl(resolved).split('?', 2)[0]!;
+	};
 
 	const loadCssModule = async (
 		filePath: string,
-		options?: {
-			includeSourceMap?: boolean;
-		},
-	): Promise<LoadedCssModule> => {
+		includeSourceMap = false,
+	): Promise<{
+		exports: Exports;
+		sourceMapOptions?: SourceMapOptions;
+	}> => {
 		let cached = cache.get(filePath);
 		if (!cached) {
 			cached = (async () => {
@@ -110,7 +75,7 @@ export const createCssModuleLoader = (
 				debugTransform('preprocessing css module', formatDebugPath(filePath));
 				const processed = await preprocessCSS(
 					code,
-					stripModuleSuffix(filePath),
+					filePath.replace(/\.module(?=\.)/, ''),
 					context.resolvedConfig,
 				);
 				debugTransform('preprocessed css module', {
@@ -123,7 +88,20 @@ export const createCssModuleLoader = (
 					root: formatDebugPath(context.resolvedConfig.root),
 					transformer: context.resolvedConfig.css.transformer,
 				});
-				const cssModule = transformCssModule(processed.code, filePath, context);
+				const id = cleanUrl(path.relative(context.resolvedConfig.root, filePath));
+				const cssModule = context.resolvedConfig.css.transformer === 'lightningcss'
+					? lightningcssTransform(
+						processed.code,
+						id,
+						context.resolvedConfig.css.lightningcss ?? {},
+						false,
+					)
+					: postcssTransform(
+						processed.code,
+						id,
+						context.cssModulesConfig,
+						false,
+					);
 				const resolvedDependencies = new Map<string, string>();
 				debugTransform('loaded css module exports', {
 					durationMs: Math.round(performance.now() - transformStart),
@@ -145,7 +123,6 @@ export const createCssModuleLoader = (
 						const dependencyFile = await resolveDependency(
 							composed.specifier,
 							filePath,
-							context,
 						);
 						debugResolve('resolved compose dependency', {
 							dependencyFile: formatDebugPath(dependencyFile),
@@ -175,7 +152,6 @@ export const createCssModuleLoader = (
 					const dependencyFile = await resolveDependency(
 						reference.specifier,
 						filePath,
-						context,
 					);
 					debugResolve('resolved value dependency', {
 						dependencyFile: formatDebugPath(dependencyFile),
@@ -216,7 +192,6 @@ export const createCssModuleLoader = (
 						),
 					),
 					originalCode: code,
-					references: cssModule.references,
 				};
 			})();
 			cache.set(filePath, cached);
@@ -224,10 +199,7 @@ export const createCssModuleLoader = (
 
 		const cssModule = await cached;
 		const sourceMapStart = performance.now();
-		const sourceMapOptions = (
-			options?.includeSourceMap
-			&& context.declarationMap
-		)
+		const sourceMapOptions = includeSourceMap && context.declarationMap
 			? {
 				sourceFileName: path.basename(filePath),
 				classPositions: cssClassPositions(cssModule.originalCode, { fileName: filePath }),
@@ -241,7 +213,6 @@ export const createCssModuleLoader = (
 		}
 		return {
 			exports: cssModule.exports,
-			references: cssModule.references,
 			sourceMapOptions,
 		};
 	};

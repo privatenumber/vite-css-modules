@@ -12,12 +12,11 @@ import {
 import {
 	findViteConfigInDirectory,
 	loadProjectContext,
+	type ProjectContext,
 } from './project-context.js';
 
 const debug = createDebug('vite-css-modules:cli');
-const defaultGlobs = [
-	'**/*.module.{css,scss,sass}',
-];
+const defaultGlob = '**/*.module.{css,scss,sass}';
 
 const isPathOutsideRoot = (
 	root: string,
@@ -33,79 +32,25 @@ const resolveInputFiles = async (
 	inputs: string[],
 	cwd: string,
 ) => {
-	const files = new Set<string>();
 	const globStart = performance.now();
-
-	for (const input of inputs) {
-		const inputStart = performance.now();
-		debug('expanding glob', {
-			cwd: formatDebugPath(cwd, cwd),
-			pattern: input,
-		});
-		const matches = await glob(input, {
-			absolute: true,
-			cwd,
-			ignore: ['**/node_modules/**'],
-		});
-		for (const match of matches) {
-			files.add(match);
-		}
-
-		debug('expanded glob', {
-			cwd: formatDebugPath(cwd, cwd),
-			durationMs: Math.round(performance.now() - inputStart),
-			matches: matches.length,
-			pattern: input,
-		});
-	}
+	debug('expanding glob', {
+		cwd: formatDebugPath(cwd, cwd),
+		patterns: inputs,
+	});
+	const files = await glob(inputs, {
+		absolute: true,
+		cwd,
+		ignore: ['**/node_modules/**'],
+	});
 
 	debug('matched files', {
-		count: files.size,
+		count: files.length,
 		cwd: formatDebugPath(cwd, cwd),
 		durationMs: Math.round(performance.now() - globStart),
 		inputs,
 	});
 
-	return [...files];
-};
-
-const reportMissingConfig = (
-	cwd: string,
-) => {
-	console.error(`No vite.config.* found in the current working directory: ${cwd}`);
-	console.error('Run this command from the same cwd as Vite, or pass --config.');
-	process.exitCode = 1;
-};
-
-const reportRootOutsideCwd = (
-	root: string,
-) => {
-	console.error(`Resolved Vite root is outside the current working directory: ${root}`);
-	console.error('Pass explicit globs to control the search scope.');
-	process.exitCode = 1;
-};
-
-const loadCliProjectContext = async (
-	cwd: string,
-	explicitConfigPath: string | undefined,
-	mode: string,
-) => {
-	const configPath = explicitConfigPath
-		?? await findViteConfigInDirectory(cwd);
-
-	if (!configPath) {
-		return;
-	}
-
-	debug('using project config', {
-		configPath: formatDebugPath(configPath, cwd),
-		cwd: formatDebugPath(cwd, cwd),
-	});
-
-	return loadProjectContext({
-		configPath,
-		mode,
-	});
+	return files;
 };
 
 const writeFileIfChanged = async (
@@ -115,18 +60,6 @@ const writeFileIfChanged = async (
 	const existingContent = await fs.readFile(filePath, 'utf8').catch(() => null);
 	if (existingContent !== content) {
 		await fs.writeFile(filePath, content);
-	}
-};
-
-const deleteFileIfExists = async (
-	filePath: string,
-) => {
-	try {
-		await fs.unlink(filePath);
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-			throw error;
-		}
 	}
 };
 
@@ -142,7 +75,11 @@ const writeDtsFiles = async (
 
 	if (!inlineSourceMapMatch) {
 		await writeFileIfChanged(dtsPath, dts);
-		await deleteFileIfExists(dtsMapPath);
+		await fs.unlink(dtsMapPath).catch((error: NodeJS.ErrnoException) => {
+			if (error.code !== 'ENOENT') {
+				throw error;
+			}
+		});
 		return [dtsPath];
 	}
 
@@ -183,47 +120,73 @@ const writeDtsFiles = async (
 	});
 
 	const cwd = process.cwd();
-	const inputGlobs = argv._.globs ?? [];
-	const explicitConfigPath = argv.flags.config
-		? path.resolve(argv.flags.config)
+	const { globs: inputGlobs = [] } = argv._;
+	const { config, mode } = argv.flags;
+	const usingDefaultGlob = inputGlobs.length === 0;
+	const explicitConfigPath = config
+		? path.resolve(config)
 		: undefined;
-	let projectContext: Awaited<ReturnType<typeof loadProjectContext>> | undefined;
-	let files: string[] = [];
+	const configPath = explicitConfigPath
+		?? await findViteConfigInDirectory(cwd);
+	let projectContext: ProjectContext | undefined;
+	let globs = inputGlobs;
+	let globCwd = cwd;
 
-	if (inputGlobs.length === 0) {
-		projectContext = await loadCliProjectContext(cwd, explicitConfigPath, argv.flags.mode);
-		if (!projectContext) {
-			reportMissingConfig(cwd);
-			return;
-		}
+	if (configPath) {
+		debug('using project config', {
+			configPath: formatDebugPath(configPath, cwd),
+			cwd: formatDebugPath(cwd, cwd),
+		});
+	}
+
+	if (usingDefaultGlob && !configPath) {
+		console.error(`No vite.config.* found in the current working directory: ${cwd}`);
+		console.error('Run this command from the same cwd as Vite, or pass --config.');
+		process.exitCode = 1;
+		return;
+	}
+
+	if (usingDefaultGlob) {
+		projectContext = await loadProjectContext({
+			configPath: configPath!,
+			mode,
+		});
 
 		if (isPathOutsideRoot(cwd, projectContext.resolvedConfig.root)) {
-			reportRootOutsideCwd(projectContext.resolvedConfig.root);
+			console.error(`Resolved Vite root is outside the current working directory: ${projectContext.resolvedConfig.root}`);
+			console.error('Pass explicit globs to control the search scope.');
+			process.exitCode = 1;
 			return;
 		}
 
 		debug('using default globs', {
 			configPath: formatDebugPath(projectContext.configPath, cwd),
 			globBase: formatDebugPath(projectContext.resolvedConfig.root, cwd),
-			globs: defaultGlobs,
+			glob: defaultGlob,
 		});
 
-		files = await resolveInputFiles(defaultGlobs, projectContext.resolvedConfig.root);
-	} else {
-		files = await resolveInputFiles(inputGlobs, cwd);
+		globs = [defaultGlob];
+		globCwd = projectContext.resolvedConfig.root;
 	}
 
+	const files = await resolveInputFiles(globs, globCwd);
 	if (files.length === 0) {
 		console.error('No files matched the provided glob patterns');
 		return;
 	}
 
+	if (!projectContext && !configPath) {
+		console.error(`No vite.config.* found in the current working directory: ${cwd}`);
+		console.error('Run this command from the same cwd as Vite, or pass --config.');
+		process.exitCode = 1;
+		return;
+	}
+
 	if (!projectContext) {
-		projectContext = await loadCliProjectContext(cwd, explicitConfigPath, argv.flags.mode);
-		if (!projectContext) {
-			reportMissingConfig(cwd);
-			return;
-		}
+		projectContext = await loadProjectContext({
+			configPath: configPath!,
+			mode,
+		});
 	}
 
 	debug('creating css module loader', {
@@ -232,8 +195,7 @@ const writeDtsFiles = async (
 	});
 	const loadCssModule = createCssModuleLoader(projectContext);
 
-	for (const file of files) {
-		const filePath = file;
+	for (const filePath of files) {
 		try {
 			const fileStart = performance.now();
 			debug('processing', formatDebugPath(filePath, cwd));
@@ -245,10 +207,7 @@ const writeDtsFiles = async (
 				});
 			}
 			const loadStart = performance.now();
-			const { exports, sourceMapOptions } = await loadCssModule(
-				filePath,
-				{ includeSourceMap: true },
-			);
+			const { exports, sourceMapOptions } = await loadCssModule(filePath, true);
 			const generateStart = performance.now();
 			const dts = generateTypes(
 				exports,
