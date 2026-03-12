@@ -1,17 +1,19 @@
 import path from 'node:path';
 import { formatWithOptions } from 'node:util';
 
-const escapeRegExp = (value: string) => value.replaceAll(/[|\\{}()[\]^$+?.*]/g, String.raw`\$&`);
-
-const debugPatterns = process.env.DEBUG
+const debugPrefixes = process.env.DEBUG
 	?.split(',')
 	.map(pattern => pattern.trim())
 	.filter(Boolean)
-	.map(pattern => new RegExp(`^${escapeRegExp(pattern).replaceAll(String.raw`\*`, '.*')}$`))
+	.map(pattern => (
+		pattern.endsWith('*')
+			? pattern.slice(0, -1)
+			: pattern
+	))
 	?? [];
 
 export const createDebug = (namespace: string) => {
-	const enabled = debugPatterns.some(pattern => pattern.test(namespace));
+	const enabled = debugPrefixes.some(prefix => namespace.startsWith(prefix));
 
 	return (...values: unknown[]) => {
 		if (!enabled) {
