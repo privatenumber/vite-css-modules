@@ -30,7 +30,7 @@ const extractInlineSourceMap = (
 	};
 };
 
-await describe('CLI', () => {
+describe('CLI', () => {
 	const previousMaxListeners = EventEmitter.defaultMaxListeners;
 	EventEmitter.defaultMaxListeners = 0;
 	onFinish(() => {
