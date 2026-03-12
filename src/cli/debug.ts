@@ -1,12 +1,13 @@
 import path from 'node:path';
+import { formatWithOptions } from 'node:util';
 
-const escapeRegExp = (value: string) => value.replaceAll(/[|\\{}()[\]^$+?.*]/g, '\\$&');
+const escapeRegExp = (value: string) => value.replaceAll(/[|\\{}()[\]^$+?.*]/g, String.raw`\$&`);
 
 const debugPatterns = process.env.DEBUG
 	?.split(',')
 	.map(pattern => pattern.trim())
 	.filter(Boolean)
-	.map(pattern => new RegExp(`^${escapeRegExp(pattern).replaceAll('\\*', '.*')}$`))
+	.map(pattern => new RegExp(`^${escapeRegExp(pattern).replaceAll(String.raw`\*`, '.*')}$`))
 	?? [];
 
 export const createDebug = (namespace: string) => {
@@ -17,7 +18,7 @@ export const createDebug = (namespace: string) => {
 			return;
 		}
 
-		console.error(namespace, ...values);
+		process.stderr.write(`${formatWithOptions({}, namespace, ...values)}\n`);
 	};
 };
 
@@ -32,7 +33,3 @@ export const formatDebugPath = (
 	const relativePath = path.relative(cwd, filePath);
 	return relativePath || '.';
 };
-
-export const formatDurationMs = (
-	durationMs: number,
-) => Math.round(durationMs);

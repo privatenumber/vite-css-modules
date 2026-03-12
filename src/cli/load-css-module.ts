@@ -14,7 +14,6 @@ import { cssModuleExportsToExports } from './css-module-exports-to-exports.js';
 import {
 	createDebug,
 	formatDebugPath,
-	formatDurationMs,
 } from './debug.js';
 
 type LoadedCssModule = {
@@ -75,7 +74,7 @@ const resolveDependency = async (
 	}
 
 	debugResolve('resolved dependency', {
-		durationMs: formatDurationMs(performance.now() - resolveStart),
+		durationMs: Math.round(performance.now() - resolveStart),
 		fromFile: formatDebugPath(fromFile),
 		resolved: formatDebugPath(resolved),
 		specifier,
@@ -97,43 +96,43 @@ export const createCssModuleLoader = (
 		},
 	): Promise<LoadedCssModule> => {
 		let cached = cache.get(filePath);
-			if (!cached) {
-				cached = (async () => {
-					const fileStart = performance.now();
-					const readStart = performance.now();
-					debugTransform('reading css module', formatDebugPath(filePath));
-					const code = await fs.readFile(filePath, 'utf8');
-					debugTransform('read css module', {
-						durationMs: formatDurationMs(performance.now() - readStart),
-						filePath: formatDebugPath(filePath),
-					});
-					const preprocessStart = performance.now();
-					debugTransform('preprocessing css module', formatDebugPath(filePath));
-					const processed = await preprocessCSS(
-						code,
-						stripModuleSuffix(filePath),
-						context.resolvedConfig,
-					);
-					debugTransform('preprocessed css module', {
-						durationMs: formatDurationMs(performance.now() - preprocessStart),
-						filePath: formatDebugPath(filePath),
-					});
-					const transformStart = performance.now();
-					debugTransform('transforming css module', {
-						filePath: formatDebugPath(filePath),
-						root: formatDebugPath(context.resolvedConfig.root),
-						transformer: context.resolvedConfig.css.transformer,
-					});
-					const cssModule = transformCssModule(processed.code, filePath, context);
-					const resolvedDependencies = new Map<string, string>();
-					debugTransform('loaded css module exports', {
-						durationMs: formatDurationMs(performance.now() - transformStart),
-						exports: Object.keys(cssModule.exports),
-						filePath: formatDebugPath(filePath),
-					});
-					const dependencyResolutionStart = performance.now();
+		if (!cached) {
+			cached = (async () => {
+				const fileStart = performance.now();
+				const readStart = performance.now();
+				debugTransform('reading css module', formatDebugPath(filePath));
+				const code = await fs.readFile(filePath, 'utf8');
+				debugTransform('read css module', {
+					durationMs: Math.round(performance.now() - readStart),
+					filePath: formatDebugPath(filePath),
+				});
+				const preprocessStart = performance.now();
+				debugTransform('preprocessing css module', formatDebugPath(filePath));
+				const processed = await preprocessCSS(
+					code,
+					stripModuleSuffix(filePath),
+					context.resolvedConfig,
+				);
+				debugTransform('preprocessed css module', {
+					durationMs: Math.round(performance.now() - preprocessStart),
+					filePath: formatDebugPath(filePath),
+				});
+				const transformStart = performance.now();
+				debugTransform('transforming css module', {
+					filePath: formatDebugPath(filePath),
+					root: formatDebugPath(context.resolvedConfig.root),
+					transformer: context.resolvedConfig.css.transformer,
+				});
+				const cssModule = transformCssModule(processed.code, filePath, context);
+				const resolvedDependencies = new Map<string, string>();
+				debugTransform('loaded css module exports', {
+					durationMs: Math.round(performance.now() - transformStart),
+					exports: Object.keys(cssModule.exports),
+					filePath: formatDebugPath(filePath),
+				});
+				const dependencyResolutionStart = performance.now();
 
-					for (const exported of Object.values(cssModule.exports)) {
+				for (const exported of Object.values(cssModule.exports)) {
 					if (typeof exported === 'string') {
 						continue;
 					}
@@ -143,27 +142,28 @@ export const createCssModuleLoader = (
 							continue;
 						}
 
-							const dependencyFile = await resolveDependency(
-								composed.specifier,
-								filePath,
-								context,
-							);
-							debugResolve('resolved compose dependency', {
-								dependencyFile: formatDebugPath(dependencyFile),
-								exportedFrom: formatDebugPath(filePath),
-								name: composed.name,
-								specifier: composed.specifier,
-							});
-							const dependencyModule = await loadCssModule(dependencyFile);
-							debugResolve('compose export lookup', {
-								availableExports: Object.keys(dependencyModule.exports),
-								dependencyFile: formatDebugPath(dependencyFile),
-								name: composed.name,
-							});
-							const dependencyExport = dependencyModule.exports[composed.name];
-							if (!dependencyExport) {
+						const dependencyFile = await resolveDependency(
+							composed.specifier,
+							filePath,
+							context,
+						);
+						debugResolve('resolved compose dependency', {
+							dependencyFile: formatDebugPath(dependencyFile),
+							exportedFrom: formatDebugPath(filePath),
+							name: composed.name,
+							specifier: composed.specifier,
+						});
+						const dependencyModule = await loadCssModule(dependencyFile);
+						debugResolve('compose export lookup', {
+							availableExports: Object.keys(dependencyModule.exports),
+							dependencyFile: formatDebugPath(dependencyFile),
+							name: composed.name,
+						});
+						const dependencyExport = dependencyModule.exports[composed.name];
+						if (!dependencyExport) {
 							throw new Error(`Cannot resolve ${JSON.stringify(composed.name)} from ${JSON.stringify(composed.specifier)}`);
 						}
+
 						resolvedDependencies.set(
 							`${composed.specifier}\0${composed.name}`,
 							dependencyExport.resolved,
@@ -172,37 +172,38 @@ export const createCssModuleLoader = (
 				}
 
 				for (const reference of Object.values(cssModule.references)) {
-						const dependencyFile = await resolveDependency(
-							reference.specifier,
-							filePath,
-							context,
-						);
-						debugResolve('resolved value dependency', {
-							dependencyFile: formatDebugPath(dependencyFile),
-							exportedFrom: formatDebugPath(filePath),
-							name: reference.name,
-							specifier: reference.specifier,
-						});
-						const dependencyModule = await loadCssModule(dependencyFile);
-						debugResolve('value export lookup', {
-							availableExports: Object.keys(dependencyModule.exports),
-							dependencyFile: formatDebugPath(dependencyFile),
-							name: reference.name,
-						});
-						if (!dependencyModule.exports[reference.name]) {
-							throw new Error(`Cannot resolve ${JSON.stringify(reference.name)} from ${JSON.stringify(reference.specifier)}`);
-						}
+					const dependencyFile = await resolveDependency(
+						reference.specifier,
+						filePath,
+						context,
+					);
+					debugResolve('resolved value dependency', {
+						dependencyFile: formatDebugPath(dependencyFile),
+						exportedFrom: formatDebugPath(filePath),
+						name: reference.name,
+						specifier: reference.specifier,
+					});
+					const dependencyModule = await loadCssModule(dependencyFile);
+					debugResolve('value export lookup', {
+						availableExports: Object.keys(dependencyModule.exports),
+						dependencyFile: formatDebugPath(dependencyFile),
+						name: reference.name,
+					});
+					if (!dependencyModule.exports[reference.name]) {
+						throw new Error(`Cannot resolve ${JSON.stringify(reference.name)} from ${JSON.stringify(reference.specifier)}`);
 					}
-					debugTransform('resolved dependencies', {
-						durationMs: formatDurationMs(performance.now() - dependencyResolutionStart),
-						filePath: formatDebugPath(filePath),
-					});
-					debugTransform('compiled css module', {
-						durationMs: formatDurationMs(performance.now() - fileStart),
-						filePath: formatDebugPath(filePath),
-					});
+				}
 
-					return {
+				debugTransform('resolved dependencies', {
+					durationMs: Math.round(performance.now() - dependencyResolutionStart),
+					filePath: formatDebugPath(filePath),
+				});
+				debugTransform('compiled css module', {
+					durationMs: Math.round(performance.now() - fileStart),
+					filePath: formatDebugPath(filePath),
+				});
+
+				return {
 					exports: cssModuleExportsToExports(
 						cssModule.exports,
 						filePath,
@@ -221,29 +222,29 @@ export const createCssModuleLoader = (
 			cache.set(filePath, cached);
 		}
 
-			const cssModule = await cached;
-			const sourceMapStart = performance.now();
-			const sourceMapOptions = (
-				options?.includeSourceMap
-				&& context.declarationMap
-			)
-				? {
-					sourceFileName: path.basename(filePath),
-					classPositions: cssClassPositions(cssModule.originalCode, { fileName: filePath }),
-				}
-				: undefined;
-			if (sourceMapOptions) {
-				debugTransform('generated declaration map inputs', {
-					durationMs: formatDurationMs(performance.now() - sourceMapStart),
-					filePath: formatDebugPath(filePath),
-				});
+		const cssModule = await cached;
+		const sourceMapStart = performance.now();
+		const sourceMapOptions = (
+			options?.includeSourceMap
+			&& context.declarationMap
+		)
+			? {
+				sourceFileName: path.basename(filePath),
+				classPositions: cssClassPositions(cssModule.originalCode, { fileName: filePath }),
 			}
-			return {
-				exports: cssModule.exports,
-				references: cssModule.references,
-				sourceMapOptions,
-			};
+			: undefined;
+		if (sourceMapOptions) {
+			debugTransform('generated declaration map inputs', {
+				durationMs: Math.round(performance.now() - sourceMapStart),
+				filePath: formatDebugPath(filePath),
+			});
+		}
+		return {
+			exports: cssModule.exports,
+			references: cssModule.references,
+			sourceMapOptions,
 		};
+	};
 
 	return loadCssModule;
 };

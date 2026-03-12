@@ -8,7 +8,6 @@ import { createCssModuleLoader } from './load-css-module.js';
 import {
 	createDebug,
 	formatDebugPath,
-	formatDurationMs,
 } from './debug.js';
 import {
 	findViteConfigInDirectory,
@@ -56,7 +55,7 @@ const resolveInputFiles = async (
 
 		debugCli('expanded glob', {
 			cwd: formatDebugPath(cwd, cwd),
-			durationMs: formatDurationMs(performance.now() - inputStart),
+			durationMs: Math.round(performance.now() - inputStart),
 			matches: matches.length,
 			pattern: input,
 		});
@@ -65,7 +64,7 @@ const resolveInputFiles = async (
 	debugCli('matched files', {
 		count: files.size,
 		cwd: formatDebugPath(cwd, cwd),
-		durationMs: formatDurationMs(performance.now() - globStart),
+		durationMs: Math.round(performance.now() - globStart),
 		inputs,
 	});
 
@@ -261,10 +260,10 @@ const writeDtsFiles = async (
 			const outputPaths = await writeDtsFiles(filePath, dts);
 			debugCli('processed file', {
 				filePath: formatDebugPath(filePath, cwd),
-				loadMs: formatDurationMs(generateStart - loadStart),
+				loadMs: Math.round(generateStart - loadStart),
 				outputs: outputPaths.map(outputPath => formatDebugPath(outputPath, cwd)),
-				totalMs: formatDurationMs(performance.now() - fileStart),
-				writeMs: formatDurationMs(performance.now() - writeStart),
+				totalMs: Math.round(performance.now() - fileStart),
+				writeMs: Math.round(performance.now() - writeStart),
 			});
 			for (const outputPath of outputPaths) {
 				console.log(`\u2713 ${formatDebugPath(outputPath, cwd)}`);

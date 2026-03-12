@@ -18,7 +18,6 @@ import { patchCssModulesConfigSymbol } from '../patch.js';
 import {
 	createDebug,
 	formatDebugPath,
-	formatDurationMs,
 } from './debug.js';
 
 const debugConfig = createDebug('vite-css-modules:config');
@@ -115,7 +114,7 @@ export const findViteConfigInDirectory = async (
 		if (await fileExists(configPath)) {
 			debugConfig('found vite config in cwd', {
 				configPath: formatDebugPath(configPath),
-				durationMs: formatDurationMs(performance.now() - searchStart),
+				durationMs: Math.round(performance.now() - searchStart),
 			});
 			return configPath;
 		}
@@ -203,7 +202,7 @@ const loadConfigProjectContext = async (
 	}
 	debugConfig('loaded vite config', {
 		configPath: formatDebugPath(loadedConfig.path),
-		durationMs: formatDurationMs(performance.now() - loadStart),
+		durationMs: Math.round(performance.now() - loadStart),
 	});
 
 	const patchConfigStart = performance.now();
@@ -222,9 +221,9 @@ const loadConfigProjectContext = async (
 	debugConfig('resolved project context', {
 		configPath: formatDebugPath(loadedConfig.path),
 		declarationMap: resolveDeclarationMap(resolvedConfig.root, patchCssModulesConfig),
-		extractPatchCssModulesConfigMs: formatDurationMs(resolveStart - patchConfigStart),
+		extractPatchCssModulesConfigMs: Math.round(resolveStart - patchConfigStart),
 		exportMode: patchCssModulesConfig?.exportMode,
-		resolveConfigMs: formatDurationMs(performance.now() - resolveStart),
+		resolveConfigMs: Math.round(performance.now() - resolveStart),
 		root: formatDebugPath(resolvedConfig.root),
 		transformer: resolvedConfig.css.transformer,
 	});
