@@ -14,11 +14,9 @@ import {
 	loadProjectContext,
 } from './project-context.js';
 
-const debugCli = createDebug('vite-css-modules:cli');
+const debug = createDebug('vite-css-modules:cli');
 const defaultGlobs = [
-	'**/*.module.css',
-	'**/*.module.scss',
-	'**/*.module.sass',
+	'**/*.module.{css,scss,sass}',
 ];
 
 const isPathOutsideRoot = (
@@ -40,7 +38,7 @@ const resolveInputFiles = async (
 
 	for (const input of inputs) {
 		const inputStart = performance.now();
-		debugCli('expanding glob', {
+		debug('expanding glob', {
 			cwd: formatDebugPath(cwd, cwd),
 			pattern: input,
 		});
@@ -53,7 +51,7 @@ const resolveInputFiles = async (
 			files.add(match);
 		}
 
-		debugCli('expanded glob', {
+		debug('expanded glob', {
 			cwd: formatDebugPath(cwd, cwd),
 			durationMs: Math.round(performance.now() - inputStart),
 			matches: matches.length,
@@ -61,7 +59,7 @@ const resolveInputFiles = async (
 		});
 	}
 
-	debugCli('matched files', {
+	debug('matched files', {
 		count: files.size,
 		cwd: formatDebugPath(cwd, cwd),
 		durationMs: Math.round(performance.now() - globStart),
@@ -165,7 +163,7 @@ const writeDtsFiles = async (
 			return;
 		}
 
-		debugCli('using project config', {
+		debug('using project config', {
 			configPath: formatDebugPath(configPath, cwd),
 			cwd: formatDebugPath(cwd, cwd),
 		});
@@ -183,7 +181,7 @@ const writeDtsFiles = async (
 			return;
 		}
 
-		debugCli('using default globs', {
+		debug('using default globs', {
 			configPath: formatDebugPath(projectContext.configPath, cwd),
 			globBase: formatDebugPath(projectContext.resolvedConfig.root, cwd),
 			globs: defaultGlobs,
@@ -210,7 +208,7 @@ const writeDtsFiles = async (
 			return;
 		}
 
-		debugCli('using project config', {
+		debug('using project config', {
 			configPath: formatDebugPath(configPath, cwd),
 			cwd: formatDebugPath(cwd, cwd),
 		});
@@ -227,17 +225,17 @@ const writeDtsFiles = async (
 		const filePath = file;
 		try {
 			const fileStart = performance.now();
-			debugCli('processing', formatDebugPath(filePath, cwd));
+			debug('processing', formatDebugPath(filePath, cwd));
 			const fileProjectContext = projectContext ?? await projectContextPromise!;
 			if (isPathOutsideRoot(fileProjectContext.resolvedConfig.root, filePath)) {
-				debugCli('matched file is outside config root', {
+				debug('matched file is outside config root', {
 					configPath: formatDebugPath(fileProjectContext.configPath, cwd),
 					filePath: formatDebugPath(filePath, cwd),
 					root: formatDebugPath(fileProjectContext.resolvedConfig.root, cwd),
 				});
 			}
 			if (!loadCssModule) {
-				debugCli('creating css module loader', {
+				debug('creating css module loader', {
 					configPath: formatDebugPath(fileProjectContext.configPath, cwd),
 					root: formatDebugPath(fileProjectContext.resolvedConfig.root, cwd),
 				});
@@ -251,14 +249,14 @@ const writeDtsFiles = async (
 			const generateStart = performance.now();
 			const dts = generateTypes(
 				exports,
-				fileProjectContext.exportMode ?? 'both',
+				'both',
 				false,
 				sourceMapOptions,
 			);
 			const writeStart = performance.now();
 
 			const outputPaths = await writeDtsFiles(filePath, dts);
-			debugCli('processed file', {
+			debug('processed file', {
 				filePath: formatDebugPath(filePath, cwd),
 				loadMs: Math.round(generateStart - loadStart),
 				outputs: outputPaths.map(outputPath => formatDebugPath(outputPath, cwd)),

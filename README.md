@@ -288,9 +288,7 @@ The CLI expects a `vite.config.*` file in the current working directory and uses
 With no globs, the CLI defaults to:
 
 ```bash
-**/*.module.css
-**/*.module.scss
-**/*.module.sass
+**/*.module.{css,scss,sass}
 ```
 
 and searches under the resolved Vite `root`.
@@ -298,6 +296,8 @@ and searches under the resolved Vite `root`.
 When you pass globs explicitly, they are resolved from the current working directory instead.
 
 Run it from the same cwd you would use for `vite`, or pass `--config` to point at a specific config file. Use `--mode` when your Vite config depends on the active mode.
+
+The CLI reads Vite `css.modules` settings and `tsconfig.json`'s `compilerOptions.declarationMap`. It does not read `patchCssModules()`-specific options like `exportMode` or `declarationMap`.
 
 Set `DEBUG=vite-css-modules:*` to trace what the CLI is doing. Available namespaces are `vite-css-modules:cli`, `vite-css-modules:config`, `vite-css-modules:transform`, and `vite-css-modules:resolve`. The logs include the selected config path, timing breakdowns, and a signal when a matched file is outside the selected Vite config root.
 

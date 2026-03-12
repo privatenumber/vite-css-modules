@@ -7,14 +7,9 @@ import {
 	resolveConfig,
 	type CSSModulesOptions,
 	type InlineConfig,
-	type Plugin,
-	type PluginOption,
 	type ResolvedConfig,
 	type UserConfig,
 } from 'vite';
-import type { PatchConfig } from '../plugin/index.js';
-import type { ExportMode } from '../plugin/types.js';
-import { patchCssModulesConfigSymbol } from '../patch.js';
 import {
 	createDebug,
 	formatDebugPath,
@@ -35,61 +30,12 @@ export type ProjectContext = {
 	cssModulesConfig: CSSModulesOptions;
 	configPath: string;
 	declarationMap: boolean;
-	exportMode?: ExportMode;
 	resolvedConfig: ResolvedConfig;
 };
 
 type ProjectContextOptions = {
 	configPath: string;
 	mode: string;
-};
-
-const flattenPlugins = async (
-	plugins: UserConfig['plugins'],
-) => {
-	const flattenedPlugins: Plugin[] = [];
-
-	const visit = async (
-		plugin: PluginOption | PluginOption[] | null | undefined,
-	): Promise<void> => {
-		if (!plugin) {
-			return;
-		}
-
-		if (Array.isArray(plugin)) {
-			for (const item of plugin) {
-				await visit(item);
-			}
-			return;
-		}
-
-		if (typeof plugin === 'object' && 'then' in plugin && typeof plugin.then === 'function') {
-			await visit(await plugin);
-			return;
-		}
-
-		if (typeof plugin !== 'object' || !('name' in plugin) || typeof plugin.name !== 'string') {
-			return;
-		}
-
-		flattenedPlugins.push(plugin);
-	};
-
-	await visit(plugins);
-	return flattenedPlugins;
-};
-
-const extractPatchCssModulesConfig = async (
-	plugins: UserConfig['plugins'],
-) => {
-	const loadedPlugins = await flattenPlugins(plugins);
-	const patchCssModulesPlugin = loadedPlugins.find(
-		plugin => plugin.name === 'patch-css-modules',
-	) as (Plugin & {
-		[patchCssModulesConfigSymbol]?: PatchConfig;
-	}) | undefined;
-
-	return patchCssModulesPlugin?.[patchCssModulesConfigSymbol];
 };
 
 const fileExists = async (filePath: string) => {
@@ -167,10 +113,8 @@ const sanitizeUserConfig = (
 
 const resolveDeclarationMap = (
 	root: string,
-	patchCssModulesConfig?: PatchConfig,
 ) => (
-	patchCssModulesConfig?.declarationMap
-		?? getTsconfig(root)?.config.compilerOptions?.declarationMap
+	getTsconfig(root)?.config.compilerOptions?.declarationMap
 		?? false
 );
 
@@ -205,8 +149,6 @@ const loadConfigProjectContext = async (
 		durationMs: Math.round(performance.now() - loadStart),
 	});
 
-	const patchConfigStart = performance.now();
-	const patchCssModulesConfig = await extractPatchCssModulesConfig(loadedConfig.config.plugins);
 	const cssModulesConfig = mergeModulesConfig(
 		loadedConfig.config.css?.modules,
 	);
@@ -220,9 +162,7 @@ const loadConfigProjectContext = async (
 	);
 	debugConfig('resolved project context', {
 		configPath: formatDebugPath(loadedConfig.path),
-		declarationMap: resolveDeclarationMap(resolvedConfig.root, patchCssModulesConfig),
-		extractPatchCssModulesConfigMs: Math.round(resolveStart - patchConfigStart),
-		exportMode: patchCssModulesConfig?.exportMode,
+		declarationMap: resolveDeclarationMap(resolvedConfig.root),
 		resolveConfigMs: Math.round(performance.now() - resolveStart),
 		root: formatDebugPath(resolvedConfig.root),
 		transformer: resolvedConfig.css.transformer,
@@ -231,8 +171,7 @@ const loadConfigProjectContext = async (
 	return {
 		cssModulesConfig,
 		configPath: loadedConfig.path,
-		declarationMap: resolveDeclarationMap(resolvedConfig.root, patchCssModulesConfig),
-		exportMode: patchCssModulesConfig?.exportMode,
+		declarationMap: resolveDeclarationMap(resolvedConfig.root),
 		resolvedConfig,
 	};
 };

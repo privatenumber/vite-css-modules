@@ -7,11 +7,6 @@ import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
 
-// The CLI strips plugins before resolveConfig(), so patchCssModules() options
-// need to travel on the plugin object itself. Symbol.for avoids name collisions
-// and still works if config loading instantiates another copy of this package.
-export const patchCssModulesConfigSymbol = Symbol.for('vite-css-modules.patch-config');
-
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
 const directRequestRE = /[?&]direct\b/;
 const inlineRE = /[?&]inline\b/;
@@ -292,10 +287,6 @@ export const patchCssModules = (
 			supportCssModulesHMR(config.plugins);
 		},
 	};
-
-	Object.defineProperty(plugin, patchCssModulesConfigSymbol, {
-		value: patchConfig,
-	});
 
 	return plugin;
 };

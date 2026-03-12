@@ -460,30 +460,6 @@ export default {
 			expect(dts).not.toMatch('"my-button"');
 		});
 
-		test('uses patchCssModules exportMode from vite config', async () => {
-			const pluginPath = JSON.stringify(path.resolve('dist/index.mjs'));
-			await using fixture = await createFixture({
-				'style.module.css': '.button { color: red; }',
-				'vite.config.mjs': `import { patchCssModules } from ${pluginPath};
-
-export default {
-	plugins: [
-		patchCssModules({
-			exportMode: 'default',
-		}),
-	],
-};`,
-			});
-
-			const result = await runCli(['style.module.css'], fixture.path);
-			expect(result.exitCode).toBeUndefined();
-			expect(result.stdout).toMatch('style.module.css.d.ts');
-
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).not.toMatch('export {');
-			expect(dts).toMatch('export default');
-		});
-
 		test('auto-detects declarationMap from tsconfig.json', async () => {
 			await using fixture = await createProjectFixture({
 				'style.module.css': '.button { color: red; }',
@@ -512,61 +488,6 @@ export default {
 			expect(dtsMap?.file).toBe('style.module.css.d.ts');
 			expect(dtsMap?.sources).toStrictEqual(['style.module.css']);
 			expect(decode(dtsMap!.mappings)[8]).toStrictEqual([[14, 0, 0, 0]]);
-		});
-
-		test('uses patchCssModules declarationMap from vite config', async () => {
-			const pluginPath = JSON.stringify(path.resolve('dist/index.mjs'));
-			await using fixture = await createFixture({
-				'style.module.css': '.button { color: red; }',
-				'vite.config.mjs': `import { patchCssModules } from ${pluginPath};
-
-export default {
-	plugins: [
-		patchCssModules({
-			declarationMap: true,
-		}),
-	],
-};`,
-			});
-
-			const result = await runCli(['style.module.css'], fixture.path);
-			expect(result.exitCode).toBeUndefined();
-			expect(result.stdout).toMatch('style.module.css.d.ts');
-			expect(result.stdout).toMatch('style.module.css.d.ts.map');
-
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toMatch('sourceMappingURL=style.module.css.d.ts.map');
-			expect(await fixture.readFile('style.module.css.d.ts.map', 'utf8')).toMatch('"version":3');
-		});
-
-		test('patchCssModules declarationMap: false overrides tsconfig', async () => {
-			const pluginPath = JSON.stringify(path.resolve('dist/index.mjs'));
-			await using fixture = await createFixture({
-				'style.module.css': '.button { color: red; }',
-				'tsconfig.json': JSON.stringify({
-					compilerOptions: {
-						declarationMap: true,
-					},
-				}),
-				'vite.config.mjs': `import { patchCssModules } from ${pluginPath};
-
-export default {
-	plugins: [
-		patchCssModules({
-			declarationMap: false,
-		}),
-	],
-};`,
-			});
-
-			const result = await runCli(['style.module.css'], fixture.path);
-			expect(result.exitCode).toBeUndefined();
-
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).not.toMatch('sourceMappingURL');
-			expect(
-				await fixture.readFile('style.module.css.d.ts.map', 'utf8').catch(() => null),
-			).toBe(null);
 		});
 
 		test('removes stale .d.ts.map when declaration maps are not emitted', async () => {
