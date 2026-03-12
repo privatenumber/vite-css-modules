@@ -67,12 +67,6 @@ export const findViteConfigInDirectory = async (
 	}
 };
 
-const mergeModulesConfig = (
-	modulesConfig: CSSModulesOptions | false | undefined,
-) => ({
-	...modulesConfig,
-});
-
 const sanitizeUserConfig = (
 	configPath: string,
 	userConfig: UserConfig,
@@ -111,14 +105,7 @@ const sanitizeUserConfig = (
 	};
 };
 
-const resolveDeclarationMap = (
-	root: string,
-) => (
-	getTsconfig(root)?.config.compilerOptions?.declarationMap
-		?? false
-);
-
-const loadConfigProjectContext = async (
+export const loadProjectContext = async (
 	options: ProjectContextOptions & {
 		configPath: string;
 	},
@@ -149,9 +136,6 @@ const loadConfigProjectContext = async (
 		durationMs: Math.round(performance.now() - loadStart),
 	});
 
-	const cssModulesConfig = mergeModulesConfig(
-		loadedConfig.config.css?.modules,
-	);
 	const resolveStart = performance.now();
 	const resolvedConfig = await resolveConfig(
 		sanitizeUserConfig(options.configPath, loadedConfig.config, options),
@@ -160,22 +144,23 @@ const loadConfigProjectContext = async (
 		undefined,
 		false,
 	);
+	const declarationMap = Boolean(
+		getTsconfig(resolvedConfig.root)?.config.compilerOptions?.declarationMap,
+	);
 	debugConfig('resolved project context', {
 		configPath: formatDebugPath(loadedConfig.path),
-		declarationMap: resolveDeclarationMap(resolvedConfig.root),
+		declarationMap,
 		resolveConfigMs: Math.round(performance.now() - resolveStart),
 		root: formatDebugPath(resolvedConfig.root),
 		transformer: resolvedConfig.css.transformer,
 	});
 
 	return {
-		cssModulesConfig,
+		cssModulesConfig: {
+			...loadedConfig.config.css?.modules,
+		},
 		configPath: loadedConfig.path,
-		declarationMap: resolveDeclarationMap(resolvedConfig.root),
+		declarationMap,
 		resolvedConfig,
 	};
 };
-
-export const loadProjectContext = async (
-	options: ProjectContextOptions,
-) => loadConfigProjectContext(options);

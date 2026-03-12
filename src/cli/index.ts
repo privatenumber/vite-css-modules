@@ -69,6 +69,45 @@ const resolveInputFiles = async (
 	return [...files];
 };
 
+const reportMissingConfig = (
+	cwd: string,
+) => {
+	console.error(`No vite.config.* found in the current working directory: ${cwd}`);
+	console.error('Run this command from the same cwd as Vite, or pass --config.');
+	process.exitCode = 1;
+};
+
+const reportRootOutsideCwd = (
+	root: string,
+) => {
+	console.error(`Resolved Vite root is outside the current working directory: ${root}`);
+	console.error('Pass explicit globs to control the search scope.');
+	process.exitCode = 1;
+};
+
+const loadCliProjectContext = async (
+	cwd: string,
+	explicitConfigPath: string | undefined,
+	mode: string,
+) => {
+	const configPath = explicitConfigPath
+		?? await findViteConfigInDirectory(cwd);
+
+	if (!configPath) {
+		return;
+	}
+
+	debug('using project config', {
+		configPath: formatDebugPath(configPath, cwd),
+		cwd: formatDebugPath(cwd, cwd),
+	});
+
+	return loadProjectContext({
+		configPath,
+		mode,
+	});
+};
+
 const writeFileIfChanged = async (
 	filePath: string,
 	content: string,
@@ -148,36 +187,18 @@ const writeDtsFiles = async (
 	const explicitConfigPath = argv.flags.config
 		? path.resolve(argv.flags.config)
 		: undefined;
-	let projectContextPromise: ReturnType<typeof loadProjectContext> | undefined;
 	let projectContext: Awaited<ReturnType<typeof loadProjectContext>> | undefined;
 	let files: string[] = [];
 
 	if (inputGlobs.length === 0) {
-		const configPath = explicitConfigPath
-			?? await findViteConfigInDirectory(cwd);
-
-		if (!configPath) {
-			console.error(`No vite.config.* found in the current working directory: ${cwd}`);
-			console.error('Run this command from the same cwd as Vite, or pass --config.');
-			process.exitCode = 1;
+		projectContext = await loadCliProjectContext(cwd, explicitConfigPath, argv.flags.mode);
+		if (!projectContext) {
+			reportMissingConfig(cwd);
 			return;
 		}
 
-		debug('using project config', {
-			configPath: formatDebugPath(configPath, cwd),
-			cwd: formatDebugPath(cwd, cwd),
-		});
-
-		projectContextPromise = loadProjectContext({
-			configPath,
-			mode: argv.flags.mode,
-		});
-		projectContext = await projectContextPromise;
-
 		if (isPathOutsideRoot(cwd, projectContext.resolvedConfig.root)) {
-			console.error(`Resolved Vite root is outside the current working directory: ${projectContext.resolvedConfig.root}`);
-			console.error('Pass explicit globs to control the search scope.');
-			process.exitCode = 1;
+			reportRootOutsideCwd(projectContext.resolvedConfig.root);
 			return;
 		}
 
@@ -197,49 +218,31 @@ const writeDtsFiles = async (
 		return;
 	}
 
-	if (!projectContextPromise) {
-		const configPath = explicitConfigPath
-			?? await findViteConfigInDirectory(cwd);
-
-		if (!configPath) {
-			console.error(`No vite.config.* found in the current working directory: ${cwd}`);
-			console.error('Run this command from the same cwd as Vite, or pass --config.');
-			process.exitCode = 1;
+	if (!projectContext) {
+		projectContext = await loadCliProjectContext(cwd, explicitConfigPath, argv.flags.mode);
+		if (!projectContext) {
+			reportMissingConfig(cwd);
 			return;
 		}
-
-		debug('using project config', {
-			configPath: formatDebugPath(configPath, cwd),
-			cwd: formatDebugPath(cwd, cwd),
-		});
-
-		projectContextPromise = loadProjectContext({
-			configPath,
-			mode: argv.flags.mode,
-		});
 	}
 
-	let loadCssModule: ReturnType<typeof createCssModuleLoader> | undefined;
+	debug('creating css module loader', {
+		configPath: formatDebugPath(projectContext.configPath, cwd),
+		root: formatDebugPath(projectContext.resolvedConfig.root, cwd),
+	});
+	const loadCssModule = createCssModuleLoader(projectContext);
 
 	for (const file of files) {
 		const filePath = file;
 		try {
 			const fileStart = performance.now();
 			debug('processing', formatDebugPath(filePath, cwd));
-			const fileProjectContext = projectContext ?? await projectContextPromise!;
-			if (isPathOutsideRoot(fileProjectContext.resolvedConfig.root, filePath)) {
+			if (isPathOutsideRoot(projectContext.resolvedConfig.root, filePath)) {
 				debug('matched file is outside config root', {
-					configPath: formatDebugPath(fileProjectContext.configPath, cwd),
+					configPath: formatDebugPath(projectContext.configPath, cwd),
 					filePath: formatDebugPath(filePath, cwd),
-					root: formatDebugPath(fileProjectContext.resolvedConfig.root, cwd),
+					root: formatDebugPath(projectContext.resolvedConfig.root, cwd),
 				});
-			}
-			if (!loadCssModule) {
-				debug('creating css module loader', {
-					configPath: formatDebugPath(fileProjectContext.configPath, cwd),
-					root: formatDebugPath(fileProjectContext.resolvedConfig.root, cwd),
-				});
-				loadCssModule = createCssModuleLoader(fileProjectContext);
 			}
 			const loadStart = performance.now();
 			const { exports, sourceMapOptions } = await loadCssModule(
