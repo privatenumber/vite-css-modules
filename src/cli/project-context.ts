@@ -25,8 +25,6 @@ const viteConfigNames = [
 	'vite.config.cjs',
 ];
 
-export type ConfigLoader = 'bundle' | 'runner' | 'native';
-
 export type ProjectContext = {
 	cssModulesConfig: CSSModulesOptions;
 	configPath?: string;
@@ -38,11 +36,8 @@ export type ProjectContext = {
 
 type ProjectContextOptions = {
 	configPath?: string;
-	configLoader: ConfigLoader;
 	invocationCwd: string;
-	localsConvention?: CSSModulesOptions['localsConvention'];
 	mode: string;
-	noConfig?: boolean;
 };
 
 const flattenPlugins = async (
@@ -140,12 +135,8 @@ export const withProcessCwd = async <Value>(
 
 const mergeModulesConfig = (
 	modulesConfig: CSSModulesOptions | false | undefined,
-	localsConvention?: CSSModulesOptions['localsConvention'],
 ) => ({
 	...modulesConfig,
-	...(localsConvention
-		? { localsConvention }
-		: {}),
 });
 
 const sanitizeUserConfig = (
@@ -169,10 +160,7 @@ const sanitizeUserConfig = (
 				alias: userConfig.resolve.alias,
 			}
 			: undefined,
-		css: (
-			userConfig.css
-				|| options.localsConvention
-		)
+		css: userConfig.css
 			? {
 				transformer: userConfig.css?.transformer,
 				modules: false,
@@ -216,7 +204,7 @@ const loadConfigProjectContext = async (
 			path.dirname(options.configPath),
 			'silent',
 			createLogger('silent'),
-			options.configLoader,
+			'bundle',
 		);
 
 		if (!loadedConfig) {
@@ -226,7 +214,6 @@ const loadConfigProjectContext = async (
 		const patchCssModulesConfig = await extractPatchCssModulesConfig(loadedConfig.config.plugins);
 		const cssModulesConfig = mergeModulesConfig(
 			loadedConfig.config.css?.modules,
-			options.localsConvention,
 		);
 		const resolvedConfig = await resolveConfig(
 			sanitizeUserConfig(options.configPath, loadedConfig.config, options),
@@ -269,7 +256,7 @@ const loadNoConfigProjectContext = async (
 		);
 
 		return {
-			cssModulesConfig: mergeModulesConfig(undefined, options.localsConvention),
+			cssModulesConfig: mergeModulesConfig(undefined),
 			declarationMap: resolveDeclarationMap(resolvedConfig.root),
 			invocationCwd: options.invocationCwd,
 			resolvedConfig,
@@ -280,10 +267,7 @@ const loadNoConfigProjectContext = async (
 export const loadProjectContext = async (
 	options: ProjectContextOptions,
 ) => {
-	if (
-		options.noConfig
-		|| !options.configPath
-	) {
+	if (!options.configPath) {
 		return loadNoConfigProjectContext(options);
 	}
 

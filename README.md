@@ -280,16 +280,19 @@ Generates inline declaration source maps in `.d.ts` files, enabling "Go to Defin
 Generate TypeScript declarations for CSS Modules without running a build.
 
 ```bash
-npx vite-css-modules <globs...> [flags]
+npx vite-css-modules <globs...> [--config path] [--mode mode]
 ```
+
+The CLI automatically discovers the nearest `vite.config.*` for each file and uses its CSS Modules configuration.
+
+Use `--config` when auto-discovery picks the wrong project config, and `--mode` when your Vite config depends on the active mode.
 
 ### Flags
 
-| Flag | Alias | Description |
-| :--- | :--- | :--- |
-| `--export-mode` | `-e` | Export style: `both`, `named`, `default` (default: `both`) |
-| `--locals-convention` | `-l` | Class name transformation: `camelCase`, `camelCaseOnly`, `dashes`, `dashesOnly` |
-| `--arbitrary-exports` | | Enable ES2022+ arbitrary exports for dashed class names |
+| Flag | Description |
+| :--- | :--- |
+| `--config <path>` | Use a specific `vite.config.*` file |
+| `--mode <mode>` | Set the Vite mode used when loading config |
 
 ### Examples
 
@@ -297,11 +300,11 @@ npx vite-css-modules <globs...> [flags]
 # Generate types for all CSS Modules
 npx vite-css-modules '**/*.module.css'
 
-# With named exports only
-npx vite-css-modules 'src/**/*.module.css' --export-mode named
+# Use a specific Vite config
+npx vite-css-modules 'src/**/*.module.css' --config apps/web/vite.config.ts
 
-# With camelCase class names
-npx vite-css-modules '**/*.module.css' --locals-convention camelCase
+# Load config with production mode
+npx vite-css-modules 'src/**/*.module.css' --mode production
 ```
 
 ## FAQ

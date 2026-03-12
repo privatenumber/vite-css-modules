@@ -92,116 +92,6 @@ describe('CLI', () => {
 		expect(result.stderr).toMatch('Unclosed block');
 	});
 
-	test('--export-mode named', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.button { color: red; }',
-		});
-
-		const result = await runCli(['--export-mode', 'named', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBeUndefined();
-
-		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-		expect(dts).toMatch('export {');
-		expect(dts).not.toMatch('export default');
-	});
-
-	test('--export-mode default', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.button { color: red; }',
-		});
-
-		const result = await runCli(['--export-mode', 'default', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBeUndefined();
-
-		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-		expect(dts).not.toMatch('export {');
-		expect(dts).toMatch('export default');
-	});
-
-	test('--locals-convention camelCase', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.my-button { color: red; }',
-		});
-
-		const result = await runCli(['--locals-convention', 'camelCase', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBeUndefined();
-
-		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-		expect(dts).toMatch('myButton');
-		expect(dts).toMatch('"my-button"');
-	});
-
-	test('--locals-convention camelCaseOnly', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.my-button { color: red; }',
-		});
-
-		const result = await runCli(['--locals-convention', 'camelCaseOnly', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBeUndefined();
-
-		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-		expect(dts).toMatch('myButton');
-		expect(dts).not.toMatch('my-button');
-	});
-
-	test('--locals-convention dashes', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.my-button { color: red; }',
-		});
-
-		const result = await runCli(['--locals-convention', 'dashes', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBeUndefined();
-
-		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-		expect(dts).toMatch('myButton');
-		expect(dts).toMatch('"my-button"');
-	});
-
-	test('--locals-convention dashesOnly', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.my-button { color: red; }',
-		});
-
-		const result = await runCli(['--locals-convention', 'dashesOnly', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBeUndefined();
-
-		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-		expect(dts).toMatch('myButton');
-		expect(dts).not.toMatch('my-button');
-	});
-
-	test('--arbitrary-exports', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.my-button { color: red; }',
-		});
-
-		const result = await runCli(['--arbitrary-exports', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBeUndefined();
-
-		const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-		expect(dts).toMatch('"my-button"');
-	});
-
-	test('invalid --export-mode shows error', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.button { color: red; }',
-		});
-
-		const result = await runCli(['--export-mode', 'invalid', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(1);
-		expect(result.stderr).toMatch('Invalid export mode');
-	});
-
-	test('invalid --locals-convention shows error', async () => {
-		await using fixture = await createFixture({
-			'style.module.css': '.button { color: red; }',
-		});
-
-		const result = await runCli(['--locals-convention', 'invalid', 'style.module.css'], fixture.path);
-		expect(result.exitCode).toBe(1);
-		expect(result.stderr).toMatch('Invalid locals convention');
-	});
-
 	test('multiple files with one parse error continues others', async () => {
 		await using fixture = await createFixture({
 			'good.module.css': '.button { color: red; }',
@@ -258,26 +148,45 @@ export default {
 			expect(dts).not.toMatch('"my-button"');
 		});
 
-		test('supports --config-loader bundle for TypeScript vite configs', async () => {
+		test('uses explicit --config path', async () => {
 			await using fixture = await createFixture({
-				'base.ts': `export default {
+				'config/vite.config.mjs': `export default {
 	css: {
 		modules: {
 			localsConvention: 'camelCaseOnly',
 		},
 	},
 };`,
-				'vite.config.ts': `import base from './base.ts';
-
-export default {
-	...base,
-	root: __dirname,
-};`,
 				'style.module.css': '.my-button { color: red; }',
 			});
 
 			const result = await runCli(
-				['--config-loader', 'bundle', 'style.module.css'],
+				['--config', 'config/vite.config.mjs', 'style.module.css'],
+				fixture.path,
+			);
+			expect(result.exitCode).toBeUndefined();
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const myButton: string');
+			expect(dts).not.toMatch('"my-button"');
+		});
+
+		test('uses --mode for Vite config loading', async () => {
+			await using fixture = await createFixture({
+				'style.module.css': '.my-button { color: red; }',
+				'vite.config.mjs': `export default ({ mode }) => ({
+	css: {
+		modules: {
+			localsConvention: mode === 'production'
+				? 'camelCaseOnly'
+				: 'camelCase',
+		},
+	},
+});`,
+			});
+
+			const result = await runCli(
+				['--mode', 'production', 'style.module.css'],
 				fixture.path,
 			);
 			expect(result.exitCode).toBeUndefined();
@@ -305,29 +214,6 @@ export default {
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).toMatch('declare const myButton: string');
 			expect(dts).not.toMatch('"my-button"');
-		});
-
-		test('CLI --locals-convention overrides vite config localsConvention', async () => {
-			await using fixture = await createFixture({
-				'style.module.css': '.my-button { color: red; }',
-				'vite.config.mjs': `export default {
-	css: {
-		modules: {
-			localsConvention: 'camelCaseOnly',
-		},
-	},
-};`,
-			});
-
-			const result = await runCli(
-				['--locals-convention', 'camelCase', 'style.module.css'],
-				fixture.path,
-			);
-			expect(result.exitCode).toBeUndefined();
-
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toMatch('myButton');
-			expect(dts).toMatch('"my-button"');
 		});
 
 		test('uses vite config exportGlobals by default', async () => {
@@ -411,32 +297,6 @@ export default {
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).not.toMatch('export {');
 			expect(dts).toMatch('export default');
-		});
-
-		test('CLI --export-mode overrides patchCssModules exportMode from vite config', async () => {
-			const pluginPath = JSON.stringify(path.resolve('dist/index.mjs'));
-			await using fixture = await createFixture({
-				'style.module.css': '.button { color: red; }',
-				'vite.config.mjs': `import { patchCssModules } from ${pluginPath};
-
-export default {
-	plugins: [
-		patchCssModules({
-			exportMode: 'default',
-		}),
-	],
-};`,
-			});
-
-			const result = await runCli(
-				['--export-mode', 'named', 'style.module.css'],
-				fixture.path,
-			);
-			expect(result.exitCode).toBeUndefined();
-
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toMatch('export {');
-			expect(dts).not.toMatch('export default');
 		});
 
 		test('auto-detects declarationMap from tsconfig.json', async () => {
@@ -542,101 +402,15 @@ export default {
 			expect(dts).toMatch('declare const active: string');
 		});
 
-		test('--no-config bypasses broken vite config', async () => {
+		test('surfaces Vite config loading failures', async () => {
 			await using fixture = await createFixture({
 				'style.module.css': '.button { color: red; }',
-				'vite.config.mjs': 'throw new Error("config should not load");',
+				'vite.config.mjs': 'throw new Error("config should load");',
 			});
 
-			const result = await runCli(['--no-config', 'style.module.css'], fixture.path);
-			expect(result.exitCode).toBeUndefined();
-
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toMatch('declare const button: string');
-		});
-
-		test('supports --cwd for configs that derive paths from process.cwd()', async () => {
-			await using fixture = await createFixture({
-				'packages/app/tokens.scss': '$brand: red;',
-				'packages/app/style.module.scss': `.button {
-	color: $brand;
-}`,
-				'packages/app/vite.config.mjs': `import path from 'node:path';
-
-export default {
-	root: process.cwd(),
-	css: {
-		preprocessorOptions: {
-			scss: {
-				additionalData: \`@use "\${path.join(process.cwd(), 'tokens.scss')}" as *;\`,
-			},
-		},
-	},
-};`,
-			});
-
-			const result = await runCli(
-				[
-					'--config',
-					'packages/app/vite.config.mjs',
-					'--cwd',
-					'packages/app',
-					'packages/app/style.module.scss',
-				],
-				fixture.path,
-			);
-			expect(result.exitCode).toBeUndefined();
-
-			const dts = await fixture.readFile('packages/app/style.module.scss.d.ts', 'utf8');
-			expect(dts).toMatch('declare const button: string');
-		});
-
-		test('resolves relative file arguments from --cwd', async () => {
-			await using fixture = await createFixture({
-				'workspace/packages/app/style.module.scss': '.button { color: red; }',
-				'workspace/packages/app/vite.config.mjs': 'export default {};',
-			});
-
-			const result = await runCli(
-				[
-					'--cwd',
-					'workspace/packages/app',
-					'style.module.scss',
-				],
-				fixture.path,
-			);
-			expect(result.exitCode).toBeUndefined();
-
-			const dts = await fixture.readFile('workspace/packages/app/style.module.scss.d.ts', 'utf8');
-			expect(dts).toMatch('declare const button: string');
-		});
-
-		test('resolves relative --config from --cwd', async () => {
-			await using fixture = await createFixture({
-				'workspace/packages/app/style.module.scss': '.button { color: red; }',
-				'workspace/packages/app/vite.config.mjs': `export default {
-	css: {
-		modules: {
-			localsConvention: 'camelCaseOnly',
-		},
-	},
-};`,
-			});
-
-			const result = await runCli(
-				[
-					'--cwd',
-					'workspace/packages/app',
-					'--config',
-					'vite.config.mjs',
-					'style.module.scss',
-				],
-				fixture.path,
-			);
-			expect(result.exitCode).toBeUndefined();
-
-			const dts = await fixture.readFile('workspace/packages/app/style.module.scss.d.ts', 'utf8');
-			expect(dts).toMatch('declare const button: string');
+			const result = await runCli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toMatch('config should load');
 		});
 
 		test('resolves alias-based dependency errors through vite resolve.alias', async () => {
