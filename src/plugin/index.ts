@@ -78,15 +78,27 @@ export const cssModules = (
 		?? false;
 
 	/*
-	 * Track active loading edges for cycle detection.
+	 * Cycle detection for CSS Module `composes` dependencies.
 	 *
-	 * When module A composes from B, context.load(B) triggers B's transform.
-	 * If B composes from A, context.load(A) deadlocks because A's transform
-	 * is suspended waiting for B. We detect this by tracking A→B as an active
-	 * edge and checking for cycles before each load.
+	 * Problem: when A composes from B, we call context.load(B) which triggers
+	 * B's transform. If B composes from A, B's transform calls context.load(A).
+	 * But A's transform is already suspended waiting for B — deadlock. Rollup
+	 * crashes with a generic "Unexpected early exit" instead of a useful error.
+	 *
+	 * Solution: track which module→dependency edges are currently in-flight.
+	 * Before loading a dependency, walk the active edges to check if it would
+	 * create a cycle back to the current module. If so, throw a descriptive
+	 * error instead of deadlocking.
+	 *
+	 * Why shared mutable state (not a passed-through Set): the call chain is
+	 * broken by Rollup's plugin pipeline — context.load() triggers a separate
+	 * transform invocation, so we can't pass parameters between them. The
+	 * activeEdges map is the bridge between independently-invoked transforms.
 	 */
 	const activeEdges = new Map<string, Set<string>>();
 
+	// DFS through active edges to find a path from fromId back to targetId.
+	// Returns the cycle path if found, or undefined if no cycle exists.
 	const findCyclePath = (
 		fromId: string,
 		targetId: string,
@@ -113,6 +125,8 @@ export const cssModules = (
 		}
 	};
 
+	// Load and return the CSS Module exports from a composed dependency.
+	// Called during transform when processing `composes: class from './dep.css'`.
 	const loadExports = async (
 		context: TransformPluginContext,
 		requestId: string,
@@ -126,6 +140,7 @@ export const cssModules = (
 		const importerId = cleanUrl(fromId);
 		const dependencyId = cleanUrl(resolved.id);
 
+		// Check if loading this dependency would create a cycle
 		const cyclePath = findCyclePath(dependencyId, importerId);
 		if (cyclePath) {
 			const formatId = (id: string) => {
@@ -137,6 +152,7 @@ export const cssModules = (
 			);
 		}
 
+		// Record this edge as active while the dependency loads
 		let dependencies = activeEdges.get(importerId);
 		if (!dependencies) {
 			dependencies = new Set();
@@ -151,6 +167,7 @@ export const cssModules = (
 			const pluginMeta = loaded.meta[pluginName] as PluginMeta;
 			return pluginMeta.exports;
 		} finally {
+			// Clean up the active edge after load completes (or fails)
 			dependencies.delete(dependencyId);
 			if (dependencies.size === 0) {
 				activeEdges.delete(importerId);
