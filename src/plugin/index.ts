@@ -7,13 +7,7 @@ import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@jridgewell/remapping';
 import { getTsconfig } from 'get-tsconfig';
 import { cssClassPositions } from 'css-class-positions';
-import {
-	createTypeFileConfigFingerprint,
-	createTypeFileFingerprint,
-	formatTypeFileFingerprintLine,
-	readTypeFileCache,
-	writeTypeFiles,
-} from '../type-files.js';
+import { writeTypeFiles } from '../type-files.js';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import { generateTypes } from './generate-types.js';
@@ -99,20 +93,6 @@ export const cssModules = (
 	const declarationMap = patchConfig?.declarationMap
 		?? getTsconfig(config.root)?.config.compilerOptions?.declarationMap
 		?? false;
-	const typeFileConfigFingerprintPromise = patchConfig?.generateSourceTypes
-		? createTypeFileConfigFingerprint(
-			config.mode,
-			config.configFile,
-			config.configFileDependencies,
-			{
-				allowArbitraryNamedExports,
-				cssModuleConfig,
-				declarationMap,
-				exportMode,
-				transformer: config.css.transformer,
-			},
-		)
-		: undefined;
 
 	let isVitest = false;
 
@@ -358,40 +338,19 @@ export const cssModules = (
 						if (fileExists) {
 							const dtsPath = `${filePath}.d.ts`;
 							const originalCss = originalCssCache?.get(filePath);
-							const sourceCode = originalCss ?? await readFile(filePath, 'utf8');
 							const sourceMapOptions = declarationMap && originalCss
 								? {
 									sourceFileName: path.basename(filePath),
 									classPositions: cssClassPositions(originalCss, { fileName: filePath }),
 								}
 								: undefined;
-							const cacheSafe = (
-								Object.keys(cssModule.references).length === 0
-								&& Object.values(cssModule.exports).every(exported => (
-									typeof exported === 'string'
-									|| exported.composes.every(composition => composition.type !== 'dependency')
-								))
-							);
-							const fingerprint = cacheSafe
-								? createTypeFileFingerprint(
-									sourceCode,
-									await typeFileConfigFingerprintPromise!,
-									declarationMap,
-								)
-								: undefined;
 							const newContent = generateTypes(
 								exports,
 								exportMode,
 								allowArbitraryNamedExports,
 								sourceMapOptions,
-								fingerprint && formatTypeFileFingerprintLine(fingerprint),
 							);
-							const cacheEntry = fingerprint
-								? await readTypeFileCache(dtsPath, 'inline')
-								: undefined;
-							if (!fingerprint || cacheEntry?.fingerprint !== fingerprint) {
-								await writeTypeFiles(dtsPath, newContent, 'inline');
-							}
+							await writeTypeFiles(dtsPath, newContent, 'inline');
 						}
 					}
 				}

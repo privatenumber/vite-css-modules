@@ -22,7 +22,6 @@ export const createCssModuleLoader = (
 	context: ProjectContext,
 ) => {
 	const cache = new Map<string, Promise<{
-		cacheSafe: boolean;
 		exports: Exports;
 		originalCode: string;
 	}>>();
@@ -59,7 +58,6 @@ export const createCssModuleLoader = (
 		includeSourceMap = false,
 		sourceCode?: string,
 	): Promise<{
-		cacheSafe: boolean;
 		exports: Exports;
 		sourceMapOptions?: SourceMapOptions;
 	}> => {
@@ -192,10 +190,6 @@ export const createCssModuleLoader = (
 				});
 
 				return {
-					cacheSafe: (
-						resolvedDependencies.size === 0
-						&& Object.keys(cssModule.references).length === 0
-					),
 					exports: cssModuleExportsToExports(
 						cssModule.exports,
 						filePath,
@@ -228,7 +222,6 @@ export const createCssModuleLoader = (
 			});
 		}
 		return {
-			cacheSafe: cssModule.cacheSafe,
 			exports: cssModule.exports,
 			sourceMapOptions,
 		};

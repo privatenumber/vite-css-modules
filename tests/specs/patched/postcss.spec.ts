@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import { describe, test, expect } from 'manten';
 import { decode } from '@jridgewell/sourcemap-codec';
+import { build } from 'vite';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
 import { base64Module } from '../../utils/base64-module.ts';
@@ -770,8 +771,6 @@ describe('PostCSS', () => {
 	});
 
 	describe('.d.ts', () => {
-		const stripFingerprintLine = (dts: string) => dts.replace(/^ \* Hash: [a-f0-9]{16}\n/m, '');
-
 		test('exportMode: both', async () => {
 			await using fixture = await createFixture(fixtures.reservedKeywords);
 
@@ -800,7 +799,7 @@ describe('PostCSS', () => {
 				'utils.css',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(stripFingerprintLine(dts)).toBe(
+			expect(dts).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -859,7 +858,7 @@ describe('PostCSS', () => {
 				'utils.css',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(stripFingerprintLine(dts)).toBe(
+			expect(dts).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -912,7 +911,7 @@ describe('PostCSS', () => {
 				'utils.css',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(stripFingerprintLine(dts)).toBe(
+			expect(dts).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -966,7 +965,7 @@ describe('PostCSS', () => {
 				'style.module.css.d.ts',
 			]);
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(stripFingerprintLine(dts)).toBe(
+			expect(dts).toBe(
 				outdent`
 				/* eslint-disable */
 				/* prettier-ignore */
@@ -978,6 +977,154 @@ describe('PostCSS', () => {
 
 				`,
 			);
+		});
+
+		test('updates generated type files when resolved Vite config changes', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.css";',
+				'style.module.css': '.my-button { color: red; }',
+				'package.json': '{"type":"module","name":"fixture"}',
+				'vite.config.mjs': `import { patchCssModules } from ${JSON.stringify(path.resolve('dist/index.mjs'))};
+
+export default {
+	plugins: [
+		patchCssModules({
+			generateSourceTypes: true,
+		}),
+	],
+	css: {
+		modules: {
+			localsConvention: process.env.CAMEL === '1'
+				? 'camelCaseOnly'
+				: undefined,
+		},
+	},
+	build: {
+		target: 'es2022',
+		lib: {
+			entry: './index.js',
+			formats: ['es'],
+		},
+	},
+};`,
+				node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+			});
+
+			const previousCamel = process.env.CAMEL;
+			try {
+				process.env.CAMEL = '0';
+				await build({
+					root: fixture.path,
+					configFile: path.join(fixture.path, 'vite.config.mjs'),
+					envFile: false,
+					logLevel: 'warn',
+				});
+				expect(await fixture.readFile('style.module.css.d.ts', 'utf8')).toMatch('"my-button"');
+
+				process.env.CAMEL = '1';
+				await build({
+					root: fixture.path,
+					configFile: path.join(fixture.path, 'vite.config.mjs'),
+					envFile: false,
+					logLevel: 'warn',
+				});
+			} finally {
+				if (previousCamel === undefined) {
+					delete process.env.CAMEL;
+				} else {
+					process.env.CAMEL = previousCamel;
+				}
+			}
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const myButton: string');
+			expect(dts).not.toMatch('"my-button"');
+		});
+
+		test('updates generated type files for SCSS partial dependencies', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.scss";',
+				'_shared.scss': '.injected { color: red; }',
+				'style.module.scss': `@use './shared';
+.local { color: blue; }`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+			expect(await fixture.readFile('style.module.scss.d.ts', 'utf8')).toMatch('declare const injected: string');
+
+			await fixture.writeFile('_shared.scss', '.changed { color: red; }');
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+			expect(dts).toMatch('declare const changed: string');
+			expect(dts).not.toMatch('declare const injected: string');
+		});
+
+		test('updates generated type files when programmatic preprocessorOptions change', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.scss";',
+				'style.module.scss': '.local { color: blue; }',
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				css: {
+					preprocessorOptions: {
+						scss: {
+							additionalData: '.injected { color: red; }',
+						},
+					},
+				},
+				build: {
+					target: 'es2022',
+				},
+			});
+			expect(await fixture.readFile('style.module.scss.d.ts', 'utf8')).toMatch('declare const injected: string');
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				css: {
+					preprocessorOptions: {
+						scss: {
+							additionalData: '.changed { color: red; }',
+						},
+					},
+				},
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+			expect(dts).toMatch('declare const changed: string');
+			expect(dts).not.toMatch('declare const injected: string');
 		});
 	});
 

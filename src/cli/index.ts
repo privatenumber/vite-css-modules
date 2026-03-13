@@ -4,12 +4,7 @@ import path from 'node:path';
 import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
 import { generateTypes } from '../plugin/generate-types.js';
-import {
-	createTypeFileFingerprint,
-	formatTypeFileFingerprintLine,
-	readTypeFileCache,
-	writeTypeFiles,
-} from '../type-files.js';
+import { writeTypeFiles } from '../type-files.js';
 import { createCssModuleLoader } from './load-css-module.js';
 import {
 	createDebug,
@@ -84,12 +79,9 @@ const resolveInputFiles = async (
 	const { globs: inputGlobs = [] } = argv._;
 	const { config, mode } = argv.flags;
 	const usingDefaultGlob = inputGlobs.length === 0;
-	const explicitConfigPath = config
+	const configPath = config
 		? path.resolve(config)
-		: undefined;
-	const configPath = explicitConfigPath
-		?? await findViteConfigInDirectory(cwd);
-	let projectContext: ProjectContext | undefined;
+		: await findViteConfigInDirectory(cwd);
 	let globs = inputGlobs;
 	let globCwd = cwd;
 
@@ -100,19 +92,19 @@ const resolveInputFiles = async (
 		});
 	}
 
-	if (usingDefaultGlob && !configPath) {
+	if (!configPath) {
 		console.error(`No vite.config.* found in the current working directory: ${cwd}`);
 		console.error('Run this command from the same cwd as Vite, or pass --config.');
 		process.exitCode = 1;
 		return;
 	}
 
-	if (usingDefaultGlob) {
-		projectContext = await loadProjectContext({
-			configPath: configPath!,
-			mode,
-		});
+	const projectContext: ProjectContext = await loadProjectContext({
+		configPath,
+		mode,
+	});
 
+	if (usingDefaultGlob) {
 		if (isPathOutsideRoot(cwd, projectContext.resolvedConfig.root)) {
 			console.error(`Resolved Vite root is outside the current working directory: ${projectContext.resolvedConfig.root}`);
 			console.error('Pass explicit globs to control the search scope.');
@@ -121,7 +113,7 @@ const resolveInputFiles = async (
 		}
 
 		debug('using default globs', {
-			configPath: formatDebugPath(projectContext.configPath, cwd),
+			configPath: formatDebugPath(configPath, cwd),
 			globBase: formatDebugPath(projectContext.resolvedConfig.root, cwd),
 			glob: defaultGlob,
 		});
@@ -136,22 +128,8 @@ const resolveInputFiles = async (
 		return;
 	}
 
-	if (!projectContext && !configPath) {
-		console.error(`No vite.config.* found in the current working directory: ${cwd}`);
-		console.error('Run this command from the same cwd as Vite, or pass --config.');
-		process.exitCode = 1;
-		return;
-	}
-
-	if (!projectContext) {
-		projectContext = await loadProjectContext({
-			configPath: configPath!,
-			mode,
-		});
-	}
-
 	debug('creating css module loader', {
-		configPath: formatDebugPath(projectContext.configPath, cwd),
+		configPath: formatDebugPath(configPath, cwd),
 		root: formatDebugPath(projectContext.resolvedConfig.root, cwd),
 	});
 	const loadCssModule = createCssModuleLoader(projectContext);
@@ -162,37 +140,15 @@ const resolveInputFiles = async (
 			debug('processing', formatDebugPath(filePath, cwd));
 			if (isPathOutsideRoot(projectContext.resolvedConfig.root, filePath)) {
 				debug('matched file is outside config root', {
-					configPath: formatDebugPath(projectContext.configPath, cwd),
+					configPath: formatDebugPath(configPath, cwd),
 					filePath: formatDebugPath(filePath, cwd),
 					root: formatDebugPath(projectContext.resolvedConfig.root, cwd),
 				});
 			}
 			const sourceCode = await fs.readFile(filePath, 'utf8');
 			const dtsPath = `${filePath}.d.ts`;
-			const fingerprint = createTypeFileFingerprint(
-				sourceCode,
-				projectContext.configFingerprint,
-				projectContext.declarationMap,
-			);
-			const cacheEntry = await readTypeFileCache(dtsPath, 'external');
-			if (cacheEntry?.fingerprint === fingerprint) {
-				const outputPaths = [
-					dtsPath,
-					...(cacheEntry.hasSourceMap ? [`${filePath}.d.ts.map`] : []),
-				];
-				debug('cache hit', {
-					filePath: formatDebugPath(filePath, cwd),
-					outputs: outputPaths.map(outputPath => formatDebugPath(outputPath, cwd)),
-					totalMs: Math.round(performance.now() - fileStart),
-				});
-				for (const outputPath of outputPaths) {
-					console.log(`\u2713 ${formatDebugPath(outputPath, cwd)}`);
-				}
-				continue;
-			}
 			const loadStart = performance.now();
 			const {
-				cacheSafe,
 				exports,
 				sourceMapOptions,
 			} = await loadCssModule(filePath, true, sourceCode);
@@ -202,7 +158,6 @@ const resolveInputFiles = async (
 				'both',
 				false,
 				sourceMapOptions,
-				cacheSafe ? formatTypeFileFingerprintLine(fingerprint) : undefined,
 			);
 			const writeStart = performance.now();
 

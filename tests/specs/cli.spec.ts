@@ -205,7 +205,7 @@ describe('CLI', () => {
 	});
 
 	test('no files matched shows warning on stderr', async () => {
-		await using fixture = await createFixture({});
+		await using fixture = await createProjectFixture({});
 		const result = await runCli(['**/*.module.css'], fixture.path);
 		expect(result.exitCode).toBeUndefined();
 		expect(result.stderr).toMatch('No files matched');
@@ -251,15 +251,98 @@ describe('CLI', () => {
 		expect(dts).toMatch('declare const button: string');
 	});
 
-	test('matched files without vite config in cwd errors', async () => {
+	test('explicit globs without vite config in cwd error before glob expansion', async () => {
 		await using fixture = await createFixture({
 			'style.module.css': '.button { color: red; }',
 		});
 
-		const result = await runCli(['style.module.css'], fixture.path);
+		const result = await runCli(
+			['style.module.css'],
+			fixture.path,
+			{
+				env: {
+					DEBUG: 'vite-css-modules:*',
+				},
+			},
+		);
 		expect(result.exitCode).toBe(1);
 		expect(result.stderr).toMatch('No vite.config.* found in the current working directory');
 		expect(result.stderr).toMatch('Run this command from the same cwd as Vite, or pass --config.');
+		expect(result.stderr).not.toMatch('vite-css-modules:cli expanding glob');
+		expect(result.stderr).not.toMatch('vite-css-modules:cli matched files');
+	});
+
+	test('explicit globs without vite config in cwd error even when nothing matches', async () => {
+		await using fixture = await createFixture({});
+
+		const result = await runCli(['**/*.module.css'], fixture.path);
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('No vite.config.* found in the current working directory');
+		expect(result.stderr).not.toMatch('No files matched');
+	});
+
+	test('invalid explicit --config errors before glob expansion', async () => {
+		await using fixture = await createFixture({
+			'style.module.css': '.button { color: red; }',
+		});
+
+		const result = await runCli(
+			['--config', 'missing/vite.config.mjs', 'style.module.css'],
+			fixture.path,
+			{
+				env: {
+					DEBUG: 'vite-css-modules:*',
+				},
+			},
+		);
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('missing/vite.config.mjs');
+		expect(result.stderr).not.toMatch('vite-css-modules:cli expanding glob');
+		expect(result.stderr).not.toMatch('vite-css-modules:cli matched files');
+	});
+
+	test('invalid explicit --config errors even when nothing matches', async () => {
+		await using fixture = await createFixture({});
+
+		const result = await runCli(
+			['--config', 'missing/vite.config.mjs', '**/*.module.css'],
+			fixture.path,
+		);
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('missing/vite.config.mjs');
+		expect(result.stderr).not.toMatch('No files matched');
+	});
+
+	test('broken discovered vite config errors before glob expansion', async () => {
+		await using fixture = await createFixture({
+			'style.module.css': '.button { color: red; }',
+			'vite.config.mjs': 'throw new Error("broken config");',
+		});
+
+		const result = await runCli(
+			['style.module.css'],
+			fixture.path,
+			{
+				env: {
+					DEBUG: 'vite-css-modules:*',
+				},
+			},
+		);
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('broken config');
+		expect(result.stderr).not.toMatch('vite-css-modules:cli expanding glob');
+		expect(result.stderr).not.toMatch('vite-css-modules:cli matched files');
+	});
+
+	test('broken discovered vite config errors even when nothing matches', async () => {
+		await using fixture = await createFixture({
+			'vite.config.mjs': 'throw new Error("broken config");',
+		});
+
+		const result = await runCli(['**/*.module.css'], fixture.path);
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('broken config');
+		expect(result.stderr).not.toMatch('No files matched');
 	});
 
 	test('no arguments error when the resolved config root is outside cwd', async () => {
@@ -513,16 +596,64 @@ export default {
 			).toBe(null);
 		});
 
-		test('reuses cached outputs for unchanged standalone modules', async () => {
-			await using fixture = await createProjectFixture({
-				'style.module.css': '.button { color: red; }',
+		test('updates generated outputs when resolved Vite config changes', async () => {
+			await using fixture = await createFixture({
+				'style.module.css': '.my-button { color: red; }',
+				'vite.config.mjs': `export default {
+	css: {
+		modules: {
+			localsConvention: process.env.CAMEL === '1'
+				? 'camelCaseOnly'
+				: undefined,
+		},
+	},
+};`,
 			});
 
-			const firstRun = await runCli(['style.module.css'], fixture.path);
+			const firstRun = await runCli(
+				['style.module.css'],
+				fixture.path,
+				{
+					env: {
+						CAMEL: '0',
+					},
+				},
+			);
 			expect(firstRun.exitCode).toBeUndefined();
+			expect(await fixture.readFile('style.module.css.d.ts', 'utf8')).toMatch('"my-button"');
 
 			const secondRun = await runCli(
 				['style.module.css'],
+				fixture.path,
+				{
+					env: {
+						CAMEL: '1',
+						DEBUG: 'vite-css-modules:*',
+					},
+				},
+			);
+			expect(secondRun.exitCode).toBeUndefined();
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const myButton: string');
+			expect(dts).not.toMatch('"my-button"');
+		});
+
+		test('updates generated outputs for SCSS files with partial dependencies', async () => {
+			await using fixture = await createProjectFixture({
+				'_shared.scss': '.injected { color: red; }',
+				'style.module.scss': `@use './shared';
+.local { color: blue; }`,
+			});
+
+			const firstRun = await runCli(['style.module.scss'], fixture.path);
+			expect(firstRun.exitCode).toBeUndefined();
+			expect(await fixture.readFile('style.module.scss.d.ts', 'utf8')).toMatch('declare const injected: string');
+
+			await fixture.writeFile('_shared.scss', '.changed { color: red; }');
+
+			const secondRun = await runCli(
+				['style.module.scss'],
 				fixture.path,
 				{
 					env: {
@@ -531,15 +662,13 @@ export default {
 				},
 			);
 			expect(secondRun.exitCode).toBeUndefined();
-			expect(secondRun.stderr).toMatch('vite-css-modules:cli cache hit');
-			expect(secondRun.stderr).not.toMatch('vite-css-modules:transform preprocessing css module');
 
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).toMatch('vite-css-modules');
-			expect(dts).toMatch(/\* Hash: [a-f0-9]{16}/);
+			const dts = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+			expect(dts).toMatch('declare const changed: string');
+			expect(dts).not.toMatch('declare const injected: string');
 		});
 
-		test('does not reuse cached outputs when dependency validation can change', async () => {
+		test('revalidates dependency-based outputs when dependencies change', async () => {
 			await using fixture = await createProjectFixture({
 				'dep.module.css': '.base { color: red; }',
 				'style.module.css': '.button { composes: base from "./dep.module.css"; }',
@@ -547,7 +676,6 @@ export default {
 
 			const firstRun = await runCli(['style.module.css'], fixture.path);
 			expect(firstRun.exitCode).toBeUndefined();
-			expect(await fixture.readFile('style.module.css.d.ts', 'utf8')).not.toMatch(/\* Hash: [a-f0-9]{16}/);
 
 			await fixture.writeFile('dep.module.css', '.other { color: blue; }');
 
@@ -562,7 +690,6 @@ export default {
 			);
 
 			expect(secondRun.exitCode).toBe(1);
-			expect(secondRun.stderr).not.toMatch('vite-css-modules:cli cache hit');
 			expect(secondRun.stderr).toMatch('base');
 			expect(secondRun.stderr).toMatch('dep.module.css');
 		});
