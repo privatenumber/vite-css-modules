@@ -76,51 +76,18 @@ export const cssModules = (
 	const declarationMap = patchConfig?.declarationMap
 		?? getTsconfig(config.root)?.config.compilerOptions?.declarationMap
 		?? false;
-	const activeDependencies = new Map<string, Map<string, number>>();
 
-	const formatDependencyId = (dependencyId: string) => {
-		const relativeId = path.relative(config.root, dependencyId);
-		return JSON.stringify(relativeId || path.basename(dependencyId));
-	};
+	/*
+	 * Track active loading edges for cycle detection.
+	 *
+	 * When module A composes from B, context.load(B) triggers B's transform.
+	 * If B composes from A, context.load(A) deadlocks because A's transform
+	 * is suspended waiting for B. We detect this by tracking A→B as an active
+	 * edge and checking for cycles before each load.
+	 */
+	const activeEdges = new Map<string, Set<string>>();
 
-	const addActiveDependency = (
-		fromId: string,
-		dependencyId: string,
-	) => {
-		let dependencies = activeDependencies.get(fromId);
-		if (!dependencies) {
-			dependencies = new Map();
-			activeDependencies.set(fromId, dependencies);
-		}
-
-		dependencies.set(
-			dependencyId,
-			(dependencies.get(dependencyId) ?? 0) + 1,
-		);
-	};
-
-	const removeActiveDependency = (
-		fromId: string,
-		dependencyId: string,
-	) => {
-		const dependencies = activeDependencies.get(fromId);
-		if (!dependencies) {
-			return;
-		}
-
-		const nextCount = (dependencies.get(dependencyId) ?? 0) - 1;
-		if (nextCount > 0) {
-			dependencies.set(dependencyId, nextCount);
-			return;
-		}
-
-		dependencies.delete(dependencyId);
-		if (dependencies.size === 0) {
-			activeDependencies.delete(fromId);
-		}
-	};
-
-	const findDependencyPath = (
+	const findCyclePath = (
 		fromId: string,
 		targetId: string,
 		visited = new Set<string>(),
@@ -128,35 +95,23 @@ export const cssModules = (
 		if (fromId === targetId) {
 			return [fromId];
 		}
-
 		if (visited.has(fromId)) {
 			return;
 		}
 		visited.add(fromId);
 
-		const dependencies = activeDependencies.get(fromId);
+		const dependencies = activeEdges.get(fromId);
 		if (!dependencies) {
 			return;
 		}
 
-		for (const [dependencyId, count] of dependencies) {
-			if (count === 0) {
-				continue;
-			}
-
-			const dependencyPath = findDependencyPath(dependencyId, targetId, visited);
-			if (dependencyPath) {
-				return [
-					fromId,
-					...dependencyPath,
-				];
+		for (const dependencyId of dependencies) {
+			const cyclePath = findCyclePath(dependencyId, targetId, visited);
+			if (cyclePath) {
+				return [fromId, ...cyclePath];
 			}
 		}
 	};
-
-	const formatCycleError = (cyclePath: string[]) => new Error(
-		`Circular CSS Module dependency: ${cyclePath.map(formatDependencyId).join(' -> ')}`,
-	);
 
 	const loadExports = async (
 		context: TransformPluginContext,
@@ -170,15 +125,25 @@ export const cssModules = (
 
 		const importerId = cleanUrl(fromId);
 		const dependencyId = cleanUrl(resolved.id);
-		const dependencyPath = findDependencyPath(dependencyId, importerId);
-		if (dependencyPath) {
-			throw formatCycleError([
-				...dependencyPath,
-				dependencyId,
-			]);
+
+		const cyclePath = findCyclePath(dependencyId, importerId);
+		if (cyclePath) {
+			const formatId = (id: string) => {
+				const relativeId = path.relative(config.root, id);
+				return JSON.stringify(relativeId || path.basename(id));
+			};
+			throw new Error(
+				`Circular CSS Module dependency: ${[...cyclePath, dependencyId].map(formatId).join(' -> ')}`,
+			);
 		}
 
-		addActiveDependency(importerId, dependencyId);
+		let dependencies = activeEdges.get(importerId);
+		if (!dependencies) {
+			dependencies = new Set();
+			activeEdges.set(importerId, dependencies);
+		}
+		dependencies.add(dependencyId);
+
 		try {
 			const loaded = await context.load({
 				id: resolved.id,
@@ -186,7 +151,10 @@ export const cssModules = (
 			const pluginMeta = loaded.meta[pluginName] as PluginMeta;
 			return pluginMeta.exports;
 		} finally {
-			removeActiveDependency(importerId, dependencyId);
+			dependencies.delete(dependencyId);
+			if (dependencies.size === 0) {
+				activeEdges.delete(importerId);
+			}
 		}
 	};
 
