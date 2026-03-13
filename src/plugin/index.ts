@@ -1,4 +1,3 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import path from 'node:path';
 import { readFile, writeFile, access } from 'fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
@@ -18,61 +17,6 @@ import type { transform as LightningcssTransform } from './transformers/lightnin
 import { getCssModuleUrl, cleanUrl, cssModuleRE } from './url-utils.js';
 
 export const pluginName = 'vite:css-modules';
-
-const dependencyTraceStorage = new AsyncLocalStorage<string[]>();
-
-const formatCycleError = (
-	dependencyTrace: string[],
-	dependencyId: string,
-) => {
-	const cycleStart = dependencyTrace.indexOf(dependencyId);
-	const cyclePath = [
-		...dependencyTrace.slice(cycleStart),
-		dependencyId,
-	].map(id => JSON.stringify(path.basename(id))).join(' -> ');
-	return new Error(`Circular CSS Module dependency: ${cyclePath}`);
-};
-
-const withDependencyTrace = async <T>(
-	id: string,
-	callback: () => Promise<T>,
-) => {
-	const dependencyTrace = dependencyTraceStorage.getStore();
-	const cleanId = cleanUrl(id);
-	if (dependencyTrace?.at(-1) === cleanId) {
-		return await callback();
-	}
-	return await dependencyTraceStorage.run(
-		[
-			...(dependencyTrace ?? []),
-			cleanId,
-		],
-		callback,
-	);
-};
-
-const loadExports = async (
-	context: TransformPluginContext,
-	requestId: string,
-	fromId: string,
-) => {
-	const resolved = await context.resolve(requestId, fromId);
-	if (!resolved) {
-		throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
-	}
-
-	const dependencyId = cleanUrl(resolved.id);
-	const dependencyTrace = dependencyTraceStorage.getStore();
-	if (dependencyTrace?.includes(dependencyId)) {
-		throw formatCycleError(dependencyTrace, dependencyId);
-	}
-
-	const loaded = await context.load({
-		id: resolved.id,
-	});
-	const pluginMeta = loaded.meta[pluginName] as PluginMeta;
-	return pluginMeta.exports;
-};
 
 export type PatchConfig = {
 
@@ -132,6 +76,119 @@ export const cssModules = (
 	const declarationMap = patchConfig?.declarationMap
 		?? getTsconfig(config.root)?.config.compilerOptions?.declarationMap
 		?? false;
+	const activeDependencies = new Map<string, Map<string, number>>();
+
+	const formatDependencyId = (dependencyId: string) => {
+		const relativeId = path.relative(config.root, dependencyId);
+		return JSON.stringify(relativeId || path.basename(dependencyId));
+	};
+
+	const addActiveDependency = (
+		fromId: string,
+		dependencyId: string,
+	) => {
+		let dependencies = activeDependencies.get(fromId);
+		if (!dependencies) {
+			dependencies = new Map();
+			activeDependencies.set(fromId, dependencies);
+		}
+
+		dependencies.set(
+			dependencyId,
+			(dependencies.get(dependencyId) ?? 0) + 1,
+		);
+	};
+
+	const removeActiveDependency = (
+		fromId: string,
+		dependencyId: string,
+	) => {
+		const dependencies = activeDependencies.get(fromId);
+		if (!dependencies) {
+			return;
+		}
+
+		const nextCount = (dependencies.get(dependencyId) ?? 0) - 1;
+		if (nextCount > 0) {
+			dependencies.set(dependencyId, nextCount);
+			return;
+		}
+
+		dependencies.delete(dependencyId);
+		if (dependencies.size === 0) {
+			activeDependencies.delete(fromId);
+		}
+	};
+
+	const findDependencyPath = (
+		fromId: string,
+		targetId: string,
+		visited = new Set<string>(),
+	): string[] | undefined => {
+		if (fromId === targetId) {
+			return [fromId];
+		}
+
+		if (visited.has(fromId)) {
+			return;
+		}
+		visited.add(fromId);
+
+		const dependencies = activeDependencies.get(fromId);
+		if (!dependencies) {
+			return;
+		}
+
+		for (const [dependencyId, count] of dependencies) {
+			if (count === 0) {
+				continue;
+			}
+
+			const dependencyPath = findDependencyPath(dependencyId, targetId, visited);
+			if (dependencyPath) {
+				return [
+					fromId,
+					...dependencyPath,
+				];
+			}
+		}
+	};
+
+	const formatCycleError = (cyclePath: string[]) => new Error(
+		`Circular CSS Module dependency: ${cyclePath.map(formatDependencyId).join(' -> ')}`,
+	);
+
+	const loadExports = async (
+		context: TransformPluginContext,
+		requestId: string,
+		fromId: string,
+	) => {
+		const resolved = await context.resolve(requestId, fromId);
+		if (!resolved) {
+			throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
+		}
+
+		const importerId = cleanUrl(fromId);
+		const dependencyId = cleanUrl(resolved.id);
+		const dependencyPath = findDependencyPath(dependencyId, importerId);
+		if (dependencyPath) {
+			throw formatCycleError([
+				...dependencyPath,
+				dependencyId,
+			]);
+		}
+
+		addActiveDependency(importerId, dependencyId);
+		try {
+			const loaded = await context.load({
+				id: resolved.id,
+			});
+			const pluginMeta = loaded.meta[pluginName] as PluginMeta;
+			return pluginMeta.exports;
+		} finally {
+			removeActiveDependency(importerId, dependencyId);
+		}
+	};
 
 	let isVitest = false;
 
@@ -177,237 +234,235 @@ export const cssModules = (
 					return;
 				}
 
-				return await withDependencyTrace(id, async () => {
 				/**
 				 * Handle Vitest disabling CSS
 				 * https://github.com/vitest-dev/vitest/blob/v2.1.8/packages/vitest/src/node/plugins/cssEnabler.ts#L55-L68
 				 */
-					if (inputCss === '') {
-						if (!isVitest) {
-							const checkVitest = config.plugins.some(plugin => plugin.name === 'vitest:css-disable');
-							if (checkVitest) {
-								isVitest = true;
-							}
-						}
-						if (isVitest) {
-							return {
-								code: 'export default {};',
-								map: null,
-							};
+				if (inputCss === '') {
+					if (!isVitest) {
+						const checkVitest = config.plugins.some(plugin => plugin.name === 'vitest:css-disable');
+						if (checkVitest) {
+							isVitest = true;
 						}
 					}
+					if (isVitest) {
+						return {
+							code: 'export default {};',
+							map: null,
+						};
+					}
+				}
 
-					const cssModule = transform(
-						inputCss,
+				const cssModule = transform(
+					inputCss,
 
-						/**
+					/**
 					 * Relative path from project root to get stable CSS modules hash
 					 * https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
 					 */
-						cleanUrl(path.relative(config.root, id)),
-						isLightningCss ? lightningCssOptions : cssModuleConfig,
-						devSourcemap,
-					);
+					cleanUrl(path.relative(config.root, id)),
+					isLightningCss ? lightningCssOptions : cssModuleConfig,
+					devSourcemap,
+				);
 
-					let outputCss = cssModule.code;
-					const imports: Imports = new Map();
-					let counter = 0;
+				let outputCss = cssModule.code;
+				const imports: Imports = new Map();
+				let counter = 0;
 
-					const keepOriginalExport = shouldKeepOriginalExport(cssModuleConfig);
-					const localsConventionFunction = getLocalesConventionFunction(cssModuleConfig);
+				const keepOriginalExport = shouldKeepOriginalExport(cssModuleConfig);
+				const localsConventionFunction = getLocalesConventionFunction(cssModuleConfig);
 
-					const registerImport = (
-						fromFile: string,
-						exportName?: string,
-					) => {
-						let importFrom = imports.get(fromFile);
-						if (!importFrom) {
-							importFrom = {};
-							imports.set(fromFile, importFrom);
-						}
+				const registerImport = (
+					fromFile: string,
+					exportName?: string,
+				) => {
+					let importFrom = imports.get(fromFile);
+					if (!importFrom) {
+						importFrom = {};
+						imports.set(fromFile, importFrom);
+					}
 
-						if (!exportName) {
-							return;
-						}
+					if (!exportName) {
+						return;
+					}
 
-						if (!importFrom[exportName]) {
-							importFrom[exportName] = `_${counter}`;
-							counter += 1;
-						}
-						return importFrom[exportName];
-					};
+					if (!importFrom[exportName]) {
+						importFrom[exportName] = `_${counter}`;
+						counter += 1;
+					}
+					return importFrom[exportName];
+				};
 
-					/**
+				/**
 				 * Passes Promise.all result to Object.fromEntries to preserve export order
 				 * This avoids unnecessary git diffs from non-deterministic ordering
 				 * (e.g. generated types) when the CSS module itself hasn't changed
 				 */
-					const exportEntries = await Promise.all(
-						Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
-							if (
-								exportName === 'default'
+				const exportEntries = await Promise.all(
+					Object.entries(cssModule.exports).map(async ([exportName, exported]) => {
+						if (
+							exportName === 'default'
 						&& exportMode === 'both'
-							) {
-								this.warn('With `exportMode: both`, you cannot use "default" as a class name as it conflicts with the default export. Set `exportMode` to `default` or `named` to use "default" as a class name.');
+						) {
+							this.warn('With `exportMode: both`, you cannot use "default" as a class name as it conflicts with the default export. Set `exportMode` to `default` or `named` to use "default" as a class name.');
+						}
+
+						const exportAs = new Set<string>();
+						if (keepOriginalExport) {
+							exportAs.add(exportName);
+						}
+
+						let code: string;
+						let resolved: string;
+						if (typeof exported === 'string') {
+							const transformedExport = localsConventionFunction?.(exportName, exportName, id);
+							if (transformedExport) {
+								exportAs.add(transformedExport);
+							}
+							code = exported;
+							resolved = exported;
+						} else {
+							const transformedExport = localsConventionFunction?.(exportName, exported.name, id);
+							if (transformedExport) {
+								exportAs.add(transformedExport);
 							}
 
-							const exportAs = new Set<string>();
-							if (keepOriginalExport) {
-								exportAs.add(exportName);
-							}
-
-							let code: string;
-							let resolved: string;
-							if (typeof exported === 'string') {
-								const transformedExport = localsConventionFunction?.(exportName, exportName, id);
-								if (transformedExport) {
-									exportAs.add(transformedExport);
-								}
-								code = exported;
-								resolved = exported;
-							} else {
-								const transformedExport = localsConventionFunction?.(exportName, exported.name, id);
-								if (transformedExport) {
-									exportAs.add(transformedExport);
-								}
-
-								// Collect composed classes
-								const composedClasses = await Promise.all(
-									exported.composes.map(async (dep) => {
-										if (dep.type === 'dependency') {
-											const loaded = await loadExports(this, getCssModuleUrl(dep.specifier), id);
-											const exportedEntry = loaded[dep.name]!;
-											if (!exportedEntry) {
-												throw new Error(`Cannot resolve ${JSON.stringify(dep.name)} from ${JSON.stringify(dep.specifier)}`);
-											}
-											const [exportAsName] = Array.from(exportedEntry.exportAs);
-											const importedAs = registerImport(dep.specifier, exportAsName)!;
-											return {
-												resolved: exportedEntry.resolved,
-												code: `\${${importedAs}}`,
-											};
+							// Collect composed classes
+							const composedClasses = await Promise.all(
+								exported.composes.map(async (dep) => {
+									if (dep.type === 'dependency') {
+										const loaded = await loadExports(this, getCssModuleUrl(dep.specifier), id);
+										const exportedEntry = loaded[dep.name]!;
+										if (!exportedEntry) {
+											throw new Error(`Cannot resolve ${JSON.stringify(dep.name)} from ${JSON.stringify(dep.specifier)}`);
 										}
-
+										const [exportAsName] = Array.from(exportedEntry.exportAs);
+										const importedAs = registerImport(dep.specifier, exportAsName)!;
 										return {
-											resolved: dep.name,
-											code: dep.name,
+											resolved: exportedEntry.resolved,
+											code: `\${${importedAs}}`,
 										};
-									}),
-								);
-								code = [exported.name, ...composedClasses.map(c => c.code)].join(' ');
-								resolved = [exported.name, ...composedClasses.map(c => c.resolved)].join(' ');
+									}
+
+									return {
+										resolved: dep.name,
+										code: dep.name,
+									};
+								}),
+							);
+							code = [exported.name, ...composedClasses.map(c => c.code)].join(' ');
+							resolved = [exported.name, ...composedClasses.map(c => c.resolved)].join(' ');
+						}
+
+						return [
+							exportName,
+							{
+								code,
+								resolved,
+								exportAs,
+							},
+						] as const;
+					}),
+				);
+
+				const exports: Exports = Object.fromEntries(exportEntries);
+
+				let { map } = cssModule;
+
+				// Inject CSS Modules values
+				const references = Object.entries(cssModule.references);
+				if (references.length > 0) {
+					const ms = new MagicString(outputCss);
+					await Promise.all(
+						references.map(async ([placeholder, source]) => {
+							const loaded = await loadExports(this, getCssModuleUrl(source.specifier), id);
+							const exported = loaded[source.name];
+							if (!exported) {
+								throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
 							}
 
-							return [
-								exportName,
-								{
-									code,
-									resolved,
-									exportAs,
-								},
-							] as const;
+							registerImport(source.specifier);
+							ms.replaceAll(placeholder, exported.code);
 						}),
 					);
+					outputCss = ms.toString();
 
-					const exports: Exports = Object.fromEntries(exportEntries);
+					if (map) {
+						const newMap = remapping(
+							[
+								ms.generateMap({
+									source: id,
+									file: id,
+									includeContent: true,
+								}),
+								map,
+							] as SourceMapInput[],
+							() => null,
+						) as ExistingRawSourceMap;
 
-					let { map } = cssModule;
-
-					// Inject CSS Modules values
-					const references = Object.entries(cssModule.references);
-					if (references.length > 0) {
-						const ms = new MagicString(outputCss);
-						await Promise.all(
-							references.map(async ([placeholder, source]) => {
-								const loaded = await loadExports(this, getCssModuleUrl(source.specifier), id);
-								const exported = loaded[source.name];
-								if (!exported) {
-									throw new Error(`Cannot resolve "${source.name}" from "${source.specifier}"`);
-								}
-
-								registerImport(source.specifier);
-								ms.replaceAll(placeholder, exported.code);
-							}),
-						);
-						outputCss = ms.toString();
-
-						if (map) {
-							const newMap = remapping(
-								[
-									ms.generateMap({
-										source: id,
-										file: id,
-										includeContent: true,
-									}),
-									map,
-								] as SourceMapInput[],
-								() => null,
-							) as ExistingRawSourceMap;
-
-							map = newMap;
-						}
+						map = newMap;
 					}
+				}
 
-					if (
-						'getJSON' in cssModuleConfig
+				if (
+					'getJSON' in cssModuleConfig
 				&& typeof cssModuleConfig.getJSON === 'function'
-					) {
-						const json: Record<string, string> = {};
-						for (const exported of Object.values(exports)) {
-							for (const exportAs of exported.exportAs) {
-								json[exportAs] = exported.resolved;
-							}
+				) {
+					const json: Record<string, string> = {};
+					for (const exported of Object.values(exports)) {
+						for (const exportAs of exported.exportAs) {
+							json[exportAs] = exported.resolved;
 						}
-
-						cssModuleConfig.getJSON(id, json, id);
 					}
 
-					const jsCode = generateEsm(
-						imports,
-						exports,
-						exportMode,
-						allowArbitraryNamedExports,
-					);
+					cssModuleConfig.getJSON(id, json, id);
+				}
 
-					if (patchConfig?.generateSourceTypes) {
-						const filePath = id.split('?', 2)[0];
+				const jsCode = generateEsm(
+					imports,
+					exports,
+					exportMode,
+					allowArbitraryNamedExports,
+				);
 
-						// Only generate types for importable module files
-						if (filePath && cssModuleRE.test(filePath)) {
-							const fileExists = await access(filePath).then(() => true, () => false);
-							if (fileExists) {
-								const dtsPath = `${filePath}.d.ts`;
-								const originalCss = originalCssCache?.get(filePath);
-								const sourceMapOptions = declarationMap && originalCss
-									? {
-										sourceFileName: path.basename(filePath),
-										classPositions: cssClassPositions(originalCss, { fileName: filePath }),
-									}
-									: undefined;
-								const newContent = generateTypes(
-									exports, exportMode, allowArbitraryNamedExports, sourceMapOptions,
-								);
+				if (patchConfig?.generateSourceTypes) {
+					const filePath = id.split('?', 2)[0];
 
-								// Skip write if content unchanged to avoid triggering file watchers
-								const existingContent = await readFile(dtsPath, 'utf8').catch(() => null);
-								if (existingContent !== newContent) {
-									await writeFile(dtsPath, newContent);
+					// Only generate types for importable module files
+					if (filePath && cssModuleRE.test(filePath)) {
+						const fileExists = await access(filePath).then(() => true, () => false);
+						if (fileExists) {
+							const dtsPath = `${filePath}.d.ts`;
+							const originalCss = originalCssCache?.get(filePath);
+							const sourceMapOptions = declarationMap && originalCss
+								? {
+									sourceFileName: path.basename(filePath),
+									classPositions: cssClassPositions(originalCss, { fileName: filePath }),
 								}
+								: undefined;
+							const newContent = generateTypes(
+								exports, exportMode, allowArbitraryNamedExports, sourceMapOptions,
+							);
+
+							// Skip write if content unchanged to avoid triggering file watchers
+							const existingContent = await readFile(dtsPath, 'utf8').catch(() => null);
+							if (existingContent !== newContent) {
+								await writeFile(dtsPath, newContent);
 							}
 						}
 					}
+				}
 
-					return {
-						code: jsCode,
-						map: map ?? { mappings: '' },
-						meta: {
-							[pluginName]: {
-								css: outputCss,
-								exports,
-							} satisfies PluginMeta,
-						},
-					};
-				});
+				return {
+					code: jsCode,
+					map: map ?? { mappings: '' },
+					meta: {
+						[pluginName]: {
+							css: outputCss,
+							exports,
+						} satisfies PluginMeta,
+					},
+				};
 			},
 		},
 	};
