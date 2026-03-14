@@ -585,11 +585,10 @@ describe('reproductions', () => {
 }`,
 		});
 
-		try {
-			await execFileAsync(process.execPath, [
-				'--input-type=module',
-				'-e',
-				`import { build } from 'vite';
+		const result = await execFileAsync(process.execPath, [
+			'--input-type=module',
+			'-e',
+			`import { build } from 'vite';
 await build({
 	root: ${JSON.stringify(fixture.path)},
 	configFile: false,
@@ -599,15 +598,13 @@ await build({
 		rollupOptions: { input: ${JSON.stringify(path.join(fixture.path, 'index.js'))} },
 	},
 });`,
-			], {
-				timeout: 8000,
-			});
+		], {
+			timeout: 8000,
+		}).then(
+			() => 'success' as const,
+			() => 'crash' as const,
+		);
 
-			// If it somehow succeeds, fail the test
-			throw new Error('Expected build to crash');
-		} catch (error) {
-			// Non-zero exit code — the process crashed
-			expect((error as { code?: number }).code).not.toBe(0);
-		}
+		expect(result).toBe('crash');
 	}, 10_000);
 });
