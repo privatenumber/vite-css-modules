@@ -604,7 +604,7 @@ await build({
 			});
 
 			// If it somehow succeeds, fail the test
-			expect.unreachable('Expected build to crash');
+			throw new Error('Expected build to crash');
 		} catch (error) {
 			// Non-zero exit code — the process crashed
 			expect((error as { code?: number }).code).not.toBe(0);
