@@ -489,44 +489,24 @@ export default {
 			const result = await runCli(['style.module.css'], fixture.path);
 			expect(result.exitCode).toBeUndefined();
 			expect(result.stdout).toMatch('style.module.css.d.ts');
-			expect(result.stdout).toMatch('style.module.css.d.ts.map');
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			const dtsMap = JSON.parse(await fixture.readFile('style.module.css.d.ts.map', 'utf8')) as {
+			expect(dts).toMatch('sourceMappingURL=data:application/json;charset=utf-8;base64,');
+
+			const match = dts.match(/sourceMappingURL=data:application\/json;charset=utf-8;base64,([A-Za-z0-9+/=]+)/);
+			const dtsMap = JSON.parse(Buffer.from(match![1]!, 'base64').toString('utf8')) as {
 				file: string;
 				mappings: string;
 				sources: string[];
 				version: number;
 			};
 
-			expect(dts).toMatch('sourceMappingURL=style.module.css.d.ts.map');
-			expect(dtsMap?.version).toBe(3);
-			expect(dtsMap?.file).toBe('style.module.css.d.ts');
-			expect(dtsMap?.sources).toStrictEqual(['style.module.css']);
+			expect(dtsMap.version).toBe(3);
+			expect(dtsMap.file).toBe('style.module.css.d.ts');
+			expect(dtsMap.sources).toStrictEqual(['style.module.css']);
 			const declarationLine = dts.split('\n').findIndex(line => line.includes('declare const button: string;'));
 			expect(declarationLine).toBeGreaterThanOrEqual(0);
-			expect(decode(dtsMap!.mappings)[declarationLine]).toStrictEqual([[14, 0, 0, 0]]);
-		});
-
-		test('removes stale .d.ts.map when declaration maps are not emitted', async () => {
-			await using fixture = await createProjectFixture({
-				'style.module.css': '.button { color: red; }',
-				'style.module.css.d.ts': `declare const button: string;
-//# sourceMappingURL=style.module.css.d.ts.map
-`,
-				'style.module.css.d.ts.map': '{"version":3}',
-			});
-
-			const result = await runCli(['style.module.css'], fixture.path);
-			expect(result.exitCode).toBeUndefined();
-			expect(result.stdout).toMatch('style.module.css.d.ts');
-			expect(result.stdout).not.toMatch('style.module.css.d.ts.map');
-
-			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
-			expect(dts).not.toMatch('sourceMappingURL');
-			expect(
-				await fixture.readFile('style.module.css.d.ts.map', 'utf8').catch(() => null),
-			).toBe(null);
+			expect(decode(dtsMap.mappings)[declarationLine]).toStrictEqual([[14, 0, 0, 0]]);
 		});
 
 		test('updates generated outputs when resolved Vite config changes', async () => {

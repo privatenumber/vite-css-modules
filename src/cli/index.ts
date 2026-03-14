@@ -4,7 +4,7 @@ import path from 'node:path';
 import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
 import { generateTypes } from '../plugin/generate-types.js';
-import { writeTypeFiles } from '../type-files.js';
+import { writeFileIfChanged } from '../type-files.js';
 import { createCssModuleLoader } from './load-css-module.js';
 import { formatDebugPath } from './debug.js';
 import {
@@ -107,10 +107,9 @@ const isPathOutsideRoot = (
 				sourceMapOptions,
 			);
 
-			const outputPaths = await writeTypeFiles(`${filePath}.d.ts`, generatedDts, 'external');
-			for (const outputPath of outputPaths) {
-				console.log(`\u2713 ${formatDebugPath(outputPath, cwd)}`);
-			}
+			const dtsPath = `${filePath}.d.ts`;
+			await writeFileIfChanged(dtsPath, generatedDts);
+			console.log(`\u2713 ${formatDebugPath(dtsPath, cwd)}`);
 		} catch (error) {
 			console.error(`\u2717 ${formatDebugPath(filePath, cwd)}`);
 			console.error(`  ${(error as Error).message}`);

@@ -273,7 +273,7 @@ Generates a `.d.ts` file next to each CSS Module with type definitions for the e
 Generates inline declaration source maps in `.d.ts` files, enabling "Go to Definition" to navigate from TypeScript to CSS source. Requires `generateSourceTypes` to be enabled.
 
 > [!TIP]
-> During build, source maps are inlined in `.d.ts` files. The CLI emits them as separate `.d.ts.map` files instead.
+> Source maps are always inlined rather than emitted as separate `.d.ts.map` files. Since `.d.ts` files are generated in-place next to your CSS source, external map files would pollute the source directory. The size overhead of inlining is negligible for typical CSS modules.
 
 ## CLI
 
