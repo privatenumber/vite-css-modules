@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { formatWithOptions } from 'node:util';
+import { slash } from '../plugin/url-utils.js';
 
 const debugPrefixes = process.env.DEBUG
 	?.split(',')
@@ -29,9 +30,9 @@ export const formatDebugPath = (
 	cwd = process.cwd(),
 ) => {
 	if (!path.isAbsolute(filePath)) {
-		return filePath.replaceAll('\\', '/');
+		return slash(filePath);
 	}
 
 	const relativePath = path.relative(cwd, filePath);
-	return (relativePath || '.').replaceAll('\\', '/');
+	return slash(relativePath || '.');
 };
