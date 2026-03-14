@@ -8,6 +8,8 @@ export const cleanUrl = (url: string) => (
 		: url
 );
 
+export const slash = (filePath: string) => filePath.replaceAll('\\', '/');
+
 export const getCssModuleUrl = (url: string) => {
 	if (cssModuleRE.test(url)) {
 		return url;

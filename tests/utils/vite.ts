@@ -5,6 +5,7 @@ import {
 } from 'vite';
 import { rollup } from 'rollup';
 import { chromium, type Page } from 'playwright-chromium';
+import { slash } from '../../src/plugin/url-utils.ts';
 
 export const viteBuild = async (
 	fixturePath: string,
@@ -86,7 +87,7 @@ const bundleHttpJs = async (
 					let retry = 5;
 					while (retry > 0) {
 						try {
-							const response = await fetch(path.join(baseUrl, id));
+							const response = await fetch(new URL(id, baseUrl));
 							return await response.text();
 						} catch (error) {
 							if (retry === 0) {
@@ -137,7 +138,10 @@ export const getViteDevCode = async (
 ) => await viteServe(
 	fixturePath,
 	config,
-	url => bundleHttpJs(url, `@fs${fixturePath}/index.js`),
+	(url) => {
+		const posixPath = slash(fixturePath);
+		return bundleHttpJs(url, `@fs${posixPath.startsWith('/') ? '' : '/'}${posixPath}/index.js`);
+	},
 );
 
 export const viteDevBrowser = async (
