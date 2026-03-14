@@ -29,9 +29,9 @@ export const formatDebugPath = (
 	cwd = process.cwd(),
 ) => {
 	if (!path.isAbsolute(filePath)) {
-		return filePath;
+		return filePath.replaceAll('\\', '/');
 	}
 
 	const relativePath = path.relative(cwd, filePath);
-	return relativePath || '.';
+	return (relativePath || '.').replaceAll('\\', '/');
 };

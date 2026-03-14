@@ -600,12 +600,12 @@ await build({
 	},
 });`,
 		], {
-			timeout: 8000,
+			timeout: 5000,
 		}).then(
 			() => 'success' as const,
 			() => 'crash' as const,
 		);
 
 		expect(result).toBe('crash');
-	}, 10_000);
+	});
 });
