@@ -1,17 +1,14 @@
 import path from 'node:path';
 import { setTimeout } from 'node:timers/promises';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { createFixture } from 'fs-fixture';
 import { describe, test, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
 import vitePluginVue from '@vitejs/plugin-vue';
+import spawn from 'nano-spawn';
 import { base64Module } from '../utils/base64-module.ts';
 import * as fixtures from '../fixtures.ts';
 import { viteBuild, getViteDevCode, viteDevBrowser } from '../utils/vite.ts';
 import { getCssSourceMaps } from '../utils/get-css-source-maps.ts';
-
-const execFileAsync = promisify(execFile);
 
 describe('reproductions', () => {
 	describe('postcss (no config)', () => {
@@ -585,7 +582,7 @@ describe('reproductions', () => {
 }`,
 		});
 
-		const result = await execFileAsync(process.execPath, [
+		const result = await spawn(process.execPath, [
 			'--input-type=module',
 			'-e',
 			`import { build } from 'vite';
