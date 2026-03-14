@@ -639,7 +639,7 @@ type PatchConfig = {
      */
     declarationMap?: boolean;
 };
-declare const cssModules: (config: ResolvedConfig, patchConfig?: PatchConfig) => Plugin;
+declare const cssModules: (config: ResolvedConfig, patchConfig?: PatchConfig, originalCssCache?: Map<string, string>) => Plugin;
 
 declare const patchCssModules: (patchConfig?: PatchConfig) => Plugin;
 

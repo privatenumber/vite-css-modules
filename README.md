@@ -273,35 +273,53 @@ Generates a `.d.ts` file next to each CSS Module with type definitions for the e
 Generates inline declaration source maps in `.d.ts` files, enabling "Go to Definition" to navigate from TypeScript to CSS source. Requires `generateSourceTypes` to be enabled.
 
 > [!TIP]
-> Source maps are always inlined rather than emitted as separate `.d.ts.map` files. Since `.d.ts` files are generated in-place next to your CSS source, external map files would pollute the source directory. The size overhead of inlining is negligible for typical CSS modules.
+> During build, source maps are inlined in `.d.ts` files. The CLI emits them as separate `.d.ts.map` files instead.
 
 ## CLI
 
 Generate TypeScript declarations for CSS Modules without running a build.
 
 ```bash
-npx vite-css-modules <globs...> [flags]
+npx vite-css-modules [globs...] [--config path] [--mode mode]
 ```
+
+The CLI expects a `vite.config.*` file in the current working directory and uses that one config for every matched file.
+
+With no globs, the CLI defaults to:
+
+```bash
+**/*.module.{css,scss,sass}
+```
+
+and searches under the resolved Vite `root`.
+
+When you pass globs explicitly, they are resolved from the current working directory instead.
+
+Run it from the same cwd you would use for `vite`, or pass `--config` to point at a specific config file. Use `--mode` when your Vite config depends on the active mode.
+
+The CLI reads Vite `css.modules` settings and `tsconfig.json`'s `compilerOptions.declarationMap`. It does not read `patchCssModules()`-specific options like `exportMode` or `declarationMap`.
 
 ### Flags
 
-| Flag | Alias | Description |
-| :--- | :--- | :--- |
-| `--export-mode` | `-e` | Export style: `both`, `named`, `default` (default: `both`) |
-| `--locals-convention` | `-l` | Class name transformation: `camelCase`, `camelCaseOnly`, `dashes`, `dashesOnly` |
-| `--arbitrary-exports` | | Enable ES2022+ arbitrary exports for dashed class names |
+| Flag | Description |
+| :--- | :--- |
+| `--config <path>` | Use a specific `vite.config.*` file |
+| `--mode <mode>` | Set the Vite mode used when loading config |
 
 ### Examples
 
 ```bash
-# Generate types for all CSS Modules
-npx vite-css-modules '**/*.module.css'
+# Generate types for CSS Modules under the Vite root
+npx vite-css-modules
 
-# With named exports only
-npx vite-css-modules 'src/**/*.module.css' --export-mode named
+# Use explicit globs from the current working directory
+npx vite-css-modules 'src/**/*.module.css'
 
-# With camelCase class names
-npx vite-css-modules '**/*.module.css' --locals-convention camelCase
+# Use a specific Vite config
+npx vite-css-modules 'src/**/*.module.css' --config apps/web/vite.config.ts
+
+# Load config with production mode
+npx vite-css-modules 'src/**/*.module.css' --mode production
 ```
 
 ## FAQ
@@ -321,6 +339,10 @@ Vite delegates bundling each CSS Module to [`postcss-modules`](https://github.co
 3. **Silent failures on unresolved dependencies**
 
     `postcss-modules` fails silently when it can't resolve a `composes` dependency—missing exports don't throw errors, making CSS bugs harder to catch. ([#16075](https://github.com/vitejs/vite/issues/16075))
+
+4. **Crash on circular `composes` dependencies**
+
+    When two CSS Modules compose from each other, `postcss-modules` triggers a deadlock that crashes the build with an unhelpful internal error. This plugin detects the cycle and throws a descriptive error showing the dependency chain (e.g. `Circular CSS Module dependency: "a.module.css" -> "b.module.css" -> "a.module.css"`).
 
 The `vite-css-modules` plugin fixes these issues by seamlessly integrating CSS Modules into Vite's build process.
 
