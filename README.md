@@ -293,6 +293,10 @@ Vite delegates bundling each CSS Module to [`postcss-modules`](https://github.co
 
     `postcss-modules` fails silently when it can't resolve a `composes` dependency—missing exports don't throw errors, making CSS bugs harder to catch. ([#16075](https://github.com/vitejs/vite/issues/16075))
 
+4. **Crash on circular `composes` dependencies**
+
+    When two CSS Modules compose from each other, `postcss-modules` triggers a deadlock that crashes the build with an unhelpful internal error. This plugin detects the cycle and throws a descriptive error showing the dependency chain (e.g. `Circular CSS Module dependency: "a.module.css" -> "b.module.css" -> "a.module.css"`).
+
 The `vite-css-modules` plugin fixes these issues by seamlessly integrating CSS Modules into Vite's build process.
 
 ### How does this work?
