@@ -144,7 +144,7 @@ export const cssModules = (
 		const cyclePath = findCyclePath(dependencyId, importerId);
 		if (cyclePath) {
 			const formatId = (id: string) => {
-				const relativeId = path.relative(config.root, id);
+				const relativeId = path.relative(config.root, id).replaceAll('\\', '/');
 				return JSON.stringify(relativeId || path.basename(id));
 			};
 			throw new Error(
@@ -245,7 +245,7 @@ export const cssModules = (
 					 * Relative path from project root to get stable CSS modules hash
 					 * https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
 					 */
-					cleanUrl(path.relative(config.root, id)),
+					cleanUrl(path.relative(config.root, id)).replaceAll('\\', '/'),
 					isLightningCss ? lightningCssOptions : cssModuleConfig,
 					devSourcemap,
 				);
