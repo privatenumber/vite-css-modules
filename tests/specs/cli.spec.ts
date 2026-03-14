@@ -158,52 +158,6 @@ describe('CLI', () => {
 		).not.toBe(null);
 	});
 
-	test('DEBUG=vite-css-modules:* emits progress logs to stderr', async () => {
-		await using fixture = await createProjectFixture({
-			'style.module.css': '.button { color: red; }',
-		});
-
-		const result = await runCli(
-			['style.module.css'],
-			fixture.path,
-			{
-				env: {
-					DEBUG: 'vite-css-modules:*',
-				},
-			},
-		);
-		expect(result.exitCode).toBeUndefined();
-		expect(result.stderr).toMatch('vite-css-modules:cli matched files');
-		expect(result.stderr).toMatch(/durationMs: \d+/);
-		expect(result.stderr).toMatch('vite-css-modules:transform preprocessed css module');
-		expect(result.stderr).toMatch('vite-css-modules:cli processed file');
-	});
-
-	test('DEBUG=vite-css-modules:* logs files outside the selected config root', async () => {
-		await using fixture = await createFixture({
-			'vite.config.mjs': `export default {
-	root: 'client',
-};`,
-			'client/inside.module.css': '.inside { color: red; }',
-			'outside.module.css': '.outside { color: blue; }',
-		});
-
-		const result = await runCli(
-			['*.module.css', 'client/*.module.css'],
-			fixture.path,
-			{
-				env: {
-					DEBUG: 'vite-css-modules:*',
-				},
-			},
-		);
-
-		expect(result.exitCode).toBeUndefined();
-		expect(result.stderr).toMatch('vite-css-modules:cli matched file is outside config root');
-		expect(result.stderr).toMatch("filePath: 'outside.module.css'");
-		expect(result.stderr).toMatch("root: 'client'");
-	});
-
 	test('no files matched shows warning on stderr', async () => {
 		await using fixture = await createProjectFixture({});
 		const result = await runCli(['**/*.module.css'], fixture.path);
@@ -259,17 +213,10 @@ describe('CLI', () => {
 		const result = await runCli(
 			['style.module.css'],
 			fixture.path,
-			{
-				env: {
-					DEBUG: 'vite-css-modules:*',
-				},
-			},
 		);
 		expect(result.exitCode).toBe(1);
 		expect(result.stderr).toMatch('No vite.config.* found in the current working directory');
 		expect(result.stderr).toMatch('Run this command from the same cwd as Vite, or pass --config.');
-		expect(result.stderr).not.toMatch('vite-css-modules:cli expanding glob');
-		expect(result.stderr).not.toMatch('vite-css-modules:cli matched files');
 	});
 
 	test('explicit globs without vite config in cwd error even when nothing matches', async () => {
@@ -289,16 +236,9 @@ describe('CLI', () => {
 		const result = await runCli(
 			['--config', 'missing/vite.config.mjs', 'style.module.css'],
 			fixture.path,
-			{
-				env: {
-					DEBUG: 'vite-css-modules:*',
-				},
-			},
 		);
 		expect(result.exitCode).toBe(1);
-		expect(result.stderr).toMatch('missing/vite.config.mjs');
-		expect(result.stderr).not.toMatch('vite-css-modules:cli expanding glob');
-		expect(result.stderr).not.toMatch('vite-css-modules:cli matched files');
+		expect(result.stderr).toMatch('vite.config.mjs');
 	});
 
 	test('invalid explicit --config errors even when nothing matches', async () => {
@@ -322,16 +262,9 @@ describe('CLI', () => {
 		const result = await runCli(
 			['style.module.css'],
 			fixture.path,
-			{
-				env: {
-					DEBUG: 'vite-css-modules:*',
-				},
-			},
 		);
 		expect(result.exitCode).toBe(1);
 		expect(result.stderr).toMatch('broken config');
-		expect(result.stderr).not.toMatch('vite-css-modules:cli expanding glob');
-		expect(result.stderr).not.toMatch('vite-css-modules:cli matched files');
 	});
 
 	test('broken discovered vite config errors even when nothing matches', async () => {
@@ -628,7 +561,6 @@ export default {
 				{
 					env: {
 						CAMEL: '1',
-						DEBUG: 'vite-css-modules:*',
 					},
 				},
 			);
@@ -655,11 +587,6 @@ export default {
 			const secondRun = await runCli(
 				['style.module.scss'],
 				fixture.path,
-				{
-					env: {
-						DEBUG: 'vite-css-modules:*',
-					},
-				},
 			);
 			expect(secondRun.exitCode).toBeUndefined();
 

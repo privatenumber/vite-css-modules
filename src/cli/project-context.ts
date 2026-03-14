@@ -10,12 +10,6 @@ import {
 	type ResolvedConfig,
 	type UserConfig,
 } from 'vite';
-import {
-	createDebug,
-	formatDebugPath,
-} from './debug.js';
-
-const debugConfig = createDebug('vite-css-modules:config');
 
 const viteConfigNames = [
 	'vite.config.ts',
@@ -40,19 +34,10 @@ type ProjectContextOptions = {
 export const findViteConfigInDirectory = async (
 	directoryPath: string,
 ) => {
-	const searchStart = performance.now();
-	debugConfig('searching for vite config in cwd', {
-		directoryPath: formatDebugPath(directoryPath),
-	});
-
 	for (const configName of viteConfigNames) {
 		const configPath = path.join(directoryPath, configName);
 		const configExists = await fs.access(configPath).then(() => true, () => false);
 		if (configExists) {
-			debugConfig('found vite config in cwd', {
-				configPath: formatDebugPath(configPath),
-				durationMs: Math.round(performance.now() - searchStart),
-			});
 			return configPath;
 		}
 	}
@@ -99,12 +84,6 @@ const sanitizeUserConfig = (
 export const loadProjectContext = async (
 	options: ProjectContextOptions,
 ): Promise<ProjectContext> => {
-	process.env.VITE_CSS_MODULES_CLI = '1';
-	const loadStart = performance.now();
-	debugConfig('loading vite config', {
-		configPath: formatDebugPath(options.configPath),
-	});
-
 	const loadedConfig = await loadConfigFromFile(
 		{
 			command: 'serve',
@@ -120,12 +99,7 @@ export const loadProjectContext = async (
 	if (!loadedConfig) {
 		throw new Error(`Could not load Vite config: ${options.configPath}`);
 	}
-	debugConfig('loaded vite config', {
-		configPath: formatDebugPath(loadedConfig.path),
-		durationMs: Math.round(performance.now() - loadStart),
-	});
 
-	const resolveStart = performance.now();
 	const resolvedConfig = await resolveConfig(
 		sanitizeUserConfig(options.configPath, loadedConfig.config, options),
 		'serve',
@@ -133,19 +107,14 @@ export const loadProjectContext = async (
 		undefined,
 		false,
 	);
+
 	const declarationMap = Boolean(
 		getTsconfig(resolvedConfig.root)?.config.compilerOptions?.declarationMap,
 	);
+
 	const cssModulesConfig: CSSModulesOptions = {
 		...loadedConfig.config.css?.modules,
 	};
-	debugConfig('resolved project context', {
-		configPath: formatDebugPath(loadedConfig.path),
-		declarationMap,
-		resolveConfigMs: Math.round(performance.now() - resolveStart),
-		root: formatDebugPath(resolvedConfig.root),
-		transformer: resolvedConfig.css.transformer,
-	});
 
 	return {
 		cssModulesConfig,
