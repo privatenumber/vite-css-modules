@@ -273,7 +273,7 @@ Generates a `.d.ts` file next to each CSS Module with type definitions for the e
 Generates inline declaration source maps in `.d.ts` files, enabling "Go to Definition" to navigate from TypeScript to CSS source. Requires `generateSourceTypes` to be enabled.
 
 > [!TIP]
-> Declaration maps are emitted as adjacent `.d.ts.map` files so editors can consume them without embedding large data URLs in generated `.d.ts` files.
+> During build, source maps are inlined in `.d.ts` files. The CLI emits them as separate `.d.ts.map` files instead.
 
 ## CLI
 
@@ -299,8 +299,6 @@ Run it from the same cwd you would use for `vite`, or pass `--config` to point a
 
 The CLI reads Vite `css.modules` settings and `tsconfig.json`'s `compilerOptions.declarationMap`. It does not read `patchCssModules()`-specific options like `exportMode` or `declarationMap`.
 
-Set `DEBUG=vite-css-modules:*` to trace what the CLI is doing. Available namespaces are `vite-css-modules:cli`, `vite-css-modules:config`, `vite-css-modules:transform`, and `vite-css-modules:resolve`. The logs include the selected config path, timing breakdowns, and a signal when a matched file is outside the selected Vite config root.
-
 ### Flags
 
 | Flag | Description |
@@ -322,9 +320,6 @@ npx vite-css-modules 'src/**/*.module.css' --config apps/web/vite.config.ts
 
 # Load config with production mode
 npx vite-css-modules 'src/**/*.module.css' --mode production
-
-# Trace config loading, preprocessing, and dependency resolution
-DEBUG=vite-css-modules:* npx vite-css-modules 'src/**/*.module.css'
 ```
 
 ## FAQ
