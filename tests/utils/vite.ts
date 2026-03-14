@@ -153,7 +153,7 @@ export const viteDevBrowser = async (
 			const page = await browser.newPage();
 
 			try {
-				await page.goto(url);
+				await page.goto(url, { waitUntil: 'load' });
 				await page.waitForSelector('#myText');
 				await callback(page, server);
 			} finally {
