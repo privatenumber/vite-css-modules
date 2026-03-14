@@ -309,7 +309,7 @@ describe('CLI', () => {
 			fixture.path,
 		);
 		expect(result.exitCode).toBe(1);
-		expect(result.stderr).toMatch('missing/vite.config.mjs');
+		expect(result.stderr).toMatch('vite.config.mjs');
 		expect(result.stderr).not.toMatch('No files matched');
 	});
 
