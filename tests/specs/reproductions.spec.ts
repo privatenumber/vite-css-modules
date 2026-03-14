@@ -1,14 +1,17 @@
 import path from 'node:path';
 import { setTimeout } from 'node:timers/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { createFixture } from 'fs-fixture';
 import { describe, test, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
 import vitePluginVue from '@vitejs/plugin-vue';
-import spawn from 'nano-spawn';
 import { base64Module } from '../utils/base64-module.ts';
 import * as fixtures from '../fixtures.ts';
 import { viteBuild, getViteDevCode, viteDevBrowser } from '../utils/vite.ts';
 import { getCssSourceMaps } from '../utils/get-css-source-maps.ts';
+
+const execFileAsync = promisify(execFile);
 
 describe('reproductions', () => {
 	describe('postcss (no config)', () => {
@@ -571,7 +574,7 @@ describe('reproductions', () => {
 	 */
 	test('cyclic composes crashes vanilla Vite', async () => {
 		await using fixture = await createFixture({
-			'index.js': `export * from './a.module.css';`,
+			'index.js': 'export * from \'./a.module.css\';',
 
 			'a.module.css': `.a {
 	composes: b from './b.module.css';
@@ -583,11 +586,10 @@ describe('reproductions', () => {
 		});
 
 		try {
-			await spawn(process.execPath, [
+			await execFileAsync(process.execPath, [
 				'--input-type=module',
 				'-e',
-				`
-import { build } from 'vite';
+				`import { build } from 'vite';
 await build({
 	root: ${JSON.stringify(fixture.path)},
 	configFile: false,
@@ -596,8 +598,7 @@ await build({
 		write: false,
 		rollupOptions: { input: ${JSON.stringify(path.join(fixture.path, 'index.js'))} },
 	},
-});
-`,
+});`,
 			], {
 				timeout: 8000,
 			});
@@ -606,7 +607,7 @@ await build({
 			expect.unreachable('Expected build to crash');
 		} catch (error) {
 			// Non-zero exit code — the process crashed
-			expect((error as { exitCode?: number }).exitCode).not.toBe(0);
+			expect((error as { code?: number }).code).not.toBe(0);
 		}
 	}, 10_000);
 });
