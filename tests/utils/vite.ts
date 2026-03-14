@@ -5,6 +5,7 @@ import {
 } from 'vite';
 import { rollup } from 'rollup';
 import { chromium, type Page } from 'playwright-chromium';
+import { slash } from '../../src/plugin/url-utils.ts';
 
 export const viteBuild = async (
 	fixturePath: string,
@@ -138,7 +139,7 @@ export const getViteDevCode = async (
 	fixturePath,
 	config,
 	(url) => {
-		const posixPath = fixturePath.replaceAll('\\', '/');
+		const posixPath = slash(fixturePath);
 		return bundleHttpJs(url, `@fs${posixPath.startsWith('/') ? '' : '/'}${posixPath}/index.js`);
 	},
 );
