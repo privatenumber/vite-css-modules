@@ -4,6 +4,7 @@ import { createFixture } from 'fs-fixture';
 import { describe, test, expect } from 'manten';
 import type { CssSyntaxError } from 'postcss';
 import vitePluginVue from '@vitejs/plugin-vue';
+import spawn from 'nano-spawn';
 import { base64Module } from '../utils/base64-module.ts';
 import * as fixtures from '../fixtures.ts';
 import { viteBuild, getViteDevCode, viteDevBrowser } from '../utils/vite.ts';
@@ -553,4 +554,54 @@ describe('reproductions', () => {
 			);
 		}, 10_000);
 	});
+
+	/*
+	 * Vanilla Vite (without patchCssModules) crashes on cyclic composes.
+	 * postcss-modules' FileSystemLoader throws an uncaught error during
+	 * circular dependency resolution that kills the process. There's no
+	 * graceful error — the build crashes with an internal postcss-modules
+	 * error.
+	 *
+	 * This documents the upstream behavior that patchCssModules fixes with
+	 * explicit cycle detection (throwing a descriptive error instead).
+	 *
+	 * Must run in a subprocess because the error is uncatchable in-process
+	 * (it's an unhandled exception from postcss-modules, not a rejected
+	 * promise from Vite's build API).
+	 */
+	test('cyclic composes crashes vanilla Vite', async () => {
+		await using fixture = await createFixture({
+			'index.js': 'export * from \'./a.module.css\';',
+
+			'a.module.css': `.a {
+	composes: b from './b.module.css';
+}`,
+
+			'b.module.css': `.b {
+	composes: a from './a.module.css';
+}`,
+		});
+
+		const result = await spawn(process.execPath, [
+			'--input-type=module',
+			'-e',
+			`import { build } from 'vite';
+await build({
+	root: ${JSON.stringify(fixture.path)},
+	configFile: false,
+	logLevel: 'silent',
+	build: {
+		write: false,
+		rollupOptions: { input: ${JSON.stringify(path.join(fixture.path, 'index.js'))} },
+	},
+});`,
+		], {
+			timeout: 8000,
+		}).then(
+			() => 'success' as const,
+			() => 'crash' as const,
+		);
+
+		expect(result).toBe('crash');
+	}, 10_000);
 });

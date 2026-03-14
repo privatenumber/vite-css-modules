@@ -759,6 +759,66 @@ describe('PostCSS', () => {
 			})).rejects.toThrow('Cannot resolve "non-existent" from "./utils.css"');
 		});
 
+		test('cyclic cross-file composes throws a targeted error', async () => {
+			await using fixture = await createFixture({
+				'index.js': outdent`
+				export * from './a.module.css';
+				export { default } from './a.module.css';
+				`,
+
+				'a.module.css': outdent`
+				.a {
+					composes: b from './b.module.css';
+				}
+				`,
+
+				'b.module.css': outdent`
+				.b {
+					composes: a from './a.module.css';
+				}
+				`,
+			});
+
+			await expect(() => viteBuild(fixture.path, {
+				logLevel: 'silent',
+				plugins: [
+					patchCssModules(),
+				],
+			})).rejects.toThrow('Circular CSS Module dependency');
+		});
+
+		test('cyclic cross-file @value throws a targeted error', async () => {
+			await using fixture = await createFixture({
+				'index.js': outdent`
+				export * from './a.module.css';
+				export { default } from './a.module.css';
+				`,
+
+				'a.module.css': outdent`
+				@value accent from './b.module.css';
+
+				.a {
+					color: accent;
+				}
+				`,
+
+				'b.module.css': outdent`
+				@value accent from './a.module.css';
+
+				.b {
+					color: accent;
+				}
+				`,
+			});
+
+			await expect(() => viteBuild(fixture.path, {
+				logLevel: 'silent',
+				plugins: [
+					patchCssModules(),
+				],
+			})).rejects.toThrow('Circular CSS Module dependency');
+		});
+
 		test('exporting a non-safe class name via esm doesnt throw', async () => {
 			await using fixture = await createFixture(fixtures.moduleNamespace);
 
