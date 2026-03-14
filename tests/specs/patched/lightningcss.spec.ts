@@ -681,6 +681,37 @@ describe('LightningCSS', () => {
 		expect(css).toMatch('style.module.css?some-query');
 	});
 
+	test('cyclic cross-file composes throws a targeted error', async () => {
+		await using fixture = await createFixture({
+			'index.js': outdent`
+			export * from './a.module.css';
+			export { default } from './a.module.css';
+			`,
+
+			'a.module.css': outdent`
+			.a {
+				composes: b from './b.module.css';
+			}
+			`,
+
+			'b.module.css': outdent`
+			.b {
+				composes: a from './a.module.css';
+			}
+			`,
+		});
+
+		await expect(() => viteBuild(fixture.path, {
+			logLevel: 'silent',
+			plugins: [
+				patchCssModules(),
+			],
+			css: {
+				transformer: 'lightningcss',
+			},
+		})).rejects.toThrow('Circular CSS Module dependency');
+	});
+
 	test('hmr', async () => {
 		await using fixture = await createFixture(fixtures.viteDev);
 

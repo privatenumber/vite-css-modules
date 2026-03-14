@@ -97,6 +97,7 @@
 		"lintroll": "^1.25.0",
 		"lodash.camelcase": "^4.3.0",
 		"manten": "^2.0.0",
+		"nano-spawn": "^2.0.0",
 		"outdent": "^0.8.0",
 		"pkgroll": "^2.27.0",
 		"playwright-chromium": "^1.58.2",

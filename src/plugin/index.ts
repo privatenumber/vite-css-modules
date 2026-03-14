@@ -18,22 +18,6 @@ import { getCssModuleUrl, cleanUrl, cssModuleRE } from './url-utils.js';
 
 export const pluginName = 'vite:css-modules';
 
-const loadExports = async (
-	context: TransformPluginContext,
-	requestId: string,
-	fromId: string,
-) => {
-	const resolved = await context.resolve(requestId, fromId);
-	if (!resolved) {
-		throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
-	}
-	const loaded = await context.load({
-		id: resolved.id,
-	});
-	const pluginMeta = loaded.meta[pluginName] as PluginMeta;
-	return pluginMeta.exports;
-};
-
 export type PatchConfig = {
 
 	/**
@@ -92,6 +76,104 @@ export const cssModules = (
 	const declarationMap = patchConfig?.declarationMap
 		?? getTsconfig(config.root)?.config.compilerOptions?.declarationMap
 		?? false;
+
+	/*
+	 * Cycle detection for CSS Module `composes` dependencies.
+	 *
+	 * Problem: when A composes from B, we call context.load(B) which triggers
+	 * B's transform. If B composes from A, B's transform calls context.load(A).
+	 * But A's transform is already suspended waiting for B — deadlock. Rollup
+	 * crashes with a generic "Unexpected early exit" instead of a useful error.
+	 *
+	 * Solution: track which module→dependency edges are currently in-flight.
+	 * Before loading a dependency, walk the active edges to check if it would
+	 * create a cycle back to the current module. If so, throw a descriptive
+	 * error instead of deadlocking.
+	 *
+	 * Why shared mutable state (not a passed-through Set): the call chain is
+	 * broken by Rollup's plugin pipeline — context.load() triggers a separate
+	 * transform invocation, so we can't pass parameters between them. The
+	 * activeEdges map is the bridge between independently-invoked transforms.
+	 */
+	const activeEdges = new Map<string, Set<string>>();
+
+	// DFS through active edges to find a path from fromId back to targetId.
+	// Returns the cycle path if found, or undefined if no cycle exists.
+	const findCyclePath = (
+		fromId: string,
+		targetId: string,
+		visited = new Set<string>(),
+	): string[] | undefined => {
+		if (fromId === targetId) {
+			return [fromId];
+		}
+		if (visited.has(fromId)) {
+			return;
+		}
+		visited.add(fromId);
+
+		const dependencies = activeEdges.get(fromId);
+		if (!dependencies) {
+			return;
+		}
+
+		for (const dependencyId of dependencies) {
+			const cyclePath = findCyclePath(dependencyId, targetId, visited);
+			if (cyclePath) {
+				return [fromId, ...cyclePath];
+			}
+		}
+	};
+
+	// Load and return the CSS Module exports from a composed dependency.
+	// Called during transform when processing `composes: class from './dep.css'`.
+	const loadExports = async (
+		context: TransformPluginContext,
+		requestId: string,
+		fromId: string,
+	) => {
+		const resolved = await context.resolve(requestId, fromId);
+		if (!resolved) {
+			throw new Error(`Cannot resolve "${requestId}" from "${fromId}"`);
+		}
+
+		const importerId = cleanUrl(fromId);
+		const dependencyId = cleanUrl(resolved.id);
+
+		// Check if loading this dependency would create a cycle
+		const cyclePath = findCyclePath(dependencyId, importerId);
+		if (cyclePath) {
+			const formatId = (id: string) => {
+				const relativeId = path.relative(config.root, id);
+				return JSON.stringify(relativeId || path.basename(id));
+			};
+			throw new Error(
+				`Circular CSS Module dependency: ${[...cyclePath, dependencyId].map(formatId).join(' -> ')}`,
+			);
+		}
+
+		// Record this edge as active while the dependency loads
+		let dependencies = activeEdges.get(importerId);
+		if (!dependencies) {
+			dependencies = new Set();
+			activeEdges.set(importerId, dependencies);
+		}
+		dependencies.add(dependencyId);
+
+		try {
+			const loaded = await context.load({
+				id: resolved.id,
+			});
+			const pluginMeta = loaded.meta[pluginName] as PluginMeta;
+			return pluginMeta.exports;
+		} finally {
+			// Clean up the active edge after load completes (or fails)
+			dependencies.delete(dependencyId);
+			if (dependencies.size === 0) {
+				activeEdges.delete(importerId);
+			}
+		}
+	};
 
 	let isVitest = false;
 
