@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { readFile, access } from 'fs/promises';
+import fs from 'node:fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
 import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
@@ -202,7 +202,7 @@ export const cssModules = (
 				}
 
 				id = id.split('?', 2)[0]!;
-				return await readFile(id, 'utf8');
+				return await fs.readFile(id, 'utf8');
 			},
 		},
 
@@ -416,7 +416,7 @@ export const cssModules = (
 
 					// Only generate types for importable module files
 					if (filePath && cssModuleRE.test(filePath)) {
-						const fileExists = await access(filePath).then(() => true, () => false);
+						const fileExists = await fs.access(filePath).then(() => true, () => false);
 						if (fileExists) {
 							const dtsPath = `${filePath}.d.ts`;
 							const originalCss = originalCssCache?.get(filePath);
