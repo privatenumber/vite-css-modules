@@ -15,7 +15,9 @@ import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';
 import type { transform as LightningcssTransform } from './transformers/lightningcss.js';
-import { getCssModuleUrl, cleanUrl, cssModuleRE } from './url-utils.js';
+import {
+	getCssModuleUrl, cleanUrl, cssModuleRE, slash,
+} from './url-utils.js';
 
 export const pluginName = 'vite:css-modules';
 
@@ -145,7 +147,7 @@ export const cssModules = (
 		const cyclePath = findCyclePath(dependencyId, importerId);
 		if (cyclePath) {
 			const formatId = (id: string) => {
-				const relativeId = path.relative(config.root, id);
+				const relativeId = slash(path.relative(config.root, id));
 				return JSON.stringify(relativeId || path.basename(id));
 			};
 			throw new Error(
@@ -246,7 +248,7 @@ export const cssModules = (
 					 * Relative path from project root to get stable CSS modules hash
 					 * https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L2690
 					 */
-					cleanUrl(path.relative(config.root, id)),
+					slash(cleanUrl(path.relative(config.root, id))),
 					isLightningCss ? lightningCssOptions : cssModuleConfig,
 					devSourcemap,
 				);
