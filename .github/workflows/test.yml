@@ -80,3 +80,10 @@ jobs:
 
       - name: Test
         run: pnpm test:vite7
+        env:
+          # fs-fixture defaults to os.tmpdir() which is on C: drive,
+          # but the repo checkout is on D: drive. path.relative() cannot
+          # compute relative paths across drives, breaking CSS module
+          # hash generation. Setting TEMP to the same drive fixes this.
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
