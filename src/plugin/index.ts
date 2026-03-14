@@ -14,7 +14,9 @@ import type { PluginMeta, ExportMode } from './types.js';
 import { supportsArbitraryModuleNamespace } from './supports-arbitrary-module-namespace.js';
 import type { transform as PostcssTransform } from './transformers/postcss/index.js';
 import type { transform as LightningcssTransform } from './transformers/lightningcss.js';
-import { getCssModuleUrl, cleanUrl, cssModuleRE, slash } from './url-utils.js';
+import {
+	getCssModuleUrl, cleanUrl, cssModuleRE, slash,
+} from './url-utils.js';
 
 export const pluginName = 'vite:css-modules';
 
