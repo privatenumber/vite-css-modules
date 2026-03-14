@@ -137,8 +137,8 @@ export const getViteDevCode = async (
 ) => await viteServe(
 	fixturePath,
 	config,
-	url => {
-		const posixPath = fixturePath.replace(/\\/g, '/');
+	(url) => {
+		const posixPath = fixturePath.replaceAll('\\', '/');
 		return bundleHttpJs(url, `@fs${posixPath.startsWith('/') ? '' : '/'}${posixPath}/index.js`);
 	},
 );
