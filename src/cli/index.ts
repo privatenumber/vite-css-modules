@@ -5,14 +5,23 @@ import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
 import { generateTypes } from '../plugin/generate-types.js';
 import { writeFileIfChanged } from '../type-files.js';
+import { slash } from '../plugin/url-utils.js';
 import { createCssModuleLoader } from './load-css-module.js';
-import { formatDebugPath } from './debug.js';
 import {
 	findViteConfigInDirectory,
 	loadProjectContext,
 } from './project-context.js';
 
 const defaultGlob = '**/*.module.{css,scss,sass}';
+
+const relativePath = (
+	filePath: string,
+	cwd: string,
+) => slash(
+	path.isAbsolute(filePath)
+		? path.relative(cwd, filePath) || '.'
+		: filePath,
+);
 
 const isPathOutsideRoot = (
 	root: string,
@@ -109,9 +118,9 @@ const isPathOutsideRoot = (
 
 			const dtsPath = `${filePath}.d.ts`;
 			await writeFileIfChanged(dtsPath, generatedDts);
-			console.log(`\u2713 ${formatDebugPath(dtsPath, cwd)}`);
+			console.log(`\u2713 ${relativePath(dtsPath, cwd)}`);
 		} catch (error) {
-			console.error(`\u2717 ${formatDebugPath(filePath, cwd)}`);
+			console.error(`\u2717 ${relativePath(filePath, cwd)}`);
 			console.error(`  ${(error as Error).message}`);
 			process.exitCode = 1;
 		}
