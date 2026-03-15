@@ -62,10 +62,7 @@ const isPathOutsideRoot = (
 		: await findViteConfigInDirectory(cwd);
 
 	if (!configPath) {
-		console.error(`No vite.config.* found in the current working directory: ${cwd}`);
-		console.error('Run this command from the same cwd as Vite, or pass --config.');
-		process.exitCode = 1;
-		return;
+		throw new Error(`No vite.config.* found in the current working directory: ${cwd}\nRun this command from the same cwd as Vite, or pass --config.`);
 	}
 
 	const projectContext = await loadProjectContext({
@@ -79,10 +76,7 @@ const isPathOutsideRoot = (
 
 	if (usingDefaultGlob) {
 		if (isPathOutsideRoot(cwd, root)) {
-			console.error(`Resolved Vite root is outside the current working directory: ${root}`);
-			console.error('Pass explicit globs to control the search scope.');
-			process.exitCode = 1;
-			return;
+			throw new Error(`Resolved Vite root is outside the current working directory: ${root}\nPass explicit globs to control the search scope.`);
 		}
 
 		globs = [defaultGlob];
