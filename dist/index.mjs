@@ -5,7 +5,7 @@ import MagicString from 'magic-string';
 import remapping from '@jridgewell/remapping';
 import { getTsconfig } from 'get-tsconfig';
 import { cssClassPositions } from 'css-class-positions';
-import { g as getCssModuleUrl, c as cssModuleRE, s as slash, a as cleanUrl, b as shouldKeepOriginalExport, d as getLocalesConventionFunction, e as generateTypes, w as writeTypeFiles } from './generate-types-BvRxwusA.mjs';
+import { g as getCssModuleUrl, c as cssModuleRE, s as slash, a as cleanUrl, b as shouldKeepOriginalExport, d as getLocalesConventionFunction, e as generateTypes, w as writeFileIfChanged } from './generate-types-6v6dhFk9.mjs';
 import path$1 from 'path';
 import '@jridgewell/sourcemap-codec';
 
@@ -378,7 +378,7 @@ const cssModules = (config, patchConfig, originalCssCache) => {
                 allowArbitraryNamedExports,
                 sourceMapOptions
               );
-              await writeTypeFiles(dtsPath, newContent, "inline");
+              await writeFileIfChanged(dtsPath, newContent);
             }
           }
         }

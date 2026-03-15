@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
-import { b as shouldKeepOriginalExport, d as getLocalesConventionFunction, a as cleanUrl, g as getCssModuleUrl, s as slash, e as generateTypes, w as writeTypeFiles } from '../generate-types-BvRxwusA.mjs';
+import { b as shouldKeepOriginalExport, d as getLocalesConventionFunction, a as cleanUrl, g as getCssModuleUrl, e as generateTypes, w as writeFileIfChanged, s as slash } from '../generate-types-6v6dhFk9.mjs';
 import { cssClassPositions } from 'css-class-positions';
 import { preprocessCSS, loadConfigFromFile, createLogger, resolveConfig } from 'vite';
 import { transform as transform$1 } from '../index-BKVAQCWi.mjs';
@@ -162,14 +162,6 @@ const createCssModuleLoader = (context) => {
   return loadCssModule;
 };
 
-const formatDebugPath = (filePath, cwd = process.cwd()) => {
-  if (!path.isAbsolute(filePath)) {
-    return slash(filePath);
-  }
-  const relativePath = path.relative(cwd, filePath);
-  return slash(relativePath || ".");
-};
-
 const viteConfigNames = [
   "vite.config.ts",
   "vite.config.mts",
@@ -245,10 +237,6 @@ const loadProjectContext = async (options) => {
 };
 
 const defaultGlob = "**/*.module.{css,scss,sass}";
-const isPathOutsideRoot = (root, filePath) => {
-  const relativePath = path.relative(root, filePath);
-  return relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath);
-};
 (async () => {
   const argv = cli({
     name: "vite-css-modules",
@@ -270,30 +258,29 @@ const isPathOutsideRoot = (root, filePath) => {
   const cwd = process.cwd();
   const { globs: inputGlobs = [] } = argv._;
   const { config, mode } = argv.flags;
-  const usingDefaultGlob = inputGlobs.length === 0;
   const configPath = config ? path.resolve(config) : await findViteConfigInDirectory(cwd);
   if (!configPath) {
-    console.error(`No vite.config.* found in the current working directory: ${cwd}`);
-    console.error("Run this command from the same cwd as Vite, or pass --config.");
-    process.exitCode = 1;
-    return;
+    throw new Error(`No vite.config.* found in the current working directory: ${cwd}
+Run this command from the same cwd as Vite, or pass --config.`);
   }
   const projectContext = await loadProjectContext({
     configPath,
     mode
   });
   const { root } = projectContext.resolvedConfig;
-  let globs = inputGlobs;
-  let globCwd = cwd;
-  if (usingDefaultGlob) {
-    if (isPathOutsideRoot(cwd, root)) {
-      console.error(`Resolved Vite root is outside the current working directory: ${root}`);
-      console.error("Pass explicit globs to control the search scope.");
-      process.exitCode = 1;
-      return;
+  let globs;
+  let globCwd;
+  if (inputGlobs.length === 0) {
+    const rootRelative = path.relative(cwd, root);
+    if (rootRelative.startsWith(`..${path.sep}`) || path.isAbsolute(rootRelative)) {
+      throw new Error(`Resolved Vite root is outside the current working directory: ${root}
+Pass explicit globs to control the search scope.`);
     }
     globs = [defaultGlob];
     globCwd = root;
+  } else {
+    globs = inputGlobs;
+    globCwd = cwd;
   }
   const files = await glob(globs, {
     absolute: true,
@@ -305,6 +292,9 @@ const isPathOutsideRoot = (root, filePath) => {
     return;
   }
   const loadCssModule = createCssModuleLoader(projectContext);
+  const toRelative = (filePath) => slash(
+    path.isAbsolute(filePath) ? path.relative(cwd, filePath) || "." : filePath
+  );
   for (const filePath of files) {
     try {
       const sourceCode = await fs.readFile(filePath, "utf8");
@@ -318,12 +308,11 @@ const isPathOutsideRoot = (root, filePath) => {
         false,
         sourceMapOptions
       );
-      const outputPaths = await writeTypeFiles(`${filePath}.d.ts`, generatedDts, "external");
-      for (const outputPath of outputPaths) {
-        console.log(`\u2713 ${formatDebugPath(outputPath, cwd)}`);
-      }
+      const dtsPath = `${filePath}.d.ts`;
+      await writeFileIfChanged(dtsPath, generatedDts);
+      console.log(`\u2713 ${toRelative(dtsPath)}`);
     } catch (error) {
-      console.error(`\u2717 ${formatDebugPath(filePath, cwd)}`);
+      console.error(`\u2717 ${toRelative(filePath)}`);
       console.error(`  ${error.message}`);
       process.exitCode = 1;
     }

@@ -10,23 +10,11 @@ var cssClassPositions = require('css-class-positions');
 var sourcemapCodec = require('@jridgewell/sourcemap-codec');
 var path$1 = require('path');
 
-const inlineSourceMapPattern = /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,([A-Za-z0-9+/=]+)\n?$/;
 const writeFileIfChanged = async (filePath, content) => {
   const existingContent = await fs.readFile(filePath, "utf8").catch(() => null);
   if (existingContent !== content) {
     await fs.writeFile(filePath, content);
   }
-};
-const writeTypeFiles = async (dtsPath, dts, sourceMapMode) => {
-  const dtsMapPath = `${dtsPath}.map`;
-  dts.match(inlineSourceMapPattern);
-  await writeFileIfChanged(dtsPath, dts);
-  await fs.unlink(dtsMapPath).catch((error) => {
-    if (error.code !== "ENOENT") {
-      throw error;
-    }
-  });
-  return [dtsPath];
 };
 
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
@@ -939,7 +927,7 @@ const cssModules = (config, patchConfig, originalCssCache) => {
                 allowArbitraryNamedExports,
                 sourceMapOptions
               );
-              await writeTypeFiles(dtsPath, newContent);
+              await writeFileIfChanged(dtsPath, newContent);
             }
           }
         }
