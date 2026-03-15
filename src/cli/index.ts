@@ -56,7 +56,6 @@ const isPathOutsideRoot = (
 	const cwd = process.cwd();
 	const { globs: inputGlobs = [] } = argv._;
 	const { config, mode } = argv.flags;
-	const usingDefaultGlob = inputGlobs.length === 0;
 	const configPath = config
 		? path.resolve(config)
 		: await findViteConfigInDirectory(cwd);
@@ -74,7 +73,7 @@ const isPathOutsideRoot = (
 	let globs = inputGlobs;
 	let globCwd = cwd;
 
-	if (usingDefaultGlob) {
+	if (inputGlobs.length === 0) {
 		if (isPathOutsideRoot(cwd, root)) {
 			throw new Error(`Resolved Vite root is outside the current working directory: ${root}\nPass explicit globs to control the search scope.`);
 		}
