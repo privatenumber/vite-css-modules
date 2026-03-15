@@ -14,24 +14,6 @@ import {
 
 const defaultGlob = '**/*.module.{css,scss,sass}';
 
-const relativePath = (
-	filePath: string,
-	cwd: string,
-) => slash(
-	path.isAbsolute(filePath)
-		? path.relative(cwd, filePath) || '.'
-		: filePath,
-);
-
-const isPathOutsideRoot = (
-	root: string,
-	filePath: string,
-) => {
-	const relativePath = path.relative(root, filePath);
-	return relativePath.startsWith(`..${path.sep}`)
-		|| path.isAbsolute(relativePath);
-};
-
 (async () => {
 	const argv = cli({
 		name: 'vite-css-modules',
@@ -70,16 +52,20 @@ const isPathOutsideRoot = (
 	});
 	const { root } = projectContext.resolvedConfig;
 
-	let globs = inputGlobs;
-	let globCwd = cwd;
+	let globs: string[];
+	let globCwd: string;
 
 	if (inputGlobs.length === 0) {
-		if (isPathOutsideRoot(cwd, root)) {
+		const rootRelative = path.relative(cwd, root);
+		if (rootRelative.startsWith(`..${path.sep}`) || path.isAbsolute(rootRelative)) {
 			throw new Error(`Resolved Vite root is outside the current working directory: ${root}\nPass explicit globs to control the search scope.`);
 		}
 
 		globs = [defaultGlob];
 		globCwd = root;
+	} else {
+		globs = inputGlobs;
+		globCwd = cwd;
 	}
 
 	const files = await glob(globs, {
@@ -94,6 +80,12 @@ const isPathOutsideRoot = (
 	}
 
 	const loadCssModule = createCssModuleLoader(projectContext);
+
+	const toRelative = (filePath: string) => slash(
+		path.isAbsolute(filePath)
+			? path.relative(cwd, filePath) || '.'
+			: filePath,
+	);
 
 	for (const filePath of files) {
 		try {
@@ -111,9 +103,9 @@ const isPathOutsideRoot = (
 
 			const dtsPath = `${filePath}.d.ts`;
 			await writeFileIfChanged(dtsPath, generatedDts);
-			console.log(`\u2713 ${relativePath(dtsPath, cwd)}`);
+			console.log(`\u2713 ${toRelative(dtsPath)}`);
 		} catch (error) {
-			console.error(`\u2717 ${relativePath(filePath, cwd)}`);
+			console.error(`\u2717 ${toRelative(filePath)}`);
 			console.error(`  ${(error as Error).message}`);
 			process.exitCode = 1;
 		}
