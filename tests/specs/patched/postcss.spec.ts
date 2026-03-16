@@ -690,6 +690,31 @@ describe('PostCSS', () => {
 		expect(css).toBeUndefined();
 	});
 
+	test('Comment-only CSS Module', async () => {
+		await using fixture = await createFixture(fixtures.commentOnlyCssModule);
+
+		const { js, css } = await viteBuild(fixture.path, {
+			plugins: [
+				patchCssModules(),
+			],
+			css: {
+				modules: {
+					generateScopedName: 'asdf_[local]',
+				},
+			},
+		});
+
+		const exported = await import(base64Module(js));
+		expect(exported).toMatchObject({
+			default: {},
+		});
+
+		if (!css) return;
+
+		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
+		expect(css.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
+	});
+
 	describe('@value', () => {
 		test('build', async () => {
 			await using fixture = await createFixture(fixtures.cssModulesValues);

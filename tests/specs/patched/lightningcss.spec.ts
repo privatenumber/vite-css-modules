@@ -67,9 +67,34 @@ describe('LightningCSS', () => {
 		expect(exported).toMatchObject({
 			default: {},
 		});
-		// Vite 8 (Rolldown) adds internal CSS chunk markers to output
-		const cssContent = css.replace(/\/\*\$vite\$.*?\*\//g, '').trim();
-		expect(cssContent).toBe('');
+
+		if (!css) return;
+		
+		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
+		expect(css.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
+	});
+
+	test('Comment-only CSS Module', async () => {
+		await using fixture = await createFixture(fixtures.commentOnlyCssModule);
+
+		const { js, css } = await viteBuild(fixture.path, {
+			plugins: [
+				patchCssModules(),
+			],
+			css: {
+				transformer: 'lightningcss',
+			},
+		});
+
+		const exported = await import(base64Module(js));
+		expect(exported).toMatchObject({
+			default: {},
+		});
+
+		if (!css) return;
+
+		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
+		expect(css.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
 	});
 
 	// https://github.com/vitejs/vite/issues/14050
