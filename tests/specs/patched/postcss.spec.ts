@@ -6,11 +6,14 @@ import { describe, test, expect } from 'manten';
 import { decode } from '@jridgewell/sourcemap-codec';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
+import { version } from 'vite';
 import { base64Module } from '../../utils/base64-module.ts';
 import * as fixtures from '../../fixtures.ts';
 import { viteBuild, getViteDevCode, viteDevBrowser } from '../../utils/vite.ts';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.ts';
 import { patchCssModules } from '#vite-css-modules';
+
+const viteMajor = Number(version.split('.')[0]);
 
 describe('PostCSS', () => {
 	describe('no config', () => {
@@ -1269,7 +1272,7 @@ describe('PostCSS', () => {
 .button { color: blue; }`,
 			});
 
-			await viteBuild(fixture.path, {
+			const buildOptions = {
 				plugins: [
 					patchCssModules({
 						generateSourceTypes: true,
@@ -1279,7 +1282,15 @@ describe('PostCSS', () => {
 				build: {
 					target: 'es2022',
 				},
-			});
+			};
+
+			// Vite 8 (Rolldown) rejects unicode lone surrogates in export names
+			if (viteMajor >= 8) {
+				await expect(viteBuild(fixture.path, buildOptions)).rejects.toThrow();
+				return;
+			}
+
+			await viteBuild(fixture.path, buildOptions);
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			const dtsMap = extractInlineSourceMap(dts);

@@ -67,7 +67,9 @@ describe('LightningCSS', () => {
 		expect(exported).toMatchObject({
 			default: {},
 		});
-		expect(css).toBe('\n');
+		// Vite 8 (Rolldown) adds internal CSS chunk markers to output
+		const cssContent = css.replace(/\/\*\$vite\$.*?\*\//g, '').trim();
+		expect(cssContent).toBe('');
 	});
 
 	// https://github.com/vitejs/vite/issues/14050

@@ -443,6 +443,10 @@ export const cssModules = (
 				return {
 					code: jsCode,
 					map: map ?? { mappings: '' },
+
+					// Vite 8 (Rolldown) auto-detects module type from extension;
+					// CSS files need explicit moduleType since we return JS
+					moduleType: 'js',
 					meta: {
 						[pluginName]: {
 							css: outputCss,
