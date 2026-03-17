@@ -69,7 +69,7 @@ describe('LightningCSS', () => {
 		});
 
 		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
-		expect(css!.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
+		expect(css!.replaceAll(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
 	});
 
 	test('Comment-only CSS Module', async () => {
@@ -90,7 +90,7 @@ describe('LightningCSS', () => {
 		});
 
 		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
-		expect(css!.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
+		expect(css!.replaceAll(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
 	});
 
 	// https://github.com/vitejs/vite/issues/14050

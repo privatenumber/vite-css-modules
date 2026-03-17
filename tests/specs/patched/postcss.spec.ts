@@ -2,7 +2,9 @@ import { setTimeout } from 'node:timers/promises';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { createFixture } from 'fs-fixture';
-import { describe, test, expect, skip } from 'manten';
+import {
+	describe, test, expect, skip,
+} from 'manten';
 import { decode } from '@jridgewell/sourcemap-codec';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
@@ -710,7 +712,7 @@ describe('PostCSS', () => {
 		});
 
 		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
-		expect(css!.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
+		expect(css!.replaceAll(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
 	});
 
 	describe('@value', () => {
