@@ -9,7 +9,7 @@ export const transform: Transformer<LightningCSSOptions> = (
 	options,
 	generateSourceMap,
 ) => {
-	// @ts-expect-error lightningcss types may differ across Vite versions (1.30 vs 1.32)
+	// @ts-expect-error Vite 8 references lightningcss 1.32 types; locally resolved version may differ
 	const transformed = lightningcssTransform({
 		...options,
 		filename: id,
