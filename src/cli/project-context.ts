@@ -50,9 +50,9 @@ export const findViteConfigInDirectory = async (
 const findPatchPlugin = (
 	userConfig: UserConfig,
 ): Plugin | undefined => {
-	const plugins = [userConfig.plugins ?? []].flat(Infinity) as Plugin[];
-	return plugins.find(
-		plugin => plugin && typeof plugin === 'object' && plugin.name === 'patch-css-modules',
+	const plugins = (userConfig.plugins ?? []) as unknown as Plugin[];
+	return plugins.flat(Infinity).find(
+		(plugin: Plugin) => plugin && typeof plugin === 'object' && plugin.name === 'patch-css-modules',
 	);
 };
 
