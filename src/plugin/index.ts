@@ -127,14 +127,16 @@ export const cssModules = (
 		}
 	};
 
+	// Minimal structural type for Rollup/Rolldown context compatibility
+	type ModuleLoader = {
+		resolve(source: string, importer: string): Promise<{ id: string } | null>;
+		load(options: { id: string }): Promise<{ meta: Record<string, unknown> }>;
+	};
+
 	// Load and return the CSS Module exports from a composed dependency.
 	// Called during transform when processing `composes: class from './dep.css'`.
 	const loadExports = async (
-		// Minimal structural type for Rollup/Rolldown context compatibility
-		context: {
-			resolve(source: string, importer: string): Promise<{ id: string } | null>;
-			load(options: { id: string }): Promise<{ meta: Record<string, unknown> }>;
-		},
+		context: ModuleLoader,
 		requestId: string,
 		fromId: string,
 	) => {
