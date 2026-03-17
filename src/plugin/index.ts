@@ -128,7 +128,7 @@ export const cssModules = (
 	};
 
 	// Minimal structural type for Rollup/Rolldown context compatibility
-	type ModuleLoader = {
+	type PluginContext = {
 		resolve(source: string, importer: string): Promise<{ id: string } | null>;
 		load(options: { id: string }): Promise<{ meta: Record<string, unknown> }>;
 	};
@@ -136,7 +136,7 @@ export const cssModules = (
 	// Load and return the CSS Module exports from a composed dependency.
 	// Called during transform when processing `composes: class from './dep.css'`.
 	const loadExports = async (
-		context: ModuleLoader,
+		context: PluginContext,
 		requestId: string,
 		fromId: string,
 	) => {
