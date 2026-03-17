@@ -47,7 +47,11 @@ describe('CLI', () => {
 
 	test('no arguments default to CSS Module globs under the resolved config root', async () => {
 		await using fixture = await createFixture({
-			'vite.config.mjs': `export default {
+			'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+			'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	root: 'client',
 };`,
 			'client/src/inside.module.css': '.inside { color: red; }',
@@ -127,7 +131,11 @@ describe('CLI', () => {
 
 	test('explicit globs are resolved from cwd instead of config root', async () => {
 		await using fixture = await createFixture({
-			'vite.config.mjs': `export default {
+			'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+			'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	root: 'client',
 };`,
 			'client/src/inside.module.css': '.inside { color: red; }',
@@ -288,7 +296,12 @@ describe('CLI', () => {
 
 	test('no arguments error when the resolved config root is outside cwd', async () => {
 		await using fixture = await createFixture({
-			'project/vite.config.mjs': `export default {
+			'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+			'project/node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+			'project/vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	root: '../shared',
 };`,
 			'shared/src/style.module.css': '.button { color: red; }',
@@ -303,6 +316,7 @@ describe('CLI', () => {
 	describe('project mode expectations', () => {
 		test('loads TypeScript vite config with imported base config by default', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'base.ts': `export default {
 	css: {
 		modules: {
@@ -310,10 +324,12 @@ describe('CLI', () => {
 		},
 	},
 };`,
-				'vite.config.ts': `import base from './base.ts';
+				'vite.config.ts': `import { patchCssModules } from 'vite-css-modules';
+import base from './base.ts';
 
 export default {
 	...base,
+	plugins: [patchCssModules()],
 	root: __dirname,
 };`,
 				'style.module.css': '.my-button { color: red; }',
@@ -329,7 +345,11 @@ export default {
 
 		test('uses explicit --config path', async () => {
 			await using fixture = await createFixture({
-				'config/vite.config.mjs': `export default {
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+				'config/vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	css: {
 		modules: {
 			localsConvention: 'camelCaseOnly',
@@ -352,7 +372,11 @@ export default {
 
 		test('no arguments use explicit --config path and its resolved root', async () => {
 			await using fixture = await createFixture({
-				'config/vite.config.mjs': `export default {
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+				'config/vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	root: '../client',
 	css: {
 		modules: {
@@ -381,8 +405,12 @@ export default {
 
 		test('uses --mode for Vite config loading', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': '.my-button { color: red; }',
-				'vite.config.mjs': `export default ({ mode }) => ({
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default ({ mode }) => ({
+	plugins: [patchCssModules()],
 	css: {
 		modules: {
 			localsConvention: mode === 'production'
@@ -406,8 +434,12 @@ export default {
 
 		test('uses vite config localsConvention by default', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': '.my-button { color: red; }',
-				'vite.config.mjs': `export default {
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	css: {
 		modules: {
 			localsConvention: 'camelCaseOnly',
@@ -426,8 +458,12 @@ export default {
 
 		test('uses vite config exportGlobals by default', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': ':global(.global-class) { color: red; }',
-				'vite.config.mjs': `export default {
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	css: {
 		modules: {
 			exportGlobals: true,
@@ -445,9 +481,13 @@ export default {
 
 		test('uses vite config globalModulePaths by default', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'global.module.css': `.page { color: red; }
 :local(.title) { color: blue; }`,
-				'vite.config.mjs': String.raw`export default {
+				'vite.config.mjs': String.raw`
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	css: {
 		modules: {
 			globalModulePaths: [/global\.module\.css/],
@@ -466,8 +506,12 @@ export default {
 
 		test('uses vite config function localsConvention by default', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': '.my-button { color: red; }',
-				'vite.config.mjs': `export default {
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	css: {
 		modules: {
 			localsConvention: () => 'customName',
@@ -519,8 +563,12 @@ export default {
 
 		test('updates generated outputs when resolved Vite config changes', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': '.my-button { color: red; }',
-				'vite.config.mjs': `export default {
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
 	css: {
 		modules: {
 			localsConvention: process.env.CAMEL === '1'
@@ -654,11 +702,15 @@ export default {
 
 		test('resolves alias-based dependency errors through vite resolve.alias', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'styles/base.module.css': '.base { color: red; }',
 				'style.module.css': '.button { composes: missing from "#styles/base.module.css"; }',
-				'vite.config.mjs': `import { fileURLToPath } from 'node:url';
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+import { fileURLToPath } from 'node:url';
 
 export default {
+	plugins: [patchCssModules()],
 	resolve: {
 		alias: {
 			'#styles': fileURLToPath(new URL('./styles', import.meta.url)),
@@ -675,11 +727,15 @@ export default {
 
 		test('resolves alias-based dependency success through vite resolve.alias', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'styles/base.module.css': '.base { color: red; }',
 				'style.module.css': '.button { composes: base from "#styles/base.module.css"; }',
-				'vite.config.mjs': `import { fileURLToPath } from 'node:url';
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+import { fileURLToPath } from 'node:url';
 
 export default {
+	plugins: [patchCssModules()],
 	resolve: {
 		alias: {
 			'#styles': fileURLToPath(new URL('./styles', import.meta.url)),
