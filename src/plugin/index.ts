@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { readFile, writeFile, access } from 'fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
-import type { TransformPluginContext, ExistingRawSourceMap } from 'rollup';
+import type { ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@jridgewell/remapping';
@@ -127,10 +127,16 @@ export const cssModules = (
 		}
 	};
 
+	// Minimal structural type for Rollup/Rolldown context compatibility
+	type PluginContext = {
+		resolve(source: string, importer: string): Promise<{ id: string } | null>;
+		load(options: { id: string }): Promise<{ meta: Record<string, unknown> }>;
+	};
+
 	// Load and return the CSS Module exports from a composed dependency.
 	// Called during transform when processing `composes: class from './dep.css'`.
 	const loadExports = async (
-		context: TransformPluginContext,
+		context: PluginContext,
 		requestId: string,
 		fromId: string,
 	) => {
@@ -443,6 +449,10 @@ export const cssModules = (
 				return {
 					code: jsCode,
 					map: map ?? { mappings: '' },
+
+					// Vite 8 (Rolldown) auto-detects module type from extension;
+					// CSS files need explicit moduleType since we return JS
+					moduleType: 'js',
 					meta: {
 						[pluginName]: {
 							css: outputCss,

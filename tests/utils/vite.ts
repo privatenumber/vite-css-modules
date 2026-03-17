@@ -41,6 +41,10 @@ export const viteBuild = async (
 			},
 			rollupOptions: {
 				onwarn: ({ message }) => {
+					// Rolldown emits PLUGIN_TIMINGS warnings on slow machines (e.g. Windows CI)
+					if (message.includes('PLUGIN_TIMINGS')) {
+						return;
+					}
 					warnings.push(message);
 				},
 			},

@@ -67,7 +67,30 @@ describe('LightningCSS', () => {
 		expect(exported).toMatchObject({
 			default: {},
 		});
-		expect(css).toBe('\n');
+
+		// Empty modules should produce no CSS rules (only whitespace/comments)
+		expect(css!).not.toContain('{');
+	});
+
+	test('Comment-only CSS Module', async () => {
+		await using fixture = await createFixture(fixtures.commentOnlyCssModule);
+
+		const { js, css } = await viteBuild(fixture.path, {
+			plugins: [
+				patchCssModules(),
+			],
+			css: {
+				transformer: 'lightningcss',
+			},
+		});
+
+		const exported = await import(base64Module(js));
+		expect(exported).toMatchObject({
+			default: {},
+		});
+
+		// Empty modules should produce no CSS rules (only whitespace/comments)
+		expect(css!).not.toContain('{');
 	});
 
 	// https://github.com/vitejs/vite/issues/14050

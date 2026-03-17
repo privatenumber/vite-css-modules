@@ -2,15 +2,20 @@ import { setTimeout } from 'node:timers/promises';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { createFixture } from 'fs-fixture';
-import { describe, test, expect } from 'manten';
+import {
+	describe, test, expect, skip,
+} from 'manten';
 import { decode } from '@jridgewell/sourcemap-codec';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
+import * as vite from 'vite';
 import { base64Module } from '../../utils/base64-module.ts';
 import * as fixtures from '../../fixtures.ts';
 import { viteBuild, getViteDevCode, viteDevBrowser } from '../../utils/vite.ts';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.ts';
 import { patchCssModules } from '#vite-css-modules';
+
+const usesRolldown = 'rolldownVersion' in vite;
 
 describe('PostCSS', () => {
 	describe('no config', () => {
@@ -687,6 +692,29 @@ describe('PostCSS', () => {
 		expect(css).toBeUndefined();
 	});
 
+	test('Comment-only CSS Module', async () => {
+		await using fixture = await createFixture(fixtures.commentOnlyCssModule);
+
+		const { js, css } = await viteBuild(fixture.path, {
+			plugins: [
+				patchCssModules(),
+			],
+			css: {
+				modules: {
+					generateScopedName: 'asdf_[local]',
+				},
+			},
+		});
+
+		const exported = await import(base64Module(js));
+		expect(exported).toMatchObject({
+			default: {},
+		});
+
+		// Empty modules should produce no CSS rules (only whitespace/comments)
+		expect(css!).not.toContain('{');
+	});
+
 	describe('@value', () => {
 		test('build', async () => {
 			await using fixture = await createFixture(fixtures.cssModulesValues);
@@ -1268,6 +1296,11 @@ describe('PostCSS', () => {
 				'style.module.css': String.raw`.\110000bad { color: red; }
 .button { color: blue; }`,
 			});
+
+			// Rolldown rejects unicode lone surrogates in export names
+			if (usesRolldown) {
+				skip('Rolldown rejects unicode lone surrogates in export names');
+			}
 
 			await viteBuild(fixture.path, {
 				plugins: [
