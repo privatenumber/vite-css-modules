@@ -1297,7 +1297,12 @@ describe('PostCSS', () => {
 .button { color: blue; }`,
 			});
 
-			const buildOptions = {
+			// Rolldown rejects unicode lone surrogates in export names
+			if (usesRolldown) {
+				skip('Rolldown rejects unicode lone surrogates in export names');
+			}
+
+			await viteBuild(fixture.path, {
 				plugins: [
 					patchCssModules({
 						generateSourceTypes: true,
@@ -1307,14 +1312,7 @@ describe('PostCSS', () => {
 				build: {
 					target: 'es2022',
 				},
-			};
-
-			// Rolldown rejects unicode lone surrogates in export names
-			if (usesRolldown) {
-				skip('Rolldown rejects unicode lone surrogates in export names');
-			}
-
-			await viteBuild(fixture.path, buildOptions);
+			});
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			const dtsMap = extractInlineSourceMap(dts);
