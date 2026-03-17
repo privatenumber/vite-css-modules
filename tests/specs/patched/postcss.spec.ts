@@ -710,7 +710,8 @@ describe('PostCSS', () => {
 		});
 
 		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
-		expect(css?.replace(/\/\*[\s\S]*?\*\//g, '').trim() ?? '').toBe('');
+		expect(typeof css).toBe('string');
+		expect(css!.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
 	});
 
 	describe('@value', () => {
