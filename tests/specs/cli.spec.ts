@@ -23,9 +23,12 @@ const runCli = (
 })
 	.catch((error: SubprocessError) => error);
 
+const projectRoot = path.resolve('.');
+
 const createProjectFixture = (
 	files: Record<string, string>,
 ) => createFixture({
+	'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 	'vite.config.mjs': `
 import { patchCssModules } from 'vite-css-modules';
 export default {
@@ -742,6 +745,7 @@ export default {
 
 		test('errors when patchCssModules is imported but not in plugins', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': '.button { color: red; }',
 				'vite.config.mjs': `
 import { patchCssModules } from 'vite-css-modules';
@@ -774,6 +778,7 @@ export default { plugins };
 
 		test('uses exportMode from patchCssModules config', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': '.button { color: red; }',
 				'vite.config.mjs': `
 import { patchCssModules } from 'vite-css-modules';
@@ -797,6 +802,7 @@ export default {
 
 		test('uses exportMode named from patchCssModules config', async () => {
 			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 				'style.module.css': '.button { color: red; }',
 				'vite.config.mjs': `
 import { patchCssModules } from 'vite-css-modules';

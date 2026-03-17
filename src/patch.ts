@@ -7,6 +7,14 @@ import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
 
+const patchConfigSymbol = Symbol('patchConfig');
+
+export const getPatchConfig = (
+	plugin: Plugin,
+): PatchConfig | undefined => (
+	plugin as Record<symbol, unknown>
+)[patchConfigSymbol] as PatchConfig | undefined;
+
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
 const directRequestRE = /[?&]direct\b/;
 const inlineRE = /[?&]inline\b/;
@@ -212,9 +220,10 @@ export const patchCssModules = (
 	 */
 	const originalCssCache = new Map<string, string>();
 
-	const plugin: Plugin = {
+	const plugin: Plugin & Record<symbol, unknown> = {
 		name: 'patch-css-modules',
 		enforce: 'pre',
+		[patchConfigSymbol]: patchConfig,
 
 		transform: {
 			filter: {

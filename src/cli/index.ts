@@ -96,7 +96,7 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 			} = await loadCssModule(filePath, true, sourceCode);
 			const generatedDts = generateTypes(
 				exports,
-				'both',
+				projectContext.exportMode,
 				false,
 				sourceMapOptions,
 			);

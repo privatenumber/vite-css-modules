@@ -7,9 +7,12 @@ import {
 	resolveConfig,
 	type CSSModulesOptions,
 	type InlineConfig,
+	type Plugin,
 	type ResolvedConfig,
 	type UserConfig,
 } from 'vite';
+import { getPatchConfig } from '../patch.js';
+import type { ExportMode } from '../plugin/types.js';
 
 const viteConfigNames = [
 	'vite.config.ts',
@@ -23,6 +26,7 @@ const viteConfigNames = [
 export type ProjectContext = {
 	cssModulesConfig: CSSModulesOptions;
 	declarationMap: boolean;
+	exportMode: ExportMode;
 	resolvedConfig: ResolvedConfig;
 };
 
@@ -41,6 +45,15 @@ export const findViteConfigInDirectory = async (
 			return configPath;
 		}
 	}
+};
+
+const findPatchPlugin = (
+	userConfig: UserConfig,
+): Plugin | undefined => {
+	const plugins = [userConfig.plugins ?? []].flat(Infinity) as Plugin[];
+	return plugins.find(
+		plugin => plugin && typeof plugin === 'object' && plugin.name === 'patch-css-modules',
+	);
 };
 
 const sanitizeUserConfig = (
@@ -100,6 +113,24 @@ export const loadProjectContext = async (
 		throw new Error(`Could not load Vite config: ${options.configPath}`);
 	}
 
+	const patchPlugin = findPatchPlugin(loadedConfig.config);
+	if (!patchPlugin) {
+		throw new Error(
+			'patchCssModules() plugin not found in the Vite config plugins array.\n'
+			+ 'The CLI requires patchCssModules() to be configured in your Vite config.',
+		);
+	}
+
+	const patchConfig = getPatchConfig(patchPlugin);
+	const exportMode: ExportMode = patchConfig?.exportMode ?? 'both';
+
+	if (loadedConfig.config.css?.modules === false) {
+		throw new Error(
+			'CSS Modules are disabled (css.modules: false) in the Vite config.\n'
+			+ 'The CLI cannot generate types when CSS Modules are disabled.',
+		);
+	}
+
 	const resolvedConfig = await resolveConfig(
 		sanitizeUserConfig(options.configPath, loadedConfig.config, options),
 		'serve',
@@ -108,9 +139,8 @@ export const loadProjectContext = async (
 		false,
 	);
 
-	const declarationMap = Boolean(
-		getTsconfig(resolvedConfig.root)?.config.compilerOptions?.declarationMap,
-	);
+	const declarationMap = patchConfig?.declarationMap
+		?? Boolean(getTsconfig(resolvedConfig.root)?.config.compilerOptions?.declarationMap);
 
 	const cssModulesConfig: CSSModulesOptions = {
 		...loadedConfig.config.css?.modules,
@@ -119,6 +149,7 @@ export const loadProjectContext = async (
 	return {
 		cssModulesConfig,
 		declarationMap,
+		exportMode,
 		resolvedConfig,
 	};
 };
