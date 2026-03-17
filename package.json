@@ -35,6 +35,7 @@
 	},
 	"imports": {
 		"vite": {
+			"vite7": "vite7",
 			"vite6": "vite6",
 			"vite5": "vite5",
 			"default": "vite"
@@ -50,8 +51,9 @@
 		"build": "pkgroll",
 		"test:vite5": "node --import alias-imports --conditions=vite5 tests/index.ts",
 		"test:vite6": "node --import alias-imports --conditions=vite6 tests/index.ts",
-		"test:vite7": "node tests/index.ts",
-		"test": "pnpm test:vite5 && pnpm test:vite6 && pnpm test:vite7",
+		"test:vite7": "node --import alias-imports --conditions=vite7 tests/index.ts",
+		"test:vite8": "node tests/index.ts",
+		"test": "pnpm test:vite5 && pnpm test:vite6 && pnpm test:vite7 && pnpm test:vite8",
 		"dev": "node --watch --conditions=development tests/index.ts",
 		"type-check": "tsc",
 		"lint": "lintroll --git --ignore-pattern README.md",
@@ -78,7 +80,7 @@
 	"peerDependencies": {
 		"lightningcss": "^1.23.0",
 		"postcss": "^8.4.49",
-		"vite": "^5.0.12 || ^6.0.0 || ^7.0.0"
+		"vite": "^5.0.12 || ^6.0.0 || ^7.0.0 || ^8.0.0"
 	},
 	"peerDependenciesMeta": {
 		"lightningcss": {
@@ -109,9 +111,10 @@
 		"sass": "^1.97.3",
 		"skills-npm": "^1.0.0",
 		"typescript": "^5.9.3",
-		"vite": "^7.3.1",
+		"vite": "^8.0.0",
 		"vite5": "npm:vite@5.4.21",
 		"vite6": "npm:vite@6.4.1",
+		"vite7": "npm:vite@7.3.1",
 		"vue": "^3.5.30"
 	}
 }

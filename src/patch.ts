@@ -142,6 +142,7 @@ const supportNewCssModules = (
 				return {
 					code,
 					map: { mappings: '' },
+					moduleType: 'js',
 				};
 			}
 
@@ -161,6 +162,7 @@ const supportNewCssModules = (
 			return {
 				code: jsCode,
 				map: { mappings: '' },
+				moduleType: 'js',
 				moduleSideEffects: 'no-treeshake',
 			};
 		}

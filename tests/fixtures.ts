@@ -12,6 +12,14 @@ export const emptyCssModule = Object.freeze({
 	'style.module.css': '',
 });
 
+export const commentOnlyCssModule = Object.freeze({
+	'index.js': outdent`
+	export * from './style.module.css';
+	export { default } from './style.module.css';
+	`,
+	'style.module.css': '/* this module intentionally left blank */',
+});
+
 /**
  * PostCSS plugin that adds a "--file" CSS variable to indicate PostCSS
  * has been successfully applied
