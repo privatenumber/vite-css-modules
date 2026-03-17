@@ -26,7 +26,12 @@ const runCli = (
 const createProjectFixture = (
 	files: Record<string, string>,
 ) => createFixture({
-	'vite.config.mjs': 'export default {};',
+	'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
+};
+`,
 	...files,
 });
 
@@ -720,6 +725,97 @@ export default {
 			const result = await runCli(['style.module.css'], fixture.path);
 			expect(result.exitCode).toBe(1);
 			expect(result.stderr).toMatch('missing.css');
+		});
+	});
+
+	describe('plugin detection', () => {
+		test('errors when vite config has no patchCssModules plugin', async () => {
+			await using fixture = await createFixture({
+				'style.module.css': '.button { color: red; }',
+				'vite.config.mjs': 'export default {};',
+			});
+
+			const result = await runCli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toMatch('patchCssModules');
+		});
+
+		test('errors when patchCssModules is imported but not in plugins', async () => {
+			await using fixture = await createFixture({
+				'style.module.css': '.button { color: red; }',
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+
+// Conditionally excluded — plugin not actually used
+const plugins = [];
+
+export default { plugins };
+`,
+			});
+
+			const result = await runCli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toMatch('patchCssModules');
+		});
+
+		test('errors when css.modules is explicitly false', async () => {
+			await using fixture = await createFixture({
+				'style.module.css': '.button { color: red; }',
+				'vite.config.mjs': `export default {
+	css: {
+		modules: false,
+	},
+};`,
+			});
+
+			const result = await runCli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBe(1);
+		});
+
+		test('uses exportMode from patchCssModules config', async () => {
+			await using fixture = await createFixture({
+				'style.module.css': '.button { color: red; }',
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+
+export default {
+	plugins: [
+		patchCssModules({ exportMode: 'default' }),
+	],
+};
+`,
+			});
+
+			const result = await runCli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBeUndefined();
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			// exportMode: 'default' means no named exports, only default export
+			expect(dts).not.toMatch('export {');
+			expect(dts).toMatch('export default');
+		});
+
+		test('uses exportMode named from patchCssModules config', async () => {
+			await using fixture = await createFixture({
+				'style.module.css': '.button { color: red; }',
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+
+export default {
+	plugins: [
+		patchCssModules({ exportMode: 'named' }),
+	],
+};
+`,
+			});
+
+			const result = await runCli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBeUndefined();
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			// exportMode: 'named' means named exports only, no default export
+			expect(dts).toMatch('export {');
+			expect(dts).not.toMatch('export default');
 		});
 	});
 }, { parallel: 4 });
