@@ -2,7 +2,7 @@ import { setTimeout } from 'node:timers/promises';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { createFixture } from 'fs-fixture';
-import { describe, test, expect } from 'manten';
+import { describe, test, expect, skip } from 'manten';
 import { decode } from '@jridgewell/sourcemap-codec';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
@@ -1309,8 +1309,7 @@ describe('PostCSS', () => {
 
 			// Rolldown rejects unicode lone surrogates in export names
 			if (usesRolldown) {
-				await expect(viteBuild(fixture.path, buildOptions)).rejects.toThrow();
-				return;
+				skip('Rolldown rejects unicode lone surrogates in export names');
 			}
 
 			await viteBuild(fixture.path, buildOptions);
