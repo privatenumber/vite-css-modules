@@ -341,6 +341,7 @@ describe('reproductions', () => {
 
 					await new Promise((resolve) => { server.watcher.once('change', resolve); });
 					await setTimeout(1000);
+					await page.waitForSelector('#myText');
 
 					const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 					expect(textColorAfter).toBe(newColor);
@@ -364,6 +365,7 @@ describe('reproductions', () => {
 
 					await new Promise((resolve) => { server.watcher.once('change', resolve); });
 					await setTimeout(1000);
+					await page.waitForSelector('#myText');
 
 					const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 					expect(textColorAfter).toBe(newColor);
@@ -520,6 +522,7 @@ describe('reproductions', () => {
 
 					await new Promise((resolve) => { server.watcher.once('change', resolve); });
 					await setTimeout(1000);
+					await page.waitForSelector('#myText');
 
 					const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 					expect(textColorAfter).toBe(newColor);
@@ -547,6 +550,7 @@ describe('reproductions', () => {
 
 					await new Promise((resolve) => { server.watcher.once('change', resolve); });
 					await setTimeout(1000);
+					await page.waitForSelector('#myText');
 
 					const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 					expect(textColorAfter).toBe(newColor);

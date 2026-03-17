@@ -1615,6 +1615,7 @@ describe('PostCSS', () => {
 				await fixture.writeFile('style1.module.css', newFile);
 
 				await setTimeout(1000);
+				await page.waitForSelector('#myText');
 
 				const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 				expect(textColorAfter).toBe(newColor);
@@ -1641,6 +1642,7 @@ describe('PostCSS', () => {
 				await fixture.writeFile('style1.module.css', newFile);
 
 				await setTimeout(1000);
+				await page.waitForSelector('#myText');
 
 				const textColorAfter = await page.evaluate('getComputedStyle(myText).color');
 				expect(textColorAfter).toBe(newColor);
