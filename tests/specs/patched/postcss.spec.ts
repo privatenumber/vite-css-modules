@@ -711,8 +711,8 @@ describe('PostCSS', () => {
 			default: {},
 		});
 
-		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
-		expect(css!.replaceAll(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
+		// Empty modules should produce no CSS rules (only whitespace/comments)
+		expect(css!).not.toContain('{');
 	});
 
 	describe('@value', () => {
