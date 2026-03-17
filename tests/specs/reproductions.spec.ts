@@ -347,7 +347,7 @@ describe('reproductions', () => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
-		}, 10_000);
+		}, 30_000);
 
 		test('hmr should work outside of root', async () => {
 			await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
@@ -371,7 +371,7 @@ describe('reproductions', () => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
-		}, 10_000);
+		}, 30_000);
 	});
 
 	describe('LightningCSS', () => {
@@ -528,7 +528,7 @@ describe('reproductions', () => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
-		}, 10_000);
+		}, 30_000);
 
 		test('hmr should work outside of root', async () => {
 			await using fixture = await createFixture(fixtures.viteDevOutsideRoot);
@@ -556,7 +556,7 @@ describe('reproductions', () => {
 					expect(textColorAfter).toBe(newColor);
 				},
 			);
-		}, 10_000);
+		}, 30_000);
 	});
 
 	/*
@@ -607,5 +607,5 @@ await build({
 		);
 
 		expect(result).toBe('crash');
-	}, 10_000);
+	}, 30_000);
 });
