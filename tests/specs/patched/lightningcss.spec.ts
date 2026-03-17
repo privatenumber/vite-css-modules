@@ -69,7 +69,6 @@ describe('LightningCSS', () => {
 		});
 
 		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
-		expect(typeof css).toBe('string');
 		expect(css!.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
 	});
 
@@ -91,7 +90,6 @@ describe('LightningCSS', () => {
 		});
 
 		// No CSS rules should be emitted; strip comments (e.g. Vite 8's internal chunk markers)
-		expect(typeof css).toBe('string');
 		expect(css!.replace(/\/\*[\s\S]*?\*\//g, '').trim()).toBe('');
 	});
 
