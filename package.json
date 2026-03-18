@@ -5,6 +5,7 @@
 	"keywords": [
 		"vite",
 		"plugin",
+		"vite-plugin",
 		"css modules",
 		"patch"
 	],
