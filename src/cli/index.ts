@@ -4,7 +4,7 @@ import path from 'node:path';
 import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
 import { generateTypes } from '../plugin/generate-types.js';
-import { writeFileIfChanged } from '../type-files.js';
+import { writeFileIfChanged } from '../write-file-if-changed.js';
 import { slash } from '../plugin/url-utils.js';
 import { createCssModuleLoader } from './load-css-module.js';
 import {

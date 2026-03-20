@@ -7,7 +7,7 @@ import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@jridgewell/remapping';
 import { getTsconfig } from 'get-tsconfig';
 import { cssClassPositions } from 'css-class-positions';
-import { writeFileIfChanged } from '../type-files.js';
+import { writeFileIfChanged } from '../write-file-if-changed.js';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import { generateTypes } from './generate-types.js';
