@@ -69,37 +69,34 @@ export const createCssModuleLoader = (
 
 				const resolvedDependencies = new Map<string, string>();
 
-				for (const exported of Object.values(cssModule.exports)) {
-					if (typeof exported === 'string') {
-						continue;
-					}
-
-					for (const composed of exported.composes) {
-						if (composed.type !== 'dependency') {
-							continue;
+				await Promise.all([
+					...Object.values(cssModule.exports).flatMap((exported) => {
+						if (typeof exported === 'string') {
+							return [];
 						}
-
-						const dependencyFile = await resolveDependency(composed.specifier, filePath);
+						return exported.composes
+							.filter(composed => composed.type === 'dependency')
+							.map(async (composed) => {
+								const dependencyFile = await resolveDependency(composed.specifier, filePath);
+								const dependencyModule = await loadCssModule(dependencyFile);
+								const dependencyExport = dependencyModule.exports[composed.name];
+								if (!dependencyExport) {
+									throw new Error(`Cannot resolve ${JSON.stringify(composed.name)} from ${JSON.stringify(composed.specifier)}`);
+								}
+								resolvedDependencies.set(
+									`${composed.specifier}\0${composed.name}`,
+									dependencyExport.resolved,
+								);
+							});
+					}),
+					...Object.values(cssModule.references).map(async (reference) => {
+						const dependencyFile = await resolveDependency(reference.specifier, filePath);
 						const dependencyModule = await loadCssModule(dependencyFile);
-						const dependencyExport = dependencyModule.exports[composed.name];
-						if (!dependencyExport) {
-							throw new Error(`Cannot resolve ${JSON.stringify(composed.name)} from ${JSON.stringify(composed.specifier)}`);
+						if (!dependencyModule.exports[reference.name]) {
+							throw new Error(`Cannot resolve ${JSON.stringify(reference.name)} from ${JSON.stringify(reference.specifier)}`);
 						}
-
-						resolvedDependencies.set(
-							`${composed.specifier}\0${composed.name}`,
-							dependencyExport.resolved,
-						);
-					}
-				}
-
-				for (const reference of Object.values(cssModule.references)) {
-					const dependencyFile = await resolveDependency(reference.specifier, filePath);
-					const dependencyModule = await loadCssModule(dependencyFile);
-					if (!dependencyModule.exports[reference.name]) {
-						throw new Error(`Cannot resolve ${JSON.stringify(reference.name)} from ${JSON.stringify(reference.specifier)}`);
-					}
-				}
+					}),
+				]);
 
 				return {
 					exports: cssModuleExportsToExports(
