@@ -11,13 +11,15 @@ import { cleanUrl, getCssModuleUrl } from '../plugin/url-utils.js';
 import type { ProjectContext } from './project-context.js';
 import { cssModuleExportsToExports } from './css-module-exports-to-exports.js';
 
+type CssModuleResult = {
+	exports: Exports;
+	sourceMapOptions?: SourceMapOptions;
+};
+
 export const createCssModuleLoader = (
 	context: ProjectContext,
 ) => {
-	const cache = new Map<string, Promise<{
-		exports: Exports;
-		originalCode: string;
-	}>>();
+	const cache = new Map<string, Promise<CssModuleResult>>();
 	const keepOriginalExport = shouldKeepOriginalExport(context.cssModulesConfig);
 	const localsConventionFunction = getLocalesConventionFunction(context.cssModulesConfig);
 	const resolve = context.resolvedConfig.createResolver();
@@ -36,7 +38,7 @@ export const createCssModuleLoader = (
 	const transformCssModule = async (
 		filePath: string,
 		sourceCode?: string,
-	) => {
+	): Promise<CssModuleResult> => {
 		const code = sourceCode ?? await fs.readFile(filePath, 'utf8');
 
 		const processed = await preprocessCSS(
@@ -91,48 +93,38 @@ export const createCssModuleLoader = (
 			}),
 		]);
 
-		return {
-			exports: cssModuleExportsToExports(
-				cssModule.exports,
-				filePath,
-				keepOriginalExport,
-				localsConventionFunction,
-				composition => (
-					composition.type === 'dependency'
-						? resolvedDependencies.get(`${composition.specifier}\0${composition.name}`)
-						: composition.name
-				),
+		const exports = cssModuleExportsToExports(
+			cssModule.exports,
+			filePath,
+			keepOriginalExport,
+			localsConventionFunction,
+			composition => (
+				composition.type === 'dependency'
+					? resolvedDependencies.get(`${composition.specifier}\0${composition.name}`)
+					: composition.name
 			),
-			originalCode: code,
-		};
+		);
+
+		const sourceMapOptions = context.declarationMap
+			? {
+				sourceFileName: path.basename(filePath),
+				classPositions: cssClassPositions(code, { fileName: filePath }),
+			}
+			: undefined;
+
+		return { exports, sourceMapOptions };
 	};
 
-	const loadCssModule = async (
+	const loadCssModule = (
 		filePath: string,
-		includeSourceMap = false,
 		sourceCode?: string,
-	): Promise<{
-		exports: Exports;
-		sourceMapOptions?: SourceMapOptions;
-	}> => {
+	): Promise<CssModuleResult> => {
 		let cached = cache.get(filePath);
 		if (!cached) {
 			cached = transformCssModule(filePath, sourceCode);
 			cache.set(filePath, cached);
 		}
-
-		const cssModule = await cached;
-		const sourceMapOptions = includeSourceMap && context.declarationMap
-			? {
-				sourceFileName: path.basename(filePath),
-				classPositions: cssClassPositions(cssModule.originalCode, { fileName: filePath }),
-			}
-			: undefined;
-
-		return {
-			exports: cssModule.exports,
-			sourceMapOptions,
-		};
+		return cached;
 	};
 
 	return loadCssModule;
