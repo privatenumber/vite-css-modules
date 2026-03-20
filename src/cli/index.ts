@@ -87,7 +87,7 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 			: filePath,
 	);
 
-	for (const filePath of files) {
+	await Promise.all(files.map(async (filePath) => {
 		try {
 			const sourceCode = await fs.readFile(filePath, 'utf8');
 			const {
@@ -109,7 +109,7 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 			console.error(`  ${(error as Error).message}`);
 			process.exitCode = 1;
 		}
-	}
+	}));
 })().catch((error: Error) => {
 	console.error(error.message);
 	process.exitCode = 1;
