@@ -33,6 +33,80 @@ export const createCssModuleLoader = (
 		return cleanUrl(resolved).split('?', 2)[0]!;
 	};
 
+	const transformCssModule = async (
+		filePath: string,
+		sourceCode?: string,
+	) => {
+		const code = sourceCode ?? await fs.readFile(filePath, 'utf8');
+
+		const processed = await preprocessCSS(
+			code,
+			filePath.replace(/\.module(?=\.)/, ''),
+			context.resolvedConfig,
+		);
+
+		const id = cleanUrl(path.relative(context.resolvedConfig.root, filePath));
+		const cssModule = context.resolvedConfig.css.transformer === 'lightningcss'
+			? lightningcssTransform(
+				processed.code,
+				id,
+				context.resolvedConfig.css.lightningcss ?? {},
+				false,
+			)
+			: postcssTransform(
+				processed.code,
+				id,
+				context.cssModulesConfig,
+				false,
+			);
+
+		const resolvedDependencies = new Map<string, string>();
+
+		await Promise.all([
+			...Object.values(cssModule.exports).flatMap((exported) => {
+				if (typeof exported === 'string') {
+					return [];
+				}
+				return exported.composes
+					.filter(composed => composed.type === 'dependency')
+					.map(async (composed) => {
+						const dependencyFile = await resolveDependency(composed.specifier, filePath);
+						const dependencyModule = await loadCssModule(dependencyFile);
+						const dependencyExport = dependencyModule.exports[composed.name];
+						if (!dependencyExport) {
+							throw new Error(`Cannot resolve ${JSON.stringify(composed.name)} from ${JSON.stringify(composed.specifier)}`);
+						}
+						resolvedDependencies.set(
+							`${composed.specifier}\0${composed.name}`,
+							dependencyExport.resolved,
+						);
+					});
+			}),
+			...Object.values(cssModule.references).map(async (reference) => {
+				const dependencyFile = await resolveDependency(reference.specifier, filePath);
+				const dependencyModule = await loadCssModule(dependencyFile);
+				if (!dependencyModule.exports[reference.name]) {
+					throw new Error(`Cannot resolve ${JSON.stringify(reference.name)} from ${JSON.stringify(reference.specifier)}`);
+				}
+			}),
+		]);
+
+		return {
+			exports: cssModuleExportsToExports(
+				cssModule.exports,
+				filePath,
+				keepOriginalExport,
+				localsConventionFunction,
+				composition => (
+					composition.type === 'dependency'
+						? resolvedDependencies.get(`${composition.specifier}\0${composition.name}`)
+						: composition.name
+				),
+			),
+			originalCode: code,
+		};
+	};
+
 	const loadCssModule = async (
 		filePath: string,
 		includeSourceMap = false,
@@ -43,80 +117,11 @@ export const createCssModuleLoader = (
 	}> => {
 		let cached = cache.get(filePath);
 		if (!cached) {
-			cached = (async () => {
-				const code = sourceCode ?? await fs.readFile(filePath, 'utf8');
-
-				const processed = await preprocessCSS(
-					code,
-					filePath.replace(/\.module(?=\.)/, ''),
-					context.resolvedConfig,
-				);
-
-				const id = cleanUrl(path.relative(context.resolvedConfig.root, filePath));
-				const cssModule = context.resolvedConfig.css.transformer === 'lightningcss'
-					? lightningcssTransform(
-						processed.code,
-						id,
-						context.resolvedConfig.css.lightningcss ?? {},
-						false,
-					)
-					: postcssTransform(
-						processed.code,
-						id,
-						context.cssModulesConfig,
-						false,
-					);
-
-				const resolvedDependencies = new Map<string, string>();
-
-				await Promise.all([
-					...Object.values(cssModule.exports).flatMap((exported) => {
-						if (typeof exported === 'string') {
-							return [];
-						}
-						return exported.composes
-							.filter(composed => composed.type === 'dependency')
-							.map(async (composed) => {
-								const dependencyFile = await resolveDependency(composed.specifier, filePath);
-								const dependencyModule = await loadCssModule(dependencyFile);
-								const dependencyExport = dependencyModule.exports[composed.name];
-								if (!dependencyExport) {
-									throw new Error(`Cannot resolve ${JSON.stringify(composed.name)} from ${JSON.stringify(composed.specifier)}`);
-								}
-								resolvedDependencies.set(
-									`${composed.specifier}\0${composed.name}`,
-									dependencyExport.resolved,
-								);
-							});
-					}),
-					...Object.values(cssModule.references).map(async (reference) => {
-						const dependencyFile = await resolveDependency(reference.specifier, filePath);
-						const dependencyModule = await loadCssModule(dependencyFile);
-						if (!dependencyModule.exports[reference.name]) {
-							throw new Error(`Cannot resolve ${JSON.stringify(reference.name)} from ${JSON.stringify(reference.specifier)}`);
-						}
-					}),
-				]);
-
-				return {
-					exports: cssModuleExportsToExports(
-						cssModule.exports,
-						filePath,
-						keepOriginalExport,
-						localsConventionFunction,
-						composition => (
-							composition.type === 'dependency'
-								? resolvedDependencies.get(`${composition.specifier}\0${composition.name}`)
-								: composition.name
-						),
-					),
-					originalCode: code,
-				};
-			})();
+			cached = transformCssModule(filePath, sourceCode);
 			cache.set(filePath, cached);
 		}
 
-		const cssModule = await cached!;
+		const cssModule = await cached;
 		const sourceMapOptions = includeSourceMap && context.declarationMap
 			? {
 				sourceFileName: path.basename(filePath),
