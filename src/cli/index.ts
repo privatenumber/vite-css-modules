@@ -81,13 +81,8 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 
 	const loadCssModule = createCssModuleLoader(projectContext);
 
-	const toRelative = (filePath: string) => slash(
-		path.isAbsolute(filePath)
-			? path.relative(cwd, filePath) || '.'
-			: filePath,
-	);
-
 	await Promise.all(files.map(async (filePath) => {
+		const relativePath = slash(path.relative(cwd, filePath));
 		try {
 			const sourceCode = await fs.readFile(filePath, 'utf8');
 			const {
@@ -103,9 +98,9 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 
 			const dtsPath = `${filePath}.d.ts`;
 			await writeFileIfChanged(dtsPath, generatedDts);
-			console.log(`\u2713 ${toRelative(dtsPath)}`);
+			console.log(`\u2713 ${relativePath}.d.ts`);
 		} catch (error) {
-			console.error(`\u2717 ${toRelative(filePath)}`);
+			console.error(`\u2717 ${relativePath}`);
 			console.error(`  ${(error as Error).message}`);
 			process.exitCode = 1;
 		}
