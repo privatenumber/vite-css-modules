@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
@@ -84,11 +83,10 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 	await Promise.all(files.map(async (filePath) => {
 		const relativePath = slash(path.relative(cwd, filePath));
 		try {
-			const sourceCode = await fs.readFile(filePath, 'utf8');
 			const {
 				exports,
 				sourceMapOptions,
-			} = await loadCssModule(filePath, sourceCode);
+			} = await loadCssModule(filePath);
 			const generatedDts = generateTypes(
 				exports,
 				projectContext.exportMode,

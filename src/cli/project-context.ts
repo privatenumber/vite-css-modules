@@ -113,6 +113,13 @@ export const loadProjectContext = async (
 		throw new Error(`Could not load Vite config: ${options.configPath}`);
 	}
 
+	if (loadedConfig.config.css?.modules === false) {
+		throw new Error(
+			'CSS Modules are disabled (css.modules: false) in the Vite config.\n'
+			+ 'The CLI cannot generate types when CSS Modules are disabled.',
+		);
+	}
+
 	const patchPlugin = findPatchPlugin(loadedConfig.config);
 	if (!patchPlugin) {
 		throw new Error(
@@ -123,13 +130,6 @@ export const loadProjectContext = async (
 
 	const patchConfig = getPatchConfig(patchPlugin);
 	const exportMode: ExportMode = patchConfig?.exportMode ?? 'both';
-
-	if (loadedConfig.config.css?.modules === false) {
-		throw new Error(
-			'CSS Modules are disabled (css.modules: false) in the Vite config.\n'
-			+ 'The CLI cannot generate types when CSS Modules are disabled.',
-		);
-	}
 
 	const resolvedConfig = await resolveConfig(
 		sanitizeUserConfig(options.configPath, loadedConfig.config, options),

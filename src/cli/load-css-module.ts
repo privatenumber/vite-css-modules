@@ -37,9 +37,8 @@ export const createCssModuleLoader = (
 
 	const transformCssModule = async (
 		filePath: string,
-		sourceCode?: string,
 	): Promise<CssModuleResult> => {
-		const code = sourceCode ?? await fs.readFile(filePath, 'utf8');
+		const code = await fs.readFile(filePath, 'utf8');
 
 		// Strip .module from path so Vite's preprocessCSS treats it as a
 		// regular stylesheet (e.g. style.module.scss → style.scss), avoiding
@@ -123,11 +122,10 @@ export const createCssModuleLoader = (
 
 	const loadCssModule = (
 		filePath: string,
-		sourceCode?: string,
 	): Promise<CssModuleResult> => {
 		let cached = cache.get(filePath);
 		if (!cached) {
-			cached = transformCssModule(filePath, sourceCode);
+			cached = transformCssModule(filePath);
 			cache.set(filePath, cached);
 		}
 		return cached;
