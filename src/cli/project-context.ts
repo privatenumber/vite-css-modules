@@ -79,11 +79,11 @@ const sanitizeUserConfig = (
 			: undefined,
 		css: userConfig.css
 			? {
-				transformer: userConfig.css?.transformer,
+				transformer: userConfig.css.transformer,
 				modules: false,
-				preprocessorOptions: userConfig.css?.preprocessorOptions,
-				postcss: userConfig.css?.postcss,
-				lightningcss: userConfig.css?.lightningcss
+				preprocessorOptions: userConfig.css.preprocessorOptions,
+				postcss: userConfig.css.postcss,
+				lightningcss: userConfig.css.lightningcss
 					? {
 						...userConfig.css.lightningcss,
 						cssModules: false,

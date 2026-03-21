@@ -41,6 +41,9 @@ export const createCssModuleLoader = (
 	): Promise<CssModuleResult> => {
 		const code = sourceCode ?? await fs.readFile(filePath, 'utf8');
 
+		// Strip .module from path so Vite's preprocessCSS treats it as a
+		// regular stylesheet (e.g. style.module.scss → style.scss), avoiding
+		// double CSS Modules processing
 		const processed = await preprocessCSS(
 			code,
 			filePath.replace(/\.module(?=\.)/, ''),
