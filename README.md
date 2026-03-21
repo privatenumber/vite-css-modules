@@ -297,7 +297,7 @@ When you pass globs explicitly, they are resolved from the current working direc
 
 Run it from the same cwd you would use for `vite`, or pass `--config` to point at a specific config file. Use `--mode` when your Vite config depends on the active mode.
 
-The CLI reads Vite `css.modules` settings and `tsconfig.json`'s `compilerOptions.declarationMap`. It does not read `patchCssModules()`-specific options like `exportMode` or `declarationMap`.
+The CLI requires `patchCssModules()` in your Vite config and reads its options (`exportMode`, `declarationMap`) along with Vite's `css.modules` settings.
 
 ### Flags
 
