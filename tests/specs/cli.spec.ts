@@ -654,11 +654,6 @@ export default {
 			const secondRun = await cli(
 				['style.module.css'],
 				fixture.path,
-				{
-					env: {
-						DEBUG: 'vite-css-modules:*',
-					},
-				},
 			);
 
 			expect(secondRun.exitCode).toBe(1);

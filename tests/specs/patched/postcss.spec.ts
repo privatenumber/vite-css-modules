@@ -1082,7 +1082,7 @@ export default {
 	],
 	css: {
 		modules: {
-			localsConvention: process.env.CAMEL === '1'
+			localsConvention: process.env.USE_CAMEL_CASE === '1'
 				? 'camelCaseOnly'
 				: undefined,
 		},
@@ -1098,9 +1098,9 @@ export default {
 				node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
 			});
 
-			const previousCamel = process.env.CAMEL;
+			const previousUseCamelCase = process.env.USE_CAMEL_CASE;
 			try {
-				process.env.CAMEL = '0';
+				process.env.USE_CAMEL_CASE = '0';
 				await build({
 					root: fixture.path,
 					configFile: path.join(fixture.path, 'vite.config.mjs'),
@@ -1109,7 +1109,7 @@ export default {
 				});
 				expect(await fixture.readFile('style.module.css.d.ts', 'utf8')).toMatch('"my-button"');
 
-				process.env.CAMEL = '1';
+				process.env.USE_CAMEL_CASE = '1';
 				await build({
 					root: fixture.path,
 					configFile: path.join(fixture.path, 'vite.config.mjs'),
@@ -1117,10 +1117,10 @@ export default {
 					logLevel: 'warn',
 				});
 			} finally {
-				if (previousCamel === undefined) {
-					delete process.env.CAMEL;
+				if (previousUseCamelCase === undefined) {
+					delete process.env.USE_CAMEL_CASE;
 				} else {
-					process.env.CAMEL = previousCamel;
+					process.env.USE_CAMEL_CASE = previousUseCamelCase;
 				}
 			}
 
