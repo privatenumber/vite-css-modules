@@ -112,7 +112,10 @@ export const createCssModuleLoader = (
 			}
 			: undefined;
 
-		return { exports, sourceMapOptions };
+		return {
+			exports,
+			sourceMapOptions,
+		};
 	};
 
 	const loadCssModule = (

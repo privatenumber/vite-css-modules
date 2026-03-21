@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { decode } from '@jridgewell/sourcemap-codec';
-import { createFixture } from 'fs-fixture';
+import { createFixture, type FileTree } from 'fs-fixture';
 import {
 	describe, test, expect, onFinish,
 } from 'manten';
@@ -25,8 +25,8 @@ const cli = (
 
 const projectRoot = path.resolve('.');
 
-const defaultProjectFiles = {
-	'node_modules/vite-css-modules': ({ symlink }: { symlink: (target: string) => string }) => symlink(projectRoot),
+const defaultProjectFiles: FileTree = {
+	'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
 	'vite.config.mjs': `
 import { patchCssModules } from 'vite-css-modules';
 export default {
