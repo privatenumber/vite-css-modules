@@ -42,7 +42,7 @@ export const cssModuleExportsToExports = (
 
 		let resolved: string;
 		if (typeof exported === 'string') {
-			const transformedExport = localsConventionFunction?.(exportName, exportName, filePath);
+			const transformedExport = localsConventionFunction?.(exportName, exported, filePath);
 			if (transformedExport) {
 				exportAs.add(transformedExport);
 			}
