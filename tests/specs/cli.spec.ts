@@ -578,7 +578,7 @@ export default {
 	plugins: [patchCssModules()],
 	css: {
 		modules: {
-			localsConvention: process.env.CAMEL === '1'
+			localsConvention: process.env.USE_CAMEL_CASE === '1'
 				? 'camelCaseOnly'
 				: undefined,
 		},
@@ -591,7 +591,7 @@ export default {
 				fixture.path,
 				{
 					env: {
-						CAMEL: '0',
+						USE_CAMEL_CASE: '0',
 					},
 				},
 			);
@@ -603,7 +603,7 @@ export default {
 				fixture.path,
 				{
 					env: {
-						CAMEL: '1',
+						USE_CAMEL_CASE: '1',
 					},
 				},
 			);
