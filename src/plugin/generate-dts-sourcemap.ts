@@ -14,18 +14,15 @@ export type SourceMapOptions = {
 	classPositions: Map<string, Position>;
 };
 
-// Number of lines in the dtsTemplate header when code is present (lines 0–7).
-// Must be updated if the dtsTemplate header format changes.
-const dtsHeaderLineCount = 8;
-
 export const buildDtsSourceMap = (
 	codeLines: MappedLine[],
 	variableToClass: Map<string, string>,
 	{ sourceFileName, classPositions }: SourceMapOptions,
+	headerLineCount: number,
 ) => {
 	const mappings: SourceMapMappings = [];
 
-	for (let i = 0; i < dtsHeaderLineCount; i += 1) {
+	for (let i = 0; i < headerLineCount; i += 1) {
 		mappings.push([]);
 	}
 

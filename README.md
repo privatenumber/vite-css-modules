@@ -275,6 +275,53 @@ Generates inline declaration source maps in `.d.ts` files, enabling "Go to Defin
 > [!TIP]
 > Source maps are always inlined rather than emitted as separate `.d.ts.map` files. Since `.d.ts` files are generated in-place next to your CSS source, external map files would pollute the source directory. The size overhead of inlining is negligible for typical CSS modules.
 
+## CLI
+
+Generate TypeScript declarations for CSS Modules without running a build.
+
+```bash
+npx vite-css-modules [globs...] [--config path] [--mode mode]
+```
+
+The CLI expects a `vite.config.*` file in the current working directory and uses that one config for every matched file.
+
+With no globs, the CLI defaults to:
+
+```bash
+**/*.module.{css,scss,sass}
+```
+
+and searches under the resolved Vite `root`.
+
+When you pass globs explicitly, they are resolved from the current working directory instead.
+
+Run it from the same cwd you would use for `vite`, or pass `--config` to point at a specific config file. Use `--mode` when your Vite config depends on the active mode.
+
+The CLI requires `patchCssModules()` in your Vite config and reads its options (`exportMode`, `declarationMap`) along with Vite's `css.modules` settings.
+
+### Flags
+
+| Flag | Description |
+| :--- | :--- |
+| `--config <path>` | Use a specific `vite.config.*` file |
+| `--mode <mode>` | Set the Vite mode used when loading config |
+
+### Examples
+
+```bash
+# Generate types for CSS Modules under the Vite root
+npx vite-css-modules
+
+# Use explicit globs from the current working directory
+npx vite-css-modules 'src/**/*.module.css'
+
+# Use a specific Vite config
+npx vite-css-modules 'src/**/*.module.css' --config apps/web/vite.config.ts
+
+# Load config with production mode
+npx vite-css-modules 'src/**/*.module.css' --mode production
+```
+
 ## FAQ
 
 ### What issues does this plugin address?

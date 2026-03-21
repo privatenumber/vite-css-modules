@@ -7,6 +7,14 @@ import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
 import type { PluginMeta } from './plugin/types.js';
 
+const patchConfigSymbol = Symbol('patchConfig');
+
+export const getPatchConfig = (
+	plugin: Plugin,
+): PatchConfig | undefined => (
+	plugin as unknown as Record<symbol, unknown>
+)[patchConfigSymbol] as PatchConfig | undefined;
+
 // https://github.com/vitejs/vite/blob/57463fc53fedc8f29e05ef3726f156a6daf65a94/packages/vite/src/node/plugins/css.ts#L185-L195
 const directRequestRE = /[?&]direct\b/;
 const inlineRE = /[?&]inline\b/;
@@ -214,9 +222,10 @@ export const patchCssModules = (
 	 */
 	const originalCssCache = new Map<string, string>();
 
-	return {
+	const plugin: Plugin & { [patchConfigSymbol]?: PatchConfig } = {
 		name: 'patch-css-modules',
 		enforce: 'pre',
+		[patchConfigSymbol]: patchConfig,
 
 		transform: {
 			filter: {
@@ -263,7 +272,9 @@ export const patchCssModules = (
 
 			cssConfig.modules = false;
 
-			const viteCssPostPluginIndex = config.plugins.findIndex(plugin => plugin.name === 'vite:css-post');
+			const viteCssPostPluginIndex = config.plugins.findIndex(
+				configuredPlugin => configuredPlugin.name === 'vite:css-post',
+			);
 			if (viteCssPostPluginIndex === -1) {
 				throw new Error('vite:css-post plugin not found');
 			}
@@ -287,4 +298,6 @@ export const patchCssModules = (
 			supportCssModulesHMR(config.plugins);
 		},
 	};
+
+	return plugin;
 };

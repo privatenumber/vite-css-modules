@@ -484,7 +484,9 @@ describe('LightningCSS', () => {
 			const decoded = decode(dtsMap.mappings);
 
 			// .button at original CSS line 1, col 1 (0-based: 0, 0)
-			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+			const declarationLine = dts.split('\n').findIndex(line => line.includes('declare const button: string;'));
+			expect(declarationLine).toBeGreaterThanOrEqual(0);
+			expect(decoded[declarationLine]).toStrictEqual([[14, 0, 0, 0]]);
 		});
 	});
 

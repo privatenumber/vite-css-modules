@@ -1065,6 +1065,154 @@ describe('PostCSS', () => {
 				`,
 			);
 		});
+
+		test('updates generated type files when resolved Vite config changes', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.css";',
+				'style.module.css': '.my-button { color: red; }',
+				'package.json': '{"type":"module","name":"fixture"}',
+				'vite.config.mjs': `import { patchCssModules } from ${JSON.stringify(path.resolve('dist/index.mjs'))};
+
+export default {
+	plugins: [
+		patchCssModules({
+			generateSourceTypes: true,
+		}),
+	],
+	css: {
+		modules: {
+			localsConvention: process.env.USE_CAMEL_CASE === '1'
+				? 'camelCaseOnly'
+				: undefined,
+		},
+	},
+	build: {
+		target: 'es2022',
+		lib: {
+			entry: './index.js',
+			formats: ['es'],
+		},
+	},
+};`,
+				node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+			});
+
+			const previousUseCamelCase = process.env.USE_CAMEL_CASE;
+			try {
+				process.env.USE_CAMEL_CASE = '0';
+				await vite.build({
+					root: fixture.path,
+					configFile: path.join(fixture.path, 'vite.config.mjs'),
+					envFile: false,
+					logLevel: 'warn',
+				});
+				expect(await fixture.readFile('style.module.css.d.ts', 'utf8')).toMatch('"my-button"');
+
+				process.env.USE_CAMEL_CASE = '1';
+				await vite.build({
+					root: fixture.path,
+					configFile: path.join(fixture.path, 'vite.config.mjs'),
+					envFile: false,
+					logLevel: 'warn',
+				});
+			} finally {
+				if (previousUseCamelCase === undefined) {
+					delete process.env.USE_CAMEL_CASE;
+				} else {
+					process.env.USE_CAMEL_CASE = previousUseCamelCase;
+				}
+			}
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const myButton: string');
+			expect(dts).not.toMatch('"my-button"');
+		});
+
+		test('updates generated type files for SCSS partial dependencies', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.scss";',
+				'_shared.scss': '.injected { color: red; }',
+				'style.module.scss': `@use './shared';
+.local { color: blue; }`,
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+			expect(await fixture.readFile('style.module.scss.d.ts', 'utf8')).toMatch('declare const injected: string');
+
+			await fixture.writeFile('_shared.scss', '.changed { color: red; }');
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+			expect(dts).toMatch('declare const changed: string');
+			expect(dts).not.toMatch('declare const injected: string');
+		});
+
+		test('updates generated type files when programmatic preprocessorOptions change', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.scss";',
+				'style.module.scss': '.local { color: blue; }',
+			});
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				css: {
+					preprocessorOptions: {
+						scss: {
+							additionalData: '.injected { color: red; }',
+						},
+					},
+				},
+				build: {
+					target: 'es2022',
+				},
+			});
+			expect(await fixture.readFile('style.module.scss.d.ts', 'utf8')).toMatch('declare const injected: string');
+
+			await viteBuild(fixture.path, {
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+				css: {
+					preprocessorOptions: {
+						scss: {
+							additionalData: '.changed { color: red; }',
+						},
+					},
+				},
+				build: {
+					target: 'es2022',
+				},
+			});
+
+			const dts = await fixture.readFile('style.module.scss.d.ts', 'utf8');
+			expect(dts).toMatch('declare const changed: string');
+			expect(dts).not.toMatch('declare const injected: string');
+		});
 	});
 
 	describe('declarationMap', () => {
@@ -1196,7 +1344,7 @@ describe('PostCSS', () => {
 			// .button at original CSS line 1, col 1 (0-based: 0, 0)
 			// If findClassPositions used the PostCSS-transformed input,
 			// it would be off by 1 line due to the prepended :root rule
-			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+			expectDeclarationMapping(dts, decoded, 'declare const button: string;', [14, 0, 0, 0]);
 		});
 
 		test('maps hex-escaped class names to CSS positions', async () => {
@@ -1222,7 +1370,7 @@ describe('PostCSS', () => {
 			const decoded = decode(dtsMap.mappings);
 
 			expect(dts).toMatch('_123 as "123"');
-			expect(decoded[8]).toStrictEqual([[14, 0, 0, 0]]);
+			expectDeclarationMapping(dts, decoded, 'declare const _123: string;', [14, 0, 0, 0]);
 		});
 
 		test('maps class names after quoted URL() content to CSS positions', async () => {

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { readFile, writeFile, access } from 'fs/promises';
+import fs from 'node:fs/promises';
 import type { Plugin, ResolvedConfig, CSSModulesOptions } from 'vite';
 import type { ExistingRawSourceMap } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
@@ -7,6 +7,7 @@ import MagicString from 'magic-string';
 import remapping, { type SourceMapInput } from '@jridgewell/remapping';
 import { getTsconfig } from 'get-tsconfig';
 import { cssClassPositions } from 'css-class-positions';
+import { writeFileIfChanged } from '../write-file-if-changed.js';
 import { shouldKeepOriginalExport, getLocalesConventionFunction } from './locals-convention.js';
 import { generateEsm, type Imports, type Exports } from './generate-esm.js';
 import { generateTypes } from './generate-types.js';
@@ -209,7 +210,7 @@ export const cssModules = (
 				}
 
 				id = id.split('?', 2)[0]!;
-				return await readFile(id, 'utf8');
+				return await fs.readFile(id, 'utf8');
 			},
 		},
 
@@ -423,7 +424,7 @@ export const cssModules = (
 
 					// Only generate types for importable module files
 					if (filePath && cssModuleRE.test(filePath)) {
-						const fileExists = await access(filePath).then(() => true, () => false);
+						const fileExists = await fs.access(filePath).then(() => true, () => false);
 						if (fileExists) {
 							const dtsPath = `${filePath}.d.ts`;
 							const originalCss = originalCssCache?.get(filePath);
@@ -434,14 +435,12 @@ export const cssModules = (
 								}
 								: undefined;
 							const newContent = generateTypes(
-								exports, exportMode, allowArbitraryNamedExports, sourceMapOptions,
+								exports,
+								exportMode,
+								allowArbitraryNamedExports,
+								sourceMapOptions,
 							);
-
-							// Skip write if content unchanged to avoid triggering file watchers
-							const existingContent = await readFile(dtsPath, 'utf8').catch(() => null);
-							if (existingContent !== newContent) {
-								await writeFile(dtsPath, newContent);
-							}
+							await writeFileIfChanged(dtsPath, newContent);
 						}
 					}
 				}
