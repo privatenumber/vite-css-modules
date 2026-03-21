@@ -319,6 +319,24 @@ export default {
 		expect(result.stderr).toMatch('Pass explicit globs to control the search scope.');
 	});
 
+	test('no arguments error when the resolved config root is the exact parent directory', async () => {
+		await using fixture = await createFixture({
+			'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+			'project/node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+			'project/vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
+	root: '..',
+};`,
+			'style.module.css': '.button { color: red; }',
+		});
+
+		const result = await cli([], path.join(fixture.path, 'project'));
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toMatch('Resolved Vite root is outside the current working directory');
+	});
+
 	describe('project mode expectations', () => {
 		test('loads TypeScript vite config with imported base config by default', async () => {
 			await using fixture = await createFixture({
@@ -532,6 +550,32 @@ export default {
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).toMatch('customName');
 			expect(dts).not.toMatch('"my-button"');
+		});
+
+		test('custom localsConvention function receives resolved value as second argument for @value exports', async () => {
+			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+				'style.module.css': `@value primary: #ff0000;
+.button { color: primary; }`,
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	plugins: [patchCssModules()],
+	css: {
+		modules: {
+			localsConvention: (className, value) => className === value ? 'BUG_SAME_ARGS' : className,
+		},
+	},
+};`,
+			});
+
+			const result = await cli(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBeUndefined();
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			// @value export "primary" has value "#ff0000" — className !== value
+			// If the code incorrectly passes className for both args, this would match
+			expect(dts).not.toMatch('BUG_SAME_ARGS');
 		});
 
 		test('auto-detects declarationMap from tsconfig.json', async () => {

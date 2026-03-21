@@ -56,7 +56,7 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 
 	if (inputGlobs.length === 0) {
 		const rootRelative = path.relative(cwd, root);
-		if (rootRelative.startsWith(`..${path.sep}`) || path.isAbsolute(rootRelative)) {
+		if (rootRelative === '..' || rootRelative.startsWith(`..${path.sep}`) || path.isAbsolute(rootRelative)) {
 			throw new Error(`Resolved Vite root is outside the current working directory: ${root}\nPass explicit globs to control the search scope.`);
 		}
 

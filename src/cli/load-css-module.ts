@@ -32,7 +32,7 @@ export const createCssModuleLoader = (
 		if (!resolved) {
 			throw new Error(`Cannot resolve ${JSON.stringify(specifier)} from ${JSON.stringify(fromFile)}`);
 		}
-		return cleanUrl(resolved).split('?', 2)[0]!;
+		return cleanUrl(resolved);
 	};
 
 	const transformCssModule = async (

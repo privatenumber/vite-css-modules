@@ -6,7 +6,6 @@ import {
 	describe, test, expect, skip,
 } from 'manten';
 import { decode } from '@jridgewell/sourcemap-codec';
-import { build } from 'vite';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
 import * as vite from 'vite';
@@ -1101,7 +1100,7 @@ export default {
 			const previousUseCamelCase = process.env.USE_CAMEL_CASE;
 			try {
 				process.env.USE_CAMEL_CASE = '0';
-				await build({
+				await vite.build({
 					root: fixture.path,
 					configFile: path.join(fixture.path, 'vite.config.mjs'),
 					envFile: false,
@@ -1110,7 +1109,7 @@ export default {
 				expect(await fixture.readFile('style.module.css.d.ts', 'utf8')).toMatch('"my-button"');
 
 				process.env.USE_CAMEL_CASE = '1';
-				await build({
+				await vite.build({
 					root: fixture.path,
 					configFile: path.join(fixture.path, 'vite.config.mjs'),
 					envFile: false,
