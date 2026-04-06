@@ -113,7 +113,7 @@
 		"skills-npm": "^1.0.0",
 		"typescript": "^5.9.3",
 		"vite": "^8.0.0",
-		"vite5": "npm:vite@5.4.21",
+		"vite5": "npm:vite@8.0.5",
 		"vite6": "npm:vite@6.4.1",
 		"vite7": "npm:vite@7.3.1",
 		"vue": "^3.5.30"
