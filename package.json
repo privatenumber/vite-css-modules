@@ -68,7 +68,7 @@
 		"cleye": "^2.2.1",
 		"css-class-positions": "^1.0.0",
 		"generic-names": "^4.0.0",
-		"get-tsconfig": "^4.13.6",
+		"get-tsconfig": "^4.13.8",
 		"icss-utils": "^5.1.0",
 		"magic-string": "^0.30.21",
 		"postcss-modules-extract-imports": "^3.1.0",
@@ -76,7 +76,7 @@
 		"postcss-modules-scope": "^3.2.1",
 		"postcss-modules-values": "^4.0.0",
 		"postcss-selector-parser": "^7.1.1",
-		"tinyglobby": "^0.2.15"
+		"tinyglobby": "^0.2.16"
 	},
 	"peerDependencies": {
 		"lightningcss": "^1.23.0",
@@ -107,8 +107,8 @@
 		"outdent": "^0.8.0",
 		"pkgroll": "^2.27.0",
 		"playwright-chromium": "^1.58.2",
-		"postcss": "^8.5.8",
-		"rollup": "^4.59.0",
+		"postcss": "^8.5.10",
+		"rollup": "^4.59.1",
 		"sass": "^1.97.3",
 		"skills-npm": "^1.0.0",
 		"typescript": "^5.9.3",
@@ -116,6 +116,6 @@
 		"vite5": "npm:vite@5.4.21",
 		"vite6": "npm:vite@6.4.1",
 		"vite7": "npm:vite@7.3.1",
-		"vue": "^3.5.30"
+		"vue": "^3.5.33"
 	}
 }
