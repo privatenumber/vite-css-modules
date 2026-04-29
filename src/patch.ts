@@ -1,11 +1,21 @@
 import path from 'path';
-import type { Plugin, ServerHook } from 'vite';
+import fs from 'node:fs/promises';
+import type {
+	Plugin, ServerHook, CSSModulesOptions,
+} from 'vite';
 import type {
 	SourceMap, ObjectHook, TransformPluginContext, TransformResult,
 } from 'rollup';
+import { getTsconfig } from 'get-tsconfig';
+import { glob } from 'tinyglobby';
 import { cssModules, type PatchConfig } from './plugin/index.js';
 import { cssModuleRE } from './plugin/url-utils.js';
-import type { PluginMeta } from './plugin/types.js';
+import { generateTypes } from './plugin/generate-types.js';
+import { writeFileIfChanged } from './write-file-if-changed.js';
+import { createCssModuleLoader } from './cli/load-css-module.js';
+import type { ProjectContext } from './cli/project-context.js';
+import { supportsArbitraryModuleNamespace } from './plugin/supports-arbitrary-module-namespace.js';
+import type { ExportMode, PluginMeta } from './plugin/types.js';
 
 const patchConfigSymbol = Symbol('patchConfig');
 
@@ -222,6 +232,8 @@ export const patchCssModules = (
 	 */
 	const originalCssCache = new Map<string, string>();
 
+	let serverProjectContext: ProjectContext | undefined;
+
 	const plugin: Plugin & { [patchConfigSymbol]?: PatchConfig } = {
 		name: 'patch-css-modules',
 		enforce: 'pre',
@@ -249,6 +261,24 @@ export const patchCssModules = (
 
 			if (isCssModulesDisabled) {
 				return;
+			}
+
+			if (patchConfig?.generateSourceTypes && config.command === 'serve') {
+				const cssModulesConfig: CSSModulesOptions = { ...cssConfig.modules };
+				const originalTransformer = cssConfig.transformer;
+				const exportMode: ExportMode = patchConfig.exportMode ?? 'both';
+				const declarationMap = patchConfig.declarationMap
+					?? getTsconfig(config.root)?.config.compilerOptions?.declarationMap
+					?? false;
+
+				serverProjectContext = {
+					cssModulesConfig,
+					declarationMap,
+					exportMode,
+					resolvedConfig: config,
+					originalTransformer,
+					allowArbitraryNamedExports: supportsArbitraryModuleNamespace(config),
+				};
 			}
 
 			// Disable CSS Modules in Vite in favor of our plugin
@@ -296,6 +326,55 @@ export const patchCssModules = (
 
 			// Enable HMR by making CSS Modules not self accept
 			supportCssModulesHMR(config.plugins);
+		},
+
+		configureServer(server) {
+			if (!serverProjectContext) {
+				return;
+			}
+
+			const projectContext = serverProjectContext;
+			const loader = createCssModuleLoader(projectContext);
+
+			const generateForFile = async (file: string) => {
+				if (!cssModuleRE.test(file)) {
+					return;
+				}
+				try {
+					loader.invalidate(file);
+					const { exports, sourceMapOptions } = await loader(file);
+					const dts = generateTypes(
+						exports,
+						projectContext.exportMode,
+						projectContext.allowArbitraryNamedExports ?? false,
+						sourceMapOptions,
+					);
+					await writeFileIfChanged(`${file}.d.ts`, dts);
+				} catch (error) {
+					server.config.logger.error(
+						`[vite-css-modules] Failed to generate types for ${file}: ${(error as Error).message}`,
+					);
+				}
+			};
+
+			return async () => {
+				const files = await glob('**/*.module.{css,scss,sass,less,styl,stylus,pcss,postcss,sss}', {
+					cwd: server.config.root,
+					absolute: true,
+					ignore: ['**/node_modules/**'],
+				});
+				await Promise.all(files.map(generateForFile));
+
+				server.watcher.on('change', generateForFile);
+				server.watcher.on('add', generateForFile);
+				server.watcher.on('unlink', async (file) => {
+					if (!cssModuleRE.test(file)) {
+						return;
+					}
+					loader.invalidate(file);
+					await fs.unlink(`${file}.d.ts`).catch(() => {});
+				});
+			};
 		},
 	};
 

@@ -50,7 +50,8 @@ export const createCssModuleLoader = (
 		);
 
 		const id = cleanUrl(path.relative(context.resolvedConfig.root, filePath));
-		const cssModule = context.resolvedConfig.css.transformer === 'lightningcss'
+		const transformer = context.originalTransformer ?? context.resolvedConfig.css.transformer;
+		const cssModule = transformer === 'lightningcss'
 			? lightningcssTransform(
 				processed.code,
 				id,
@@ -131,5 +132,9 @@ export const createCssModuleLoader = (
 		return cached;
 	};
 
-	return loadCssModule;
+	const invalidate = (filePath: string) => {
+		cache.delete(filePath);
+	};
+
+	return Object.assign(loadCssModule, { invalidate });
 };

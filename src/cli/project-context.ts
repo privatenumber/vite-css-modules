@@ -28,6 +28,8 @@ export type ProjectContext = {
 	declarationMap: boolean;
 	exportMode: ExportMode;
 	resolvedConfig: ResolvedConfig;
+	originalTransformer?: string;
+	allowArbitraryNamedExports?: boolean;
 };
 
 type ProjectContextOptions = {

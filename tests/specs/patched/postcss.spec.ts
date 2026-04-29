@@ -1,5 +1,5 @@
 import { setTimeout } from 'node:timers/promises';
-import { readdir } from 'node:fs/promises';
+import { readdir, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { createFixture } from 'fs-fixture';
 import {
@@ -1064,6 +1064,104 @@ describe('PostCSS', () => {
 
 				`,
 			);
+		});
+
+		test('dev server generates .d.ts on startup', async () => {
+			await using fixture = await createFixture({
+				...fixtures.reservedKeywords,
+				node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+			});
+
+			const server = await vite.createServer({
+				root: fixture.path,
+				configFile: false,
+				envFile: false,
+				logLevel: 'error',
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+			});
+			try {
+				await server.listen();
+				await setTimeout(2000);
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('declare const _import: string;');
+				expect(dts).toMatch('declare const _export: string;');
+				expect(dts).toMatch('declare const _default: string;');
+			} finally {
+				await server.close();
+			}
+		});
+
+		test('dev server regenerates .d.ts on file change', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.css";',
+				'style.module.css': '.button { color: red; }',
+				node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+			});
+
+			const server = await vite.createServer({
+				root: fixture.path,
+				configFile: false,
+				envFile: false,
+				logLevel: 'error',
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+			});
+			try {
+				await server.listen();
+				await setTimeout(2000);
+				const dtsBefore = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dtsBefore).toMatch('declare const button: string;');
+				expect(dtsBefore).not.toMatch('declare const heading: string;');
+
+				await fixture.writeFile('style.module.css', '.heading { color: blue; }');
+				await setTimeout(2000);
+				const dtsAfter = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dtsAfter).toMatch('declare const heading: string;');
+				expect(dtsAfter).not.toMatch('declare const button: string;');
+			} finally {
+				await server.close();
+			}
+		});
+
+		test('dev server deletes .d.ts when css module is deleted', async () => {
+			await using fixture = await createFixture({
+				'index.js': 'import "./style.module.css";',
+				'style.module.css': '.button { color: red; }',
+				node_modules: ({ symlink }) => symlink(path.resolve('node_modules')),
+			});
+
+			const server = await vite.createServer({
+				root: fixture.path,
+				configFile: false,
+				envFile: false,
+				logLevel: 'error',
+				plugins: [
+					patchCssModules({
+						generateSourceTypes: true,
+					}),
+				],
+			});
+			try {
+				await server.listen();
+				await setTimeout(2000);
+				const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('declare const button: string;');
+
+				await unlink(path.join(fixture.path, 'style.module.css'));
+				await setTimeout(2000);
+				const files = await readdir(fixture.path);
+				expect(files).not.toContain('style.module.css');
+				expect(files).not.toContain('style.module.css.d.ts');
+			} finally {
+				await server.close();
+			}
 		});
 
 		test('updates generated type files when resolved Vite config changes', async () => {

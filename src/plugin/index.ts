@@ -419,7 +419,7 @@ export const cssModules = (
 					allowArbitraryNamedExports,
 				);
 
-				if (patchConfig?.generateSourceTypes) {
+				if (patchConfig?.generateSourceTypes && config.command === 'build') {
 					const filePath = id.split('?', 2)[0];
 
 					// Only generate types for importable module files
