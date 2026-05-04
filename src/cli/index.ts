@@ -31,12 +31,18 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 				description: 'Vite mode',
 				default: 'development',
 			},
+			silent: {
+				type: Boolean,
+				alias: 's',
+				description: 'Suppress per-file success output',
+				default: false,
+			},
 		},
 	});
 
 	const cwd = process.cwd();
 	const { globs: inputGlobs = [] } = argv._;
-	const { config, mode } = argv.flags;
+	const { config, mode, silent } = argv.flags;
 	const configPath = config
 		? path.resolve(config)
 		: await findViteConfigInDirectory(cwd);
@@ -96,7 +102,9 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 
 			const dtsPath = `${filePath}.d.ts`;
 			await writeFileIfChanged(dtsPath, generatedDts);
-			console.log(`\u2713 ${relativePath}.d.ts`);
+			if (!silent) {
+				console.log(`\u2713 ${relativePath}.d.ts`);
+			}
 		} catch (error) {
 			console.error(`\u2717 ${relativePath}`);
 			console.error(`  ${(error as Error).message}`);
