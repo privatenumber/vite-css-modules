@@ -126,6 +126,19 @@ export default {
 		}
 	});
 
+	test('--silent does not suppress error output on stderr', async () => {
+		await using fixture = await createFixture({
+			...defaultProjectFiles,
+			'broken.module.css': '.button { color: ',
+		});
+
+		const result = await cli(['--silent', 'broken.module.css'], fixture.path);
+		expect(result.exitCode).toBe(1);
+		expect(result.stdout).toBe('');
+		expect(result.stderr).toMatch('broken.module.css');
+		expect(result.stderr).toMatch('Unclosed block');
+	});
+
 	test('generates .d.ts for glob pattern', async () => {
 		await using fixture = await createFixture({
 			...defaultProjectFiles,
