@@ -305,6 +305,7 @@ The CLI requires `patchCssModules()` in your Vite config and reads its options (
 | :--- | :--- |
 | `--config <path>` | Use a specific `vite.config.*` file |
 | `--mode <mode>` | Set the Vite mode used when loading config |
+| `--silent`, `-s` | Suppress success output (errors still print to stderr) |
 
 ### Examples
 
