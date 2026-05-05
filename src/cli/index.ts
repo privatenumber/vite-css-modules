@@ -34,8 +34,7 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 			silent: {
 				type: Boolean,
 				alias: 's',
-				description: 'Suppress per-file success output',
-				default: false,
+				description: 'Suppress success output',
 			},
 		},
 	});
