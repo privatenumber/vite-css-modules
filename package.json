@@ -109,7 +109,7 @@
 		"playwright-chromium": "^1.58.2",
 		"postcss": "^8.5.10",
 		"rollup": "^4.59.1",
-		"sass": "^1.97.3",
+		"sass": "^1.99.0",
 		"skills-npm": "^1.0.0",
 		"typescript": "^5.9.3",
 		"vite": "^8.0.0",
