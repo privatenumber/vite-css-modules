@@ -81,7 +81,7 @@ export const runWatch = async ({
 			setTimeout(() => {
 				pendingTimers.delete(filePath);
 				callback();
-			}, 300),
+			}, 100),
 		);
 	};
 

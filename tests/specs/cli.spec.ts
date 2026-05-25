@@ -1014,6 +1014,15 @@ export default {
 				});
 			};
 
+			// On Windows, @parcel/watcher's subscribe() resolves before
+			// ReadDirectoryChangesW is called (queued via QueueUserAPC).
+			const waitUntilReady = async () => {
+				await waitForOutput('Watching for changes...');
+				if (process.platform === 'win32') {
+					await new Promise((resolve) => { setTimeout(resolve, 1000); });
+				}
+			};
+
 			return {
 				get stdout() {
 					return stdout;
@@ -1022,6 +1031,7 @@ export default {
 					return stderr;
 				},
 				waitForOutput,
+				waitUntilReady,
 				kill,
 			};
 		};
@@ -1034,7 +1044,7 @@ export default {
 
 			const watcher = watchCli(['**/*.module.css'], fixture.path);
 			try {
-				await watcher.waitForOutput('Watching for changes...');
+				await watcher.waitUntilReady();
 
 				await fs.writeFile(
 					path.join(fixture.path, 'new.module.css'),
@@ -1058,7 +1068,7 @@ export default {
 
 			const watcher = watchCli(['**/*.module.css'], fixture.path);
 			try {
-				await watcher.waitForOutput('Watching for changes...');
+				await watcher.waitUntilReady();
 
 				const dtsBefore = await fixture.readFile('style.module.css.d.ts', 'utf8');
 				expect(dtsBefore).toMatch('declare const original: string');
@@ -1096,7 +1106,7 @@ export default {
 
 			const watcher = watchCli(['**/*.module.css'], fixture.path);
 			try {
-				await watcher.waitForOutput('Watching for changes...');
+				await watcher.waitUntilReady();
 
 				expect(
 					await fixture.readFile('style.module.css.d.ts', 'utf8').catch(() => null),
@@ -1130,7 +1140,7 @@ export default {
 
 			const watcher = watchCli(['--silent', '**/*.module.css'], fixture.path);
 			try {
-				await watcher.waitForOutput('Watching for changes...');
+				await watcher.waitUntilReady();
 
 				await fs.writeFile(
 					path.join(fixture.path, 'broken.module.css'),
@@ -1150,7 +1160,7 @@ export default {
 
 			const watcher = watchCli(['--silent', '**/*.module.css'], fixture.path);
 			try {
-				await watcher.waitForOutput('Watching for changes...');
+				await watcher.waitUntilReady();
 
 				await fs.writeFile(
 					path.join(fixture.path, 'style.module.css'),
@@ -1184,7 +1194,7 @@ export default {
 
 			const watcher = watchCli(['**/*.module.css'], fixture.path);
 			try {
-				await watcher.waitForOutput('Watching for changes...');
+				await watcher.waitUntilReady();
 				expect(watcher.stdout).toMatch('No files matched yet');
 
 				await fs.writeFile(
