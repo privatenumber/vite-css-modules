@@ -131,5 +131,9 @@ export const createCssModuleLoader = (
 		return cached;
 	};
 
+	loadCssModule.invalidate = (filePath: string) => {
+		cache.delete(filePath);
+	};
+
 	return loadCssModule;
 };

@@ -1,4 +1,6 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawn as cpSpawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { decode } from '@jridgewell/sourcemap-codec';
 import { createFixture, type FileTree } from 'fs-fixture';
@@ -960,6 +962,242 @@ export default {
 			// exportMode: 'named' means named exports only, no default export
 			expect(dts).toMatch('export {');
 			expect(dts).not.toMatch('export default');
+		});
+	});
+
+	describe('watch mode', () => {
+		const watchCli = (
+			args: string[],
+			cwd: string,
+		) => {
+			const child = cpSpawn(process.execPath, [cliPath, '--watch', ...args], {
+				cwd,
+				stdio: ['ignore', 'pipe', 'pipe'],
+			});
+
+			let stdout = '';
+			let stderr = '';
+			child.stdout!.on('data', (chunk: Buffer) => {
+				stdout += chunk.toString();
+			});
+			child.stderr!.on('data', (chunk: Buffer) => {
+				stderr += chunk.toString();
+			});
+
+			const waitForOutput = (
+				match: string | RegExp,
+				stream: 'stdout' | 'stderr' = 'stdout',
+				timeout = 15_000,
+			) => new Promise<void>((resolve, reject) => {
+				const timer = setTimeout(
+					() => reject(new Error(`Timed out waiting for ${String(match)} in ${stream}.\nstdout: ${stdout}\nstderr: ${stderr}`)),
+					timeout,
+				);
+
+				const check = () => {
+					const text = stream === 'stdout' ? stdout : stderr;
+					const matched = typeof match === 'string' ? text.includes(match) : match.test(text);
+					if (matched) {
+						clearTimeout(timer);
+						resolve();
+					}
+				};
+
+				check();
+				child[stream]!.on('data', check);
+			});
+
+			const kill = () => {
+				child.kill('SIGTERM');
+				return new Promise<void>((resolve) => {
+					child.on('close', () => resolve());
+				});
+			};
+
+			return {
+				get stdout() {
+					return stdout;
+				},
+				get stderr() {
+					return stderr;
+				},
+				waitForOutput,
+				kill,
+			};
+		};
+
+		test('generates types for new files', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'existing.module.css': '.existing { color: red; }',
+			});
+
+			const watcher = watchCli(['**/*.module.css'], fixture.path);
+			try {
+				await watcher.waitForOutput('Watching for changes...');
+
+				await fs.writeFile(
+					path.join(fixture.path, 'new.module.css'),
+					'.added { color: blue; }',
+				);
+
+				await watcher.waitForOutput('new.module.css.d.ts');
+
+				const dts = await fixture.readFile('new.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('declare const added: string');
+			} finally {
+				await watcher.kill();
+			}
+		});
+
+		test('regenerates types on file change', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'style.module.css': '.original { color: red; }',
+			});
+
+			const watcher = watchCli(['**/*.module.css'], fixture.path);
+			try {
+				await watcher.waitForOutput('Watching for changes...');
+
+				const dtsBefore = await fixture.readFile('style.module.css.d.ts', 'utf8');
+				expect(dtsBefore).toMatch('declare const original: string');
+
+				await fs.writeFile(
+					path.join(fixture.path, 'style.module.css'),
+					'.updated { color: blue; }',
+				);
+
+				await watcher.waitForOutput('style.module.css.d.ts');
+
+				const poll = async () => {
+					for (let i = 0; i < 50; i++) {
+						const content = await fixture.readFile('style.module.css.d.ts', 'utf8');
+						if (content.includes('updated')) {
+							return content;
+						}
+						await new Promise(resolve => setTimeout(resolve, 100));
+					}
+					throw new Error('Timed out waiting for updated .d.ts content');
+				};
+				const dtsAfter = await poll();
+				expect(dtsAfter).toMatch('declare const updated: string');
+				expect(dtsAfter).not.toMatch('declare const original: string');
+			} finally {
+				await watcher.kill();
+			}
+		});
+
+		test('removes .d.ts on file deletion', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'style.module.css': '.button { color: red; }',
+			});
+
+			const watcher = watchCli(['**/*.module.css'], fixture.path);
+			try {
+				await watcher.waitForOutput('Watching for changes...');
+
+				expect(
+					await fixture.readFile('style.module.css.d.ts', 'utf8').catch(() => null),
+				).not.toBe(null);
+
+				await fs.unlink(path.join(fixture.path, 'style.module.css'));
+
+				const poll = async () => {
+					for (let i = 0; i < 50; i++) {
+						const exists = await fs.access(
+							path.join(fixture.path, 'style.module.css.d.ts'),
+						).then(() => true, () => false);
+						if (!exists) {
+							return;
+						}
+						await new Promise(resolve => setTimeout(resolve, 100));
+					}
+					throw new Error('Timed out waiting for .d.ts deletion');
+				};
+				await poll();
+			} finally {
+				await watcher.kill();
+			}
+		});
+
+		test('errors are shown even with --silent', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'style.module.css': '.button { color: red; }',
+			});
+
+			const watcher = watchCli(['--silent', '**/*.module.css'], fixture.path);
+			try {
+				await watcher.waitForOutput('Watching for changes...');
+
+				await fs.writeFile(
+					path.join(fixture.path, 'broken.module.css'),
+					'.button { color: ',
+				);
+
+				await watcher.waitForOutput('broken.module.css', 'stderr');
+			} finally {
+				await watcher.kill();
+			}
+		});
+
+		test('--silent suppresses success output in watch mode', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+			});
+
+			const watcher = watchCli(['--silent', '**/*.module.css'], fixture.path);
+			try {
+				await watcher.waitForOutput('Watching for changes...');
+
+				await fs.writeFile(
+					path.join(fixture.path, 'style.module.css'),
+					'.button { color: red; }',
+				);
+
+				const poll = async () => {
+					for (let i = 0; i < 50; i++) {
+						const exists = await fs.access(
+							path.join(fixture.path, 'style.module.css.d.ts'),
+						).then(() => true, () => false);
+						if (exists) {
+							return;
+						}
+						await new Promise(resolve => setTimeout(resolve, 100));
+					}
+					throw new Error('Timed out waiting for .d.ts generation');
+				};
+				await poll();
+
+				expect(watcher.stdout).not.toMatch('style.module.css.d.ts');
+			} finally {
+				await watcher.kill();
+			}
+		});
+
+		test('watch starts even with no initial files', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+			});
+
+			const watcher = watchCli(['**/*.module.css'], fixture.path);
+			try {
+				await watcher.waitForOutput('Watching for changes...');
+				expect(watcher.stdout).toMatch('No files matched yet');
+
+				await fs.writeFile(
+					path.join(fixture.path, 'new.module.css'),
+					'.fresh { color: green; }',
+				);
+
+				await watcher.waitForOutput('new.module.css.d.ts');
+				const dts = await fixture.readFile('new.module.css.d.ts', 'utf8');
+				expect(dts).toMatch('declare const fresh: string');
+			} finally {
+				await watcher.kill();
+			}
 		});
 	});
 }, { parallel: 4 });

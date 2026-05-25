@@ -2,16 +2,14 @@
 import path from 'node:path';
 import { cli } from 'cleye';
 import { glob } from 'tinyglobby';
-import { generateTypes } from '../plugin/generate-types.js';
-import { writeFileIfChanged } from '../write-file-if-changed.js';
-import { slash } from '../plugin/url-utils.js';
+import { supportsArbitraryModuleNamespace } from '../plugin/supports-arbitrary-module-namespace.js';
 import { createCssModuleLoader } from './load-css-module.js';
+import { generateDeclarationForFile } from './generate-declaration.js';
+import { resolveGlobScope } from './glob-scope.js';
 import {
 	findViteConfigInDirectory,
 	loadProjectContext,
 } from './project-context.js';
-
-const defaultGlob = '**/*.module.{css,scss,sass}';
 
 (async () => {
 	const argv = cli({
@@ -36,12 +34,17 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 				alias: 's',
 				description: 'Suppress success output',
 			},
+			watch: {
+				type: Boolean,
+				alias: 'w',
+				description: 'Watch for changes and regenerate types',
+			},
 		},
 	});
 
 	const cwd = process.cwd();
 	const { globs: inputGlobs = [] } = argv._;
-	const { config, mode, silent } = argv.flags;
+	const { config, mode, silent, watch: watchMode } = argv.flags;
 	const configPath = config
 		? path.resolve(config)
 		: await findViteConfigInDirectory(cwd);
@@ -55,22 +58,9 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 		mode,
 	});
 	const { root } = projectContext.resolvedConfig;
+	const allowArbitraryNamedExports = supportsArbitraryModuleNamespace(projectContext.resolvedConfig);
 
-	let globs: string[];
-	let globCwd: string;
-
-	if (inputGlobs.length === 0) {
-		const rootRelative = path.relative(cwd, root);
-		if (rootRelative === '..' || rootRelative.startsWith(`..${path.sep}`) || path.isAbsolute(rootRelative)) {
-			throw new Error(`Resolved Vite root is outside the current working directory: ${root}\nPass explicit globs to control the search scope.`);
-		}
-
-		globs = [defaultGlob];
-		globCwd = root;
-	} else {
-		globs = inputGlobs;
-		globCwd = cwd;
-	}
+	const { globs, globCwd } = resolveGlobScope(inputGlobs, cwd, root);
 
 	const files = await glob(globs, {
 		absolute: true,
@@ -78,38 +68,44 @@ const defaultGlob = '**/*.module.{css,scss,sass}';
 		ignore: ['**/node_modules/**'],
 	});
 
-	if (files.length === 0) {
+	if (files.length === 0 && !watchMode) {
 		console.error('No files matched the provided glob patterns');
 		return;
 	}
 
 	const loadCssModule = createCssModuleLoader(projectContext);
 
-	await Promise.all(files.map(async (filePath) => {
-		const relativePath = slash(path.relative(cwd, filePath));
-		try {
-			const {
-				exports,
-				sourceMapOptions,
-			} = await loadCssModule(filePath);
-			const generatedDts = generateTypes(
-				exports,
-				projectContext.exportMode,
-				false,
-				sourceMapOptions,
-			);
+	await Promise.all(files.map(filePath =>
+		generateDeclarationForFile(
+			projectContext,
+			loadCssModule,
+			cwd,
+			filePath,
+			allowArbitraryNamedExports,
+			silent ?? false,
+			!watchMode,
+		),
+	));
 
-			const dtsPath = `${filePath}.d.ts`;
-			await writeFileIfChanged(dtsPath, generatedDts);
-			if (!silent) {
-				console.log(`\u2713 ${relativePath}.d.ts`);
-			}
-		} catch (error) {
-			console.error(`\u2717 ${relativePath}`);
-			console.error(`  ${(error as Error).message}`);
-			process.exitCode = 1;
-		}
-	}));
+	if (watchMode) {
+		const { runWatch } = await import('./watch.js');
+		const cleanup = await runWatch({
+			globs,
+			globCwd,
+			projectContext,
+			loadCssModule,
+			cwd,
+			allowArbitraryNamedExports,
+			hadInitialMatches: files.length > 0,
+			silent: silent ?? false,
+		});
+
+		const shutdown = () => {
+			cleanup().then(() => process.exit());
+		};
+		process.on('SIGINT', shutdown);
+		process.on('SIGTERM', shutdown);
+	}
 })().catch((error: Error) => {
 	console.error(error.message);
 	process.exitCode = 1;
