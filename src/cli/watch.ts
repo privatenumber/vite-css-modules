@@ -52,9 +52,7 @@ export const runWatch = async ({
 }: RunWatchOptions): Promise<() => Promise<void>> => {
 	const resolvedGlobCwd = path.resolve(globCwd);
 
-	const globMatchers = globs.map(pattern =>
-		picomatch(pattern, { dot: true }),
-	);
+	const globMatchers = globs.map(pattern => picomatch(pattern, { dot: true }));
 
 	const matchesConfiguredGlobs = (absolutePath: string): boolean => {
 		const relative = slash(path.relative(resolvedGlobCwd, absolutePath));
@@ -68,9 +66,7 @@ export const runWatch = async ({
 		return globMatchers.some(matcher => matcher(relative));
 	};
 
-	const ignoreMatchers = DEFAULT_IGNORE_GLOBS.map(pattern =>
-		picomatch(pattern, { dot: true }),
-	);
+	const ignoreMatchers = DEFAULT_IGNORE_GLOBS.map(pattern => picomatch(pattern, { dot: true }));
 
 	const isIgnored = (absolutePath: string): boolean => {
 		const relative = slash(path.relative(resolvedGlobCwd, absolutePath));

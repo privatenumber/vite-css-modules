@@ -1071,12 +1071,12 @@ export default {
 				await watcher.waitForOutput('style.module.css.d.ts');
 
 				const poll = async () => {
-					for (let i = 0; i < 50; i++) {
+					for (let i = 0; i < 50; i += 1) {
 						const content = await fixture.readFile('style.module.css.d.ts', 'utf8');
 						if (content.includes('updated')) {
 							return content;
 						}
-						await new Promise(resolve => setTimeout(resolve, 100));
+						await new Promise((resolve) => { setTimeout(resolve, 100); });
 					}
 					throw new Error('Timed out waiting for updated .d.ts content');
 				};
@@ -1105,14 +1105,14 @@ export default {
 				await fs.unlink(path.join(fixture.path, 'style.module.css'));
 
 				const poll = async () => {
-					for (let i = 0; i < 50; i++) {
+					for (let i = 0; i < 50; i += 1) {
 						const exists = await fs.access(
 							path.join(fixture.path, 'style.module.css.d.ts'),
 						).then(() => true, () => false);
 						if (!exists) {
 							return;
 						}
-						await new Promise(resolve => setTimeout(resolve, 100));
+						await new Promise((resolve) => { setTimeout(resolve, 100); });
 					}
 					throw new Error('Timed out waiting for .d.ts deletion');
 				};
@@ -1158,14 +1158,14 @@ export default {
 				);
 
 				const poll = async () => {
-					for (let i = 0; i < 50; i++) {
+					for (let i = 0; i < 50; i += 1) {
 						const exists = await fs.access(
 							path.join(fixture.path, 'style.module.css.d.ts'),
 						).then(() => true, () => false);
 						if (exists) {
 							return;
 						}
-						await new Promise(resolve => setTimeout(resolve, 100));
+						await new Promise((resolve) => { setTimeout(resolve, 100); });
 					}
 					throw new Error('Timed out waiting for .d.ts generation');
 				};

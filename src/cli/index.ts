@@ -44,7 +44,9 @@ import {
 
 	const cwd = process.cwd();
 	const { globs: inputGlobs = [] } = argv._;
-	const { config, mode, silent, watch: watchMode } = argv.flags;
+	const {
+		config, mode, silent, watch: watchMode,
+	} = argv.flags;
 	const configPath = config
 		? path.resolve(config)
 		: await findViteConfigInDirectory(cwd);
@@ -58,7 +60,8 @@ import {
 		mode,
 	});
 	const { root } = projectContext.resolvedConfig;
-	const allowArbitraryNamedExports = supportsArbitraryModuleNamespace(projectContext.resolvedConfig);
+	const allowArbitraryNamedExports =
+		supportsArbitraryModuleNamespace(projectContext.resolvedConfig);
 
 	const { globs, globCwd } = resolveGlobScope(inputGlobs, cwd, root);
 
@@ -75,17 +78,15 @@ import {
 
 	const loadCssModule = createCssModuleLoader(projectContext);
 
-	await Promise.all(files.map(filePath =>
-		generateDeclarationForFile(
-			projectContext,
-			loadCssModule,
-			cwd,
-			filePath,
-			allowArbitraryNamedExports,
-			silent ?? false,
-			!watchMode,
-		),
-	));
+	await Promise.all(files.map(filePath => generateDeclarationForFile(
+		projectContext,
+		loadCssModule,
+		cwd,
+		filePath,
+		allowArbitraryNamedExports,
+		silent ?? false,
+		!watchMode,
+	)));
 
 	if (watchMode) {
 		const { runWatch } = await import('./watch.js');
@@ -101,7 +102,7 @@ import {
 		});
 
 		const shutdown = () => {
-			cleanup().then(() => process.exit());
+			cleanup().then(() => process.exit(0)).catch(() => {});
 		};
 		process.on('SIGINT', shutdown);
 		process.on('SIGTERM', shutdown);
