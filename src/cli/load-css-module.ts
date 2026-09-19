@@ -6,7 +6,7 @@ import type { SourceMapOptions } from '../plugin/generate-dts-sourcemap.js';
 import { getLocalesConventionFunction, shouldKeepOriginalExport } from '../plugin/locals-convention.js';
 import type { Exports } from '../plugin/generate-esm.js';
 import { transform as postcssTransform } from '../plugin/transformers/postcss/index.js';
-import { transform as lightningcssTransform } from '../plugin/transformers/lightningcss.js';
+import type { transform as LightningcssTransform } from '../plugin/transformers/lightningcss.js';
 import { cleanUrl, getCssModuleUrl } from '../plugin/url-utils.js';
 import type { ProjectContext } from './project-context.js';
 import { cssModuleExportsToExports } from './css-module-exports-to-exports.js';
@@ -50,8 +50,11 @@ export const createCssModuleLoader = (
 		);
 
 		const id = cleanUrl(path.relative(context.resolvedConfig.root, filePath));
-		const cssModule = context.resolvedConfig.css.transformer === 'lightningcss'
-			? lightningcssTransform(
+		const isLightningCss = context.resolvedConfig.css.transformer === 'lightningcss';
+		const cssModule = isLightningCss
+			? (
+				await import('../plugin/transformers/lightningcss.js') as { transform: typeof LightningcssTransform }
+			).transform(
 				processed.code,
 				id,
 				context.resolvedConfig.css.lightningcss ?? {},

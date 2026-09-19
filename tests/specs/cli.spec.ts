@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { decode } from '@jridgewell/sourcemap-codec';
@@ -22,6 +23,25 @@ const cli = (
 	},
 })
 	.catch((error: SubprocessError) => error);
+
+// Records every module specifier Node attempts to resolve while the CLI runs,
+// so tests can assert an optional dependency was never even looked up.
+const importTraceHookPath = path.resolve('tests/utils/import-trace-register.ts');
+const cliWithImportTrace = (
+	args: string[],
+	cwd: string,
+	traceLogPath: string,
+): Promise<Result & { exitCode?: number }> => spawn(
+	process.execPath,
+	['--import', importTraceHookPath, cliPath, ...args],
+	{
+		cwd,
+		env: {
+			...process.env,
+			IMPORT_TRACE_LOG: traceLogPath,
+		},
+	},
+).catch((error: SubprocessError) => error);
 
 const projectRoot = path.resolve('.');
 
@@ -960,6 +980,43 @@ export default {
 			// exportMode: 'named' means named exports only, no default export
 			expect(dts).toMatch('export {');
 			expect(dts).not.toMatch('export default');
+		});
+	});
+
+	describe('lightningcss dependency', () => {
+		test('does not resolve lightningcss when the transformer is not configured', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'style.module.css': '.button { color: red; }',
+			});
+
+			const traceLogPath = path.join(fixture.path, 'import-trace.log');
+			const result = await cliWithImportTrace(['style.module.css'], fixture.path, traceLogPath);
+			expect(result.exitCode).toBeUndefined();
+
+			const trace = await fs.readFile(traceLogPath, 'utf8').catch(() => '');
+			expect(trace).not.toMatch('lightningcss');
+		});
+
+		test('resolves lightningcss when configured as the transformer', async () => {
+			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+				'style.module.css': '.button { color: red; }',
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	css: { transformer: 'lightningcss' },
+	plugins: [patchCssModules()],
+};
+`,
+			});
+
+			const traceLogPath = path.join(fixture.path, 'import-trace.log');
+			const result = await cliWithImportTrace(['style.module.css'], fixture.path, traceLogPath);
+			expect(result.exitCode).toBeUndefined();
+
+			const trace = await fs.readFile(traceLogPath, 'utf8').catch(() => '');
+			expect(trace).toMatch('lightningcss');
 		});
 	});
 }, { parallel: 4 });
