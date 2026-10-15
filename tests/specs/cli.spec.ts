@@ -994,8 +994,13 @@ export default {
 			const result = await cliWithImportTrace(['style.module.css'], fixture.path, traceLogPath);
 			expect(result.exitCode).toBeUndefined();
 
-			const trace = await fs.readFile(traceLogPath, 'utf8').catch(() => '');
-			expect(trace).not.toMatch('lightningcss');
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const button: string;');
+			expect(dts).toMatch('export {\n\tbutton\n};');
+
+			const trace = await fs.readFile(traceLogPath, 'utf8');
+			expect(trace.length).toBeGreaterThan(0);
+			expect(trace).not.toMatch(/^lightningcss$/m);
 		});
 
 		test('resolves lightningcss when configured as the transformer', async () => {
@@ -1015,8 +1020,13 @@ export default {
 			const result = await cliWithImportTrace(['style.module.css'], fixture.path, traceLogPath);
 			expect(result.exitCode).toBeUndefined();
 
-			const trace = await fs.readFile(traceLogPath, 'utf8').catch(() => '');
-			expect(trace).toMatch('lightningcss');
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const button: string;');
+			expect(dts).toMatch('export {\n\tbutton\n};');
+
+			const trace = await fs.readFile(traceLogPath, 'utf8');
+			expect(trace.length).toBeGreaterThan(0);
+			expect(trace).toMatch(/^lightningcss$/m);
 		});
 	});
 }, { parallel: 4 });
