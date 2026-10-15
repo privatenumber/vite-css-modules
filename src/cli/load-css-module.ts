@@ -49,19 +49,23 @@ export const createCssModuleLoader = (
 		);
 
 		const id = cleanUrl(path.relative(context.resolvedConfig.root, filePath));
-		const cssModule = context.resolvedConfig.css.transformer === 'lightningcss'
-			? (await import('../plugin/transformers/lightningcss.js')).transform(
+		let cssModule;
+		if (context.resolvedConfig.css.transformer === 'lightningcss') {
+			const { transform } = await import('../plugin/transformers/lightningcss.js');
+			cssModule = transform(
 				processed.code,
 				id,
 				context.resolvedConfig.css.lightningcss ?? {},
 				false,
-			)
-			: postcssTransform(
+			);
+		} else {
+			cssModule = postcssTransform(
 				processed.code,
 				id,
 				context.cssModulesConfig,
 				false,
 			);
+		}
 
 		const resolvedDependencies = new Map<string, string>();
 
