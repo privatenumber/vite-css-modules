@@ -1,7 +1,13 @@
-ignoredBuiltDependencies:
-  - "@parcel/watcher"
-  - esbuild
-  - unrs-resolver
+allowBuilds:
+  "@parcel/watcher": false
+  esbuild: false
+  playwright-chromium: true
+  unrs-resolver: false
 
-onlyBuiltDependencies:
-  - playwright-chromium
+permissions:
+  manten:
+    skills: true
+
+skills:
+  dirs:
+    - .agents/skills
