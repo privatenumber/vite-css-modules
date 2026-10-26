@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { EventEmitter } from 'node:events';
 import { decode } from '@jridgewell/sourcemap-codec';
 import { createFixture, type FileTree } from 'fs-fixture';
@@ -32,13 +31,24 @@ const cli = (
 
 // Records every module specifier Node attempts to resolve while the CLI runs,
 // so tests can assert an optional dependency was never even looked up.
-const importTraceHookUrl = pathToFileURL(path.resolve('tests/utils/import-trace-register.ts')).href;
+const traceHookSource = String.raw`
+import { appendFileSync } from 'node:fs';
+import { registerHooks } from 'node:module';
+
+registerHooks({
+	resolve(specifier, context, nextResolve) {
+		appendFileSync(process.env.IMPORT_TRACE_LOG, specifier + '\n');
+		return nextResolve(specifier, context);
+	},
+});
+`;
+const traceHookUrl = `data:text/javascript,${encodeURIComponent(traceHookSource)}`;
 const cliWithImportTrace = (
 	args: string[],
 	cwd: string,
 	traceLogPath: string,
 ) => node(
-	['--import', importTraceHookUrl, cliPath, ...args],
+	['--import', traceHookUrl, cliPath, ...args],
 	{
 		cwd,
 		env: {
