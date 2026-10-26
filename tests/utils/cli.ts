@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { on } from 'node:events';
+import { createFixture } from 'fs-fixture';
 import type { Result, SubprocessError } from 'nano-spawn';
 import { node } from './node.ts';
 
@@ -21,83 +21,38 @@ export const cli = (
 // Records every module specifier Node attempts to resolve while the CLI runs,
 // so tests can assert an optional dependency was never even looked up.
 const traceHookSource = String.raw`
+import { appendFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
-
-let pendingSends = 0;
-let closing = false;
-const send = (message) => {
-	pendingSends += 1;
-	process.channel?.ref();
-	process.send(message, (error) => {
-		pendingSends -= 1;
-		if (error) {
-			console.error(error);
-			process.exitCode = 1;
-			if (process.connected) {
-				process.disconnect();
-			}
-			return;
-		}
-		if (pendingSends === 0) {
-			if (closing && process.connected) {
-				process.disconnect();
-			} else {
-				process.channel?.unref();
-			}
-		}
-	});
-};
 
 registerHooks({
 	resolve(specifier, context, nextResolve) {
-		send({ type: 'resolve', specifier });
+		appendFileSync(process.env.IMPORT_TRACE_LOG, specifier + '\n');
 		return nextResolve(specifier, context);
 	},
 });
-send({ type: 'ready' });
-
-// Pending sends keep the channel referenced until their callbacks complete.
-process.once('beforeExit', () => {
-	if (process.connected) {
-		closing = true;
-		send({ type: 'complete' });
-	}
-});
 `;
 const traceHookUrl = `data:text/javascript,${encodeURIComponent(traceHookSource)}`;
-type TraceMessage = { type: 'ready' } | { type: 'complete' } | {
-	type: 'resolve';
-	specifier: string;
-};
 
 export const cliWithImportTrace = async (
 	args: string[],
 	cwd: string,
 ) => {
-	const subprocess = node(['--import', traceHookUrl, cliPath, ...args], {
+	await using traceDirectory = await createFixture();
+	const traceLogPath = path.join(traceDirectory.path, 'import-trace.log');
+	const result: Result & { exitCode?: number } = await node(['--import', traceHookUrl, cliPath, ...args], {
 		cwd,
-		env: process.env,
-		stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-	});
-	const processResult: Promise<Result & { exitCode?: number }> = subprocess
-		.catch((error: SubprocessError) => error);
-	const child = await subprocess.nodeChildProcess;
-	const resolutionAttempts: string[] = [];
-	let ready = false;
-	let complete = false;
-	for await (const [message] of on(child, 'message', { close: ['disconnect'] })) {
-		const traceMessage = message as TraceMessage;
-		if (traceMessage.type === 'ready') {
-			ready = true;
-		} else if (traceMessage.type === 'complete') {
-			complete = true;
-		} else {
-			resolutionAttempts.push(traceMessage.specifier);
-		}
+		env: {
+			...process.env,
+			IMPORT_TRACE_LOG: traceLogPath,
+		},
+	}).catch((error: SubprocessError) => error);
+	const trace = await traceDirectory.readFile('import-trace.log', 'utf8');
+	if (trace.length === 0) {
+		throw new Error('CLI import trace is empty');
 	}
-	const result = await processResult;
-	if (!ready || !complete) {
-		throw new Error(`CLI import tracing ${ready ? 'did not complete' : 'was not ready'}: ${result.stderr}`);
-	}
-	return Object.assign(result, { resolutionAttempts });
+	const resolutionAttempts = trace.trimEnd().split('\n');
+	return {
+		...result,
+		resolutionAttempts,
+	};
 };

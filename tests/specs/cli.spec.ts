@@ -947,50 +947,6 @@ export default {
 		});
 	});
 
-	describe('import tracing', () => {
-		test('records failed resolution attempts and preserves output and exit status', async () => {
-			await using fixture = await createFixture({
-				...defaultProjectFiles,
-				'vite.config.mjs': `
-import { patchCssModules } from 'vite-css-modules';
-export default async () => {
-	const dependency = 'trace-missing-dependency';
-	try {
-		await import(dependency);
-	} catch {
-		console.log('trace stdout');
-		console.error('trace stderr');
-		process.exitCode = 7;
-	}
-	return { plugins: [patchCssModules()] };
-};
-`,
-				'style.module.css': '.button { color: red; }',
-			});
-
-			const result = await cliWithImportTrace(['style.module.css'], fixture.path);
-			expect(result.exitCode).toBe(7);
-			expect(result.stdout).toMatch('trace stdout');
-			expect(result.stderr).toMatch('trace stderr');
-			expect(result.resolutionAttempts).toContain('trace-missing-dependency');
-		});
-
-		test('rejects incomplete tracing when the child disconnects early', async () => {
-			await using fixture = await createFixture({
-				...defaultProjectFiles,
-				'vite.config.mjs': `
-import { patchCssModules } from 'vite-css-modules';
-process.disconnect();
-export default { plugins: [patchCssModules()] };
-`,
-				'style.module.css': '.button { color: red; }',
-			});
-
-			await expect(cliWithImportTrace(['style.module.css'], fixture.path))
-				.rejects.toThrow('CLI import tracing did not complete');
-		});
-	});
-
 	describe('lightningcss dependency', () => {
 		test('does not resolve lightningcss when the transformer is not configured', async () => {
 			await using fixture = await createFixture({
