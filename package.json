@@ -90,7 +90,7 @@
 	"devDependencies": {
 		"@types/icss-utils": "^5.1.2",
 		"@types/lodash.camelcase": "^4.3.9",
-		"@types/node": "^24.10.15",
+		"@types/node": "^24.19.2",
 		"@types/postcss-modules-extract-imports": "^3.0.5",
 		"@types/postcss-modules-local-by-default": "^4.0.2",
 		"@types/postcss-modules-values": "^4.0.2",
@@ -99,7 +99,7 @@
 		"clean-pkg-json": "^2.0.0",
 		"fs-fixture": "^2.16.0",
 		"lightningcss": "^1.33.0",
-		"lintroll": "^1.25.0",
+		"lintroll": "^1.32.1",
 		"lodash.camelcase": "^4.3.0",
 		"manten": "^2.0.2",
 		"nano-spawn": "^2.1.0",

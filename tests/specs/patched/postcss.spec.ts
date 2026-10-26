@@ -9,11 +9,11 @@ import { decode } from '@jridgewell/sourcemap-codec';
 import vitePluginVue from '@vitejs/plugin-vue';
 import { outdent } from 'outdent';
 import * as vite from 'vite';
+import { patchCssModules } from '#vite-css-modules';
 import { base64Module } from '../../utils/base64-module.ts';
 import * as fixtures from '../../fixtures.ts';
 import { viteBuild, getViteDevCode, viteDevBrowser } from '../../utils/vite.ts';
 import { getCssSourceMaps } from '../../utils/get-css-source-maps.ts';
-import { patchCssModules } from '#vite-css-modules';
 
 const usesRolldown = 'rolldownVersion' in vite;
 
