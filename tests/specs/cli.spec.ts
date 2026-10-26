@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { decode } from '@jridgewell/sourcemap-codec';
@@ -948,6 +947,50 @@ export default {
 		});
 	});
 
+	describe('import tracing', () => {
+		test('records failed resolution attempts and preserves output and exit status', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default async () => {
+	const dependency = 'trace-missing-dependency';
+	try {
+		await import(dependency);
+	} catch {
+		console.log('trace stdout');
+		console.error('trace stderr');
+		process.exitCode = 7;
+	}
+	return { plugins: [patchCssModules()] };
+};
+`,
+				'style.module.css': '.button { color: red; }',
+			});
+
+			const result = await cliWithImportTrace(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBe(7);
+			expect(result.stdout).toMatch('trace stdout');
+			expect(result.stderr).toMatch('trace stderr');
+			expect(result.resolutionAttempts).toContain('trace-missing-dependency');
+		});
+
+		test('rejects incomplete tracing when the child disconnects early', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+process.disconnect();
+export default { plugins: [patchCssModules()] };
+`,
+				'style.module.css': '.button { color: red; }',
+			});
+
+			await expect(cliWithImportTrace(['style.module.css'], fixture.path))
+				.rejects.toThrow('CLI import tracing did not complete');
+		});
+	});
+
 	describe('lightningcss dependency', () => {
 		test('does not resolve lightningcss when the transformer is not configured', async () => {
 			await using fixture = await createFixture({
@@ -955,17 +998,14 @@ export default {
 				'style.module.css': '.button { color: red; }',
 			});
 
-			const traceLogPath = path.join(fixture.path, 'import-trace.log');
-			const result = await cliWithImportTrace(['style.module.css'], fixture.path, traceLogPath);
+			const result = await cliWithImportTrace(['style.module.css'], fixture.path);
 			expect(result.exitCode).toBeUndefined();
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).toMatch('declare const button: string;');
 			expect(dts).toMatch('export {\n\tbutton\n};');
 
-			const trace = await fs.readFile(traceLogPath, 'utf8');
-			expect(trace.length).toBeGreaterThan(0);
-			expect(trace).not.toMatch(/^lightningcss$/m);
+			expect(result.resolutionAttempts).not.toContain('lightningcss');
 		});
 
 		test('resolves lightningcss when configured as the transformer', async () => {
@@ -981,17 +1021,14 @@ export default {
 `,
 			});
 
-			const traceLogPath = path.join(fixture.path, 'import-trace.log');
-			const result = await cliWithImportTrace(['style.module.css'], fixture.path, traceLogPath);
+			const result = await cliWithImportTrace(['style.module.css'], fixture.path);
 			expect(result.exitCode).toBeUndefined();
 
 			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
 			expect(dts).toMatch('declare const button: string;');
 			expect(dts).toMatch('export {\n\tbutton\n};');
 
-			const trace = await fs.readFile(traceLogPath, 'utf8');
-			expect(trace.length).toBeGreaterThan(0);
-			expect(trace).toMatch(/^lightningcss$/m);
+			expect(result.resolutionAttempts).toContain('lightningcss');
 		});
 	});
 }, { parallel: 4 });
