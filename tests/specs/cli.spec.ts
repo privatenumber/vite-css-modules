@@ -5,23 +5,7 @@ import { createFixture, type FileTree } from 'fs-fixture';
 import {
 	describe, test, expect, onFinish,
 } from 'manten';
-import spawn, { type Result, type SubprocessError } from 'nano-spawn';
-
-const cliPath = path.resolve('dist/cli/index.mjs');
-const cli = (
-	args: string[],
-	cwd: string,
-	options?: {
-		env?: NodeJS.ProcessEnv;
-	},
-): Promise<Result & { exitCode?: number }> => spawn(process.execPath, [cliPath, ...args], {
-	cwd,
-	env: {
-		...process.env,
-		...options?.env,
-	},
-})
-	.catch((error: SubprocessError) => error);
+import { cli, cliWithImportTrace } from '../utils/cli.ts';
 
 const projectRoot = path.resolve('.');
 
@@ -960,6 +944,47 @@ export default {
 			// exportMode: 'named' means named exports only, no default export
 			expect(dts).toMatch('export {');
 			expect(dts).not.toMatch('export default');
+		});
+	});
+
+	describe('lightningcss dependency', () => {
+		test('does not resolve lightningcss when the transformer is not configured', async () => {
+			await using fixture = await createFixture({
+				...defaultProjectFiles,
+				'style.module.css': '.button { color: red; }',
+			});
+
+			const result = await cliWithImportTrace(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBeUndefined();
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const button: string;');
+			expect(dts).toMatch('export {\n\tbutton\n};');
+
+			expect(result.resolutionAttempts).not.toContain('lightningcss');
+		});
+
+		test('resolves lightningcss when configured as the transformer', async () => {
+			await using fixture = await createFixture({
+				'node_modules/vite-css-modules': ({ symlink }) => symlink(projectRoot),
+				'style.module.css': '.button { color: red; }',
+				'vite.config.mjs': `
+import { patchCssModules } from 'vite-css-modules';
+export default {
+	css: { transformer: 'lightningcss' },
+	plugins: [patchCssModules()],
+};
+`,
+			});
+
+			const result = await cliWithImportTrace(['style.module.css'], fixture.path);
+			expect(result.exitCode).toBeUndefined();
+
+			const dts = await fixture.readFile('style.module.css.d.ts', 'utf8');
+			expect(dts).toMatch('declare const button: string;');
+			expect(dts).toMatch('export {\n\tbutton\n};');
+
+			expect(result.resolutionAttempts).toContain('lightningcss');
 		});
 	});
 }, { parallel: 4 });
