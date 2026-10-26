@@ -112,8 +112,8 @@
 		"typescript": "^5.9.3",
 		"vite": "^8.3.5",
 		"vite5": "npm:vite@5.4.21",
-		"vite6": "npm:vite@6.4.1",
-		"vite7": "npm:vite@7.3.1",
+		"vite6": "npm:vite@6.4.5",
+		"vite7": "npm:vite@7.3.7",
 		"vue": "^3.5.44"
 	}
 }
