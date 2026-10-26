@@ -7,7 +7,13 @@ import { createFixture, type FileTree } from 'fs-fixture';
 import {
 	describe, test, expect, onFinish,
 } from 'manten';
-import spawn, { type Result, type SubprocessError } from 'nano-spawn';
+import spawn, { type Options, type Result, type SubprocessError } from 'nano-spawn';
+
+const node = (
+	args: string[],
+	options: Options,
+): Promise<Result & { exitCode?: number }> => spawn(process.execPath, args, options)
+	.catch((error: SubprocessError) => error);
 
 const cliPath = path.resolve('dist/cli/index.mjs');
 const cli = (
@@ -16,14 +22,13 @@ const cli = (
 	options?: {
 		env?: NodeJS.ProcessEnv;
 	},
-): Promise<Result & { exitCode?: number }> => spawn(process.execPath, [cliPath, ...args], {
+) => node([cliPath, ...args], {
 	cwd,
 	env: {
 		...process.env,
 		...options?.env,
 	},
-})
-	.catch((error: SubprocessError) => error);
+});
 
 // Records every module specifier Node attempts to resolve while the CLI runs,
 // so tests can assert an optional dependency was never even looked up.
@@ -32,8 +37,7 @@ const cliWithImportTrace = (
 	args: string[],
 	cwd: string,
 	traceLogPath: string,
-): Promise<Result & { exitCode?: number }> => spawn(
-	process.execPath,
+) => node(
 	['--import', importTraceHookUrl, cliPath, ...args],
 	{
 		cwd,
@@ -42,7 +46,7 @@ const cliWithImportTrace = (
 			IMPORT_TRACE_LOG: traceLogPath,
 		},
 	},
-).catch((error: SubprocessError) => error);
+);
 
 const projectRoot = path.resolve('.');
 
