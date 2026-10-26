@@ -239,7 +239,7 @@ patchCssModules({
 
 This enables **"Go to Definition"** (<kbd>F12</kbd> / <kbd>Cmd</kbd>+Click in VS Code) to jump from a CSS class name in TypeScript directly to where it's defined in the CSS file. Without declaration maps, "Go to Definition" lands on the generated `.d.ts` — a machine-generated file with no useful context.
 
-<video src="https://github.com/privatenumber/vite-css-modules/raw/refs/heads/fix/readme-video-playback/.github/go-to-definition.mp4" controls></video>
+<video src="https://github.com/user-attachments/assets/968f5f57-e7ef-4268-9a0e-f14734e01940"></video>
 
 [Watch the MP4 directly](https://github.com/privatenumber/vite-css-modules/raw/refs/heads/fix/readme-video-playback/.github/go-to-definition.mp4)
 
