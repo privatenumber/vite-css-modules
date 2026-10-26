@@ -116,6 +116,8 @@ const viteServe = async <T>(
 	// This adds a SIGTERM listener to process, which emits a memory leak warning
 	const server = await createServer({
 		root: fixturePath,
+		// Fixtures share node_modules, but concurrent servers need separate optimizer caches.
+		cacheDir: path.join(fixturePath, '.vite'),
 		configFile: false,
 		envFile: false,
 		logLevel: 'error',
