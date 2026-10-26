@@ -1,11 +1,7 @@
 import path from 'node:path';
 import { on } from 'node:events';
-import spawn, { type Options, type Result, type SubprocessError } from 'nano-spawn';
-
-const node = (
-	args: string[],
-	options: Options,
-) => spawn(process.execPath, args, options);
+import type { Result, SubprocessError } from 'nano-spawn';
+import { node } from './node.ts';
 
 const cliPath = path.resolve('dist/cli/index.mjs');
 export const cli = (
