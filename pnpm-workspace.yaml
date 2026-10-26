@@ -3,3 +3,11 @@ allowBuilds:
   esbuild: false
   unrs-resolver: false
   playwright-chromium: true
+
+skills:
+  dirs:
+    - .agents/skills
+
+permissions:
+  manten:
+    skills: true
